@@ -4,6 +4,7 @@ import { db } from './database'
 import {
   acceptKcalSuggestion,
   addLogEntries,
+  countCiqualFoods,
   createFood,
   deleteFood,
   deleteLogEntry,
@@ -337,13 +338,43 @@ describe('objectifs', () => {
   it('acceptKcalSuggestion cumule l’ajustement et date', async () => {
     await saveProfile(makeProfile(), NOW)
     await acceptKcalSuggestion(150, '2026-03-01', T1)
-    const p = await acceptKcalSuggestion(150, '2026-03-25', T2)
+    await rejects(acceptKcalSuggestion(150, '2026-03-01', T1), /déjà appliqué/)
+    await rejects(acceptKcalSuggestion(150, '2026-03-21', T1), /déjà appliqué/)
+    const p = await acceptKcalSuggestion(150, '2026-03-22', T2)
     expect(p.nutrition.kcalAdjustment).toBe(300)
-    expect(p.nutrition.kcalAdjustedOn).toBe('2026-03-25')
+    expect(p.nutrition.kcalAdjustedOn).toBe('2026-03-22')
     await db.profile.put(makeProfile({ nutrition: { ...p.nutrition, kcalAdjustment: 950 } }))
     await rejects(acceptKcalSuggestion(100, '2026-04-01', T2), /ajustement/i)
     expect((await db.profile.get('me'))?.nutrition.kcalAdjustment).toBe(950)
     await rejects(acceptKcalSuggestion(Number.NaN, '2026-04-01', T2))
+  })
+
+  it('restoreCiqualFood keepFavorite garde un favori minimal aux valeurs d’origine', async () => {
+    await replaceCiqual('v', [rice], NOW)
+    const over = await updateFood(
+      riceFood,
+      { name: 'Riz perso', per100g: { kcal: 99, protein: 1, carbs: 1, fat: 1 } },
+      T1,
+    )
+    await setFoodFavorite(over, true, T1)
+    await restoreCiqualFood(rice.id, { keepFavorite: true }, T2)
+    expect(await getFoodRow(rice.id)).toEqual({ ...riceFood, favorite: true, updatedAt: T2 })
+    // surcharge non favorite : supprimée, rien de réécrit
+    await restoreCiqualFood(rice.id)
+    await updateFood(riceFood, { name: 'Autre', per100g: riceFood.per100g }, T1)
+    await restoreCiqualFood(rice.id, { keepFavorite: true }, T2)
+    expect(await getFoodRow(rice.id)).toBeUndefined()
+    // favori sans ligne ciqual : rien de réécrit
+    await db.ciqual.clear()
+    await setFoodFavorite(riceFood, true, T1)
+    await restoreCiqualFood(rice.id, { keepFavorite: true }, T2)
+    expect(await getFoodRow(rice.id)).toBeUndefined()
+  })
+
+  it('countCiqualFoods', async () => {
+    expect(await countCiqualFoods()).toBe(0)
+    await replaceCiqual('v', [rice], NOW)
+    expect(await countCiqualFoods()).toBe(1)
   })
 
   it('acceptKcalSuggestion exige un profil', async () => {

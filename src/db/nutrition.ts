@@ -12,6 +12,7 @@ import type {
   NutritionParams,
   Profile,
 } from '../types'
+import { daysBetween, isValidLocalDate } from '../domain/shared/dates'
 import { db } from './database'
 import { defaultSettings } from './defaults'
 import { fail, newId, nowIso } from './helpers'
@@ -41,6 +42,11 @@ export async function replaceCiqual(
     const settings = (await db.settings.get(SINGLETON_ID)) ?? defaultSettings(now)
     await db.settings.put({ ...settings, ciqualVersion: version, updatedAt: now })
   })
+}
+
+/** Nombre de lignes de la table `ciqual` (0 alors qu'une version est enregistrée = table à recharger). */
+export async function countCiqualFoods(): Promise<number> {
+  return db.ciqual.count()
 }
 
 export async function listCiqualFoods(): Promise<CiqualFood[]> {
@@ -164,11 +170,33 @@ export async function deleteFood(food: Food): Promise<void> {
   await db.foods.delete(food.id)
 }
 
-/** Supprime la surcharge d'un aliment Ciqual (rétablit l'original). */
-export async function restoreCiqualFood(id: Id): Promise<void> {
-  await db.transaction('rw', db.foods, async () => {
+/**
+ * Supprime la surcharge d'un aliment Ciqual (rétablit l'original). Avec `keepFavorite`, si la surcharge était
+ * favorite et que l'aliment existe dans la table `ciqual`, une ligne minimale favorite (valeurs Ciqual d'origine) est réécrite.
+ */
+export async function restoreCiqualFood(
+  id: Id,
+  opts: { keepFavorite?: boolean } = {},
+  now: IsoDateTime = nowIso(),
+): Promise<void> {
+  await db.transaction('rw', [db.foods, db.ciqual], async () => {
     const row = await db.foods.get(id)
-    if (row?.source === 'ciqual') await db.foods.delete(id)
+    if (row?.source !== 'ciqual') return
+    await db.foods.delete(id)
+    if (opts.keepFavorite === true && row.favorite) {
+      const original = await db.ciqual.get(id)
+      if (original) {
+        await db.foods.put({
+          id,
+          name: original.name,
+          source: 'ciqual',
+          ciqualCode: original.code,
+          per100g: { ...original.per100g },
+          favorite: true,
+          updatedAt: now,
+        })
+      }
+    }
   })
 }
 
@@ -263,6 +291,10 @@ export async function acceptKcalSuggestion(
   return db.transaction('rw', db.profile, async () => {
     const profile = await db.profile.get(SINGLETON_ID)
     if (!profile) throw new ValidationError('Profil introuvable.')
+    const last = profile.nutrition.kcalAdjustedOn
+    if (last !== undefined && isValidLocalDate(last) && daysBetween(last, on) < 21) {
+      throw new ValidationError('Ajustement déjà appliqué récemment.')
+    }
     const next = writeNutrition(
       profile,
       {

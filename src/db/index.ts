@@ -53,6 +53,7 @@ export type { SessionTemplateInput } from './sessions'
 export {
   acceptKcalSuggestion,
   addLogEntries,
+  countCiqualFoods,
   createFood,
   deleteFood,
   deleteLogEntry,
