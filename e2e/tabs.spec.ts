@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { completeOnboarding } from './helpers.ts'
 
 const tabs = [
   { name: 'Séance', path: /\/seance$/, h1: 'Séance' },
@@ -15,7 +16,7 @@ test('navigation par onglets', async ({ page }) => {
   page.on('pageerror', (e) => errors.push(e.message))
 
   await page.goto('./')
-  await expect(page).toHaveURL(/\/seance$/)
+  await completeOnboarding(page)
 
   const nav = page.getByRole('navigation', { name: 'Navigation principale' })
   await expect(nav.getByRole('link')).toHaveCount(4)
