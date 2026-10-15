@@ -29,6 +29,8 @@ export interface NutritionParams {
   fatShare: number
   /** Ajustement manuel cumulé en kcal (ex. +150 après stagnation acceptée) ; défaut 0. */
   kcalAdjustment: number
+  /** Jour du dernier ajustement accepté (bloque une nouvelle proposition pendant 21 jours). */
+  kcalAdjustedOn?: LocalDate
 }
 
 export interface Profile {

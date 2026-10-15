@@ -62,6 +62,13 @@ export interface Exercise {
   illustration?: string
   /** Lien vidéo saisi par l'utilisateur. */
   videoUrl?: string
+  /** Peut servir de finisher en fin de séance de 60 min (swings, portés) ; absent = non. Remplace `FINISHER_SWING_IDS`. */
+  finisher?: boolean
+  /**
+   * Geste complexe appris d'abord sans charge (ex. Turkish get-up) : l'état créé au déblocage a `loadKg: null`
+   * même pour un exercice `kettlebell`. Remplace `LEARN_UNLOADED_IDS`.
+   */
+  learnUnloaded?: boolean
   source: ContentSource
   /** Surcharge d'un exercice de départ supprimé par l'utilisateur (masqué partout). */
   deleted?: boolean
@@ -88,7 +95,10 @@ export type Feeling = 'easy' | 'ok' | 'hard'
 export interface ExerciseState {
   /** Clé primaire. */
   exerciseId: Id
-  /** Charge de travail actuelle ; `null` pour le poids du corps. */
+  /**
+   * Charge de travail actuelle ; `null` pour le poids du corps, ou pour un exercice `kettlebell` en apprentissage
+   * sans charge (`Exercise.learnUnloaded`).
+   */
   loadKg: number | null
   /** Durée visée par série en secondes (gainage, portés) ; absente pour un exercice en répétitions. */
   targetDurationSec?: number
@@ -125,6 +135,8 @@ export interface SessionExercise {
   restSec: number
   /** Tempo imposé (ex. `'3-1-1'` : 3 s de descente, 1 s de pause, 1 s de montée) ; absent = tempo libre. */
   tempo?: string
+  /** Exercice proposé à l'origine, quand l'utilisateur l'a remplacé (avant ou pendant la séance). */
+  replacedFrom?: Id
   sets: SetEntry[]
 }
 
@@ -135,6 +147,31 @@ export interface SessionBlock {
   exercises: SessionExercise[]
 }
 
+/** Position dans une séance : indices du bloc, de l'exercice dans le bloc, de la série dans l'exercice. */
+export interface SessionCursor {
+  block: number
+  exercise: number
+  set: number
+}
+
+/** Suggestion de progression (`ProgressionSuggestion`, src/types/engine.ts) gardée avec la séance qui l'a produite. */
+export interface SessionSuggestion {
+  kind: 'level_up' | 'tempo'
+  exerciseId: Id
+  toExerciseId?: Id
+  message: string
+  /** `pending` tant que l'utilisateur n'a pas répondu. Accepter crée l'état (level_up) ou pose `tempo` (tempo). */
+  status: 'pending' | 'accepted' | 'dismissed'
+}
+
+/**
+ * Séance enregistrée. Cycle de vie :
+ * - `planned` : non utilisé en J4 (l'aperçu édité reste en mémoire jusqu'au départ) ;
+ * - `in_progress` : créée au départ (« Commencer »), sauvegardée à chaque série ; une seule à la fois ;
+ * - `done` : terminée, progression appliquée une fois (`progressionAppliedAt`) ;
+ * - `abandoned` : arrêtée sans terminer ; ne compte ni pour le volume ni pour la progression.
+ * Une séance `done` corrigée dans l'historique ne rejoue pas la progression (seuls volume et records changent).
+ */
 export interface Session {
   id: Id
   date: LocalDate
@@ -148,7 +185,13 @@ export interface Session {
   startedAt?: IsoDateTime
   endedAt?: IsoDateTime
   /** Position courante pour la reprise du mode guidé. */
-  cursor?: { block: number; exercise: number; set: number }
+  cursor?: SessionCursor
+  /** Fin du repos en cours (minuteur), pour le reprendre après fermeture de l'app ; absent = pas de repos. */
+  restEndsAt?: IsoDateTime
+  /** Moment où la progression a été appliquée aux états : garde-fou, `applySessionResult` n'est jamais rejouée. */
+  progressionAppliedAt?: IsoDateTime
+  /** Suggestions produites à la fin de la séance (récapitulatif), avec la réponse de l'utilisateur. */
+  suggestions?: SessionSuggestion[]
   notes?: string
   updatedAt: IsoDateTime
 }

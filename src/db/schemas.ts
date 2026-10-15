@@ -77,6 +77,7 @@ export const profileSchema = z.strictObject({
     proteinPerKg: num,
     fatShare: num,
     kcalAdjustment: num,
+    kcalAdjustedOn: localDate.optional(),
   }),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
@@ -131,6 +132,8 @@ export const exerciseSchema = z.strictObject({
   }),
   illustration: str.optional(),
   videoUrl: str.optional(),
+  finisher: z.boolean().optional(),
+  learnUnloaded: z.boolean().optional(),
   source: contentSource,
   deleted: z.boolean().optional(),
   updatedAt: isoDateTime,
@@ -175,7 +178,13 @@ export const sessionSchema = z.strictObject({
       id,
       kind: z.enum(['single', 'superset', 'finisher']),
       exercises: z.array(
-        z.strictObject({ exerciseId: id, restSec: num, tempo: str.optional(), sets: z.array(setEntry) }),
+        z.strictObject({
+          exerciseId: id,
+          restSec: num,
+          tempo: str.optional(),
+          replacedFrom: id.optional(),
+          sets: z.array(setEntry),
+        }),
       ),
     }),
   ),
@@ -185,6 +194,19 @@ export const sessionSchema = z.strictObject({
   startedAt: isoDateTime.optional(),
   endedAt: isoDateTime.optional(),
   cursor: z.strictObject({ block: num, exercise: num, set: num }).optional(),
+  restEndsAt: isoDateTime.optional(),
+  progressionAppliedAt: isoDateTime.optional(),
+  suggestions: z
+    .array(
+      z.strictObject({
+        kind: z.enum(['level_up', 'tempo']),
+        exerciseId: id,
+        toExerciseId: id.optional(),
+        message: str,
+        status: z.enum(['pending', 'accepted', 'dismissed']),
+      }),
+    )
+    .optional(),
   notes: str.optional(),
   updatedAt: isoDateTime,
 }) satisfies z.ZodType<Session>
@@ -303,6 +325,7 @@ export const settingsSchema = z.strictObject({
     volumeTargets: z.partialRecord(muscleGroup, range),
     deloadEveryWeeks: num,
   }),
+  ciqualVersion: str.optional(),
   updatedAt: isoDateTime,
 }) satisfies z.ZodType<Settings>
 

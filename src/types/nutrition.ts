@@ -35,6 +35,7 @@ export interface Food {
   defaultPortionG?: number
   aisle?: Aisle
   favorite: boolean
+  /** Non utilisé : les récents sont dérivés du journal (`QuickItem`). Conservé pour les sauvegardes. */
   lastUsedAt?: IsoDateTime
   updatedAt: IsoDateTime
 }
@@ -109,4 +110,112 @@ export interface ShoppingList {
   items: ShoppingItem[]
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
+}
+
+// ---------- Ciqual (SPEC §4.4) ----------
+
+/**
+ * Ligne compacte du fichier Ciqual embarqué : `[code, nom, groupe, kcal, protéines, glucides, lipides, fibres]`
+ * pour 100 g. `groupe` = index dans `CiqualDataset.groups`. Valeurs absentes de Ciqual : « traces » → 0,
+ * « < x » → x / 2 ; un aliment sans kcal ni macros exploitables n'est pas embarqué. Fibres absentes → `null`.
+ */
+export type CiqualRow = [
+  code: string,
+  name: string,
+  group: number,
+  kcal: number,
+  protein: number,
+  carbs: number,
+  fat: number,
+  fiber: number | null,
+]
+
+/** Fichier JSON généré par `scripts/ciqual.mjs` (src/content/foods/ciqual.json), chargé à la demande (`import()`). */
+export interface CiqualDataset {
+  /** Version de la table source (ex. `'2020'`) + révision du script (ex. `'2020-r1'`). Change → rechargement. */
+  version: string
+  groups: string[]
+  foods: CiqualRow[]
+}
+
+/**
+ * Aliment Ciqual tel que stocké dans la table Dexie `ciqual` (données de référence, hors sauvegarde, rechargées
+ * quand `CiqualDataset.version` change). Les surcharges de l'utilisateur (favori, valeurs corrigées) vivent dans
+ * `foods` avec le même id et `source: 'ciqual'` (même principe que les exercices : la ligne `foods` gagne).
+ */
+export interface CiqualFood {
+  /** `ciqual-<code>`. */
+  id: Id
+  code: string
+  name: string
+  group: string
+  /** Nom normalisé pour la recherche (minuscules, sans accents ni ponctuation), voir `normalizeFoodSearch`. */
+  search: string
+  per100g: Per100g
+}
+
+// ---------- Objectifs (SPEC §4.1) ----------
+
+/** Objectifs du jour, arrondis à l'entier (kcal, g). */
+export interface NutritionTargets extends Macros {
+  bmr: number
+  tdee: number
+  /** Poids utilisé : moyenne mobile 7 jours, sinon dernière pesée. */
+  weightKg: number
+  ageYears: number
+}
+
+/**
+ * Proposition après stagnation (SPEC §4.1) : moyenne 7 j stable (< +0,1 kg) sur 21 jours, objectif `bulk`, et pas
+ * d'ajustement depuis 21 jours (`NutritionParams.kcalAdjustedOn`). Acceptée → `kcalAdjustment + kcal`.
+ */
+export interface KcalSuggestion {
+  kcal: number
+  /** Variation de la moyenne 7 j sur la période, en kg. */
+  changeKg: number
+  days: number
+  message: string
+}
+
+// ---------- Journal (SPEC §4.2) ----------
+
+export interface MealTotals {
+  slot: MealSlot
+  entries: FoodLogEntry[]
+  totals: Macros
+}
+
+/** Journal d'un jour : repas dans l'ordre petit-déj, déjeuner, dîner, collations (toujours les 4). */
+export interface DayLog {
+  date: LocalDate
+  meals: MealTotals[]
+  totals: Macros
+}
+
+/** Saisie libre : nom + kcal, macros optionnelles (absentes → 0 dans l'entrée figée). */
+export interface FreeEntryInput {
+  name: string
+  kcal: number
+  protein?: number
+  carbs?: number
+  fat?: number
+}
+
+/**
+ * Élément re-loguable en un tap (favoris, récents) :
+ * - `food` : un aliment et la dernière quantité utilisée (macros recalculées au log depuis l'aliment) ;
+ * - `free` : une saisie libre ou importée récente (macros reprises telles quelles).
+ * Les récents sont dérivés du journal (pas de `Food.lastUsedAt`), dédoublonnés par aliment ou par nom.
+ */
+export type QuickItem =
+  | { kind: 'food'; key: string; food: Food; grams: number }
+  | { kind: 'free'; key: string; name: string; macros: Macros }
+
+/** Champs saisis à la création ou à la modification d'un aliment personnel (ou d'une surcharge Ciqual). */
+export interface FoodInput {
+  name: string
+  brand?: string
+  per100g: Per100g
+  defaultPortionG?: number
+  aisle?: Aisle
 }

@@ -18,5 +18,7 @@ export interface Settings {
   /** Dernier export de sauvegarde, pour le rappel hebdomadaire. */
   lastExportAt: IsoDateTime | null
   engine: EngineSettings
+  /** Version de la table Ciqual chargée dans Dexie (`CiqualDataset.version`) ; absente = pas encore chargée. */
+  ciqualVersion?: string
   updatedAt: IsoDateTime
 }
