@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J3 — Moteur : **terminé et validé sur iPhone le 2026-10-15**.
-Prochain : J4 — Séance guidée.
+J4 — Séance guidée et J5 — Journal alimentaire : **terminés le 2026-10-15, en attente de validation sur iPhone**
+(une vraie séance de bout en bout + une journée complète loguée). Prochain : J6 — Recettes (39 recettes déjà écrites).
 
 ## Décisions prises
 
@@ -80,6 +80,36 @@ Prochain : J4 — Séance guidée.
 - 2026-10-15 (J3) : ne jamais importer `domain/training` par son index depuis `src/ui` ou le code de démarrage
   (le moteur entrerait dans le bundle principal).
 
+- 2026-10-15 (J4/J5) : `<main>` est le seul élément qui défile (`min-h-0`, `relative`) ; barre d'onglets dans le flux
+  (plus `fixed`). Cause du décalage J3 : les radios `sr-only` (absolute) allongeaient le document et iOS le faisait
+  défiler au focus. Test e2e de non-régression (position et taille de la barre identiques sur toutes les routes).
+- 2026-10-15 (J4/J5) : `registerType: 'prompt'` + `UpdatePrompt` (API service worker native, `SKIP_WAITING`,
+  vérification au retour au premier plan) ; absent du mode guidé. Sheet empilable (pile, `inert`, Échap/Tab en haut).
+- 2026-10-15 (J4/J5) : Dexie v2 = une seule version pour les deux jalons : table `ciqual` (référence, hors sauvegarde,
+  `settings.ciqualVersion` locale jamais importée) ; upgrade qui pose `finisher`/`learnUnloaded` sur les surcharges
+  d'exercices antérieures. Accès J4 dans `src/db/sessions.ts`, J5 dans `src/db/nutrition.ts`.
+- 2026-10-15 (J4) : séance créée `in_progress` au départ (pas de `planned`), une seule à la fois, sauvegardée à chaque
+  série (`cursor`, `restEndsAt`) ; fin = `completeSessionPlan` (pure) puis `completeSession` (transaction, garde-fou
+  `progressionAppliedAt`). Corriger une séance `done` ne rejoue jamais la progression. Suggestions gardées sur la
+  séance, résolues dans la transaction (`makeState`). Pas de déblocage implicite d'un niveau non atteint.
+- 2026-10-15 (J4) : drapeaux `finisher` / `learnUnloaded` sur l'exercice (fin des listes d'ids) ; balistique =
+  finisher du schéma hinge. TGU appris sans charge jusqu'à 2 séances au haut de la fourchette.
+- 2026-10-15 (J4) : reps préremplies au bas de la fourchette puis aux reps réelles de la série précédente (valider
+  sans saisir ne déclenche pas la hausse de charge). Ressenti = bouton de validation (un tap). Minuteur sur
+  horodatage absolu ; iOS n'a pas de vibration : bip Web Audio (contexte déverrouillé à chaque geste).
+- 2026-10-15 (J4) : modèles groupés (`TemplateBlock.group`/`kind`) ; enregistrés depuis un deload → séries d'avant le
+  deload ; tonnage unilatéral × 2 ; finisher toujours en dernier.
+- 2026-10-15 (J5) : Ciqual **2025** (Dataverse Anses, `npm run ciqual`), 3 398 aliments, 73 kB gzip, chunk à part chargé
+  par `import()` ; version `2025-r2` ; préparé en tâche de fond 2 s après le démarrage (~0,3 s). Attribution affichée.
+- 2026-10-15 (J5) : récents dérivés du journal (pas de `lastUsedAt`) ; favori sur un aliment Ciqual = surcharge complète
+  (fige ses valeurs, « Rétablir l'original » garde le favori). Corriger une quantité met à l'échelle les macros figées
+  (jamais relues depuis l'aliment). Modifier les valeurs d'une entrée recette/import la convertit en `free`.
+- 2026-10-15 (J5) : objectifs : maintain = TDEE, cut = TDEE × (1 − surplus), ajustement ajouté à tous les objectifs ;
+  +150 kcal proposé si moyenne 7 j < +0,1 kg sur 21 j (≥ 3 pesées par fenêtre), refusé si ajustement < 21 j ou > 1000.
+  Écran Ajouter : on reste sur l'écran pour enchaîner (« Terminer (n ajoutés) »), jour/repas conservés partout.
+- 2026-10-15 : recettes de départ (J6 anticipé) : 39 recettes `src/content/recipes/`, ids anglais, codes Ciqual
+  vérifiés par test ; skyr et whey sans code Ciqual (`per100g`). Non branchées.
+
 ## Fait
 
 - J0 Socle (2026-10-15) : projet Vite + React + TS strict, Tailwind, PWA « Forge » (manifest FR, standalone,
@@ -104,21 +134,29 @@ Prochain : J4 — Séance guidée.
   enregistré), volume des 7 derniers jours sur l'écran Séance, Réglages > Moteur d'entraînement (deload, cibles par
   groupe). 518 tests Vitest (dont 85 de scénarios de semaines simulées), 25 e2e.
 
+- J4 Séance guidée (2026-10-15) : barre d'onglets corrigée, aperçu éditable, mode guidé (minuteur, Wake Lock, son,
+  ressenti, passer / remplacer / corriger, reprise après fermeture), récapitulatif avec records et suggestions,
+  historique corrigeable, modèles, remarques J3 traitées. Moteur : guided / completion / summary / templates.
+- J5 Journal alimentaire (2026-10-15) : script Ciqual → JSON, objectifs (Réglages), journal du jour (anneau, P/G/L,
+  4 repas, copie d'hier), recherche sans accents, quantité, favoris / récents, saisie libre, aliments perso et
+  surcharges Ciqual, hors ligne. Total : 873 tests Vitest, 41 e2e.
+
 ## À faire ensuite
 
-- J4 (Séance guidée).
-- Retours de l'utilisateur sur iPhone (J3), à corriger plus tard :
-  - Barre d'onglets du bas : décalage, elle n'a pas la même taille partout (à préciser avec l'utilisateur).
-  - Quelques autres détails d'interface (non précisés).
-- Remarques non bloquantes reportées (J3), à traiter en J4 :
-  - Accepter une suggestion `level_up` (créer l'état via `unlockState`) ; pour le TGU (`LEARN_UNLOADED_IDS`),
-    démarrer sans charge (`loadKg: null` ou indicateur d'apprentissage) plutôt qu'au minimum de la KB.
-  - Ne créer un état pour un exercice au-dessus du niveau atteint qu'après acceptation explicite (sinon déblocage du
-    schéma par simple ajout manuel) ; profil repassé de 2 à 1 avec un état niveau 3 → toujours proposé.
-  - Appeler `applySessionResult` une fois par exercice et par séance (séries fusionnées), avec `deload` et `profileLevel`.
-  - `replacementCandidates(…, excludeIds)` avec les ids déjà dans la séance.
-  - Drapeaux `finisher` / `learnUnloaded` sur l'exercice plutôt que des listes d'ids (SPEC §9).
-  - EngineSection : champs modifiables pendant l'écriture ; groupe touché puis ramené à sa valeur reste dans le brouillon.
+- Validation J4 + J5 sur iPhone, puis J6 (brancher `SEED_RECIPES`, fiche, mode cuisine, frigo, courses, import).
+- À vérifier sur iPhone (J4) : son en mode silencieux, Wake Lock en standalone, lisibilité à 1 m, panneau du bas
+  (« Comment faire ? » parfois sous le pli), repos de 20 s entre exercices de superset sans bip distinct.
+- À vérifier sur iPhone (J5) : anneau 176 px, bouton collant « Terminer », toasts de 7 s, noms Ciqual longs,
+  « Copier d'hier » visible même si le repas du jour est rempli.
+- Remarques non bloquantes reportées (J4/J5) :
+  - `SetEntry` sans charge prévue : `undoSet` ne rétablit pas la charge prévue après une charge saisie différente.
+  - Profil repassé de 2 à 1 avec un état niveau 3 : niveau conservé (choix assumé : les niveaux gagnés restent).
+  - Aperçu édité en sessionStorage : charges figées au moment de l'édition (risque faible, même jour).
+  - Frigo non décrémenté au log d'une portion (J6, fonction dédiée en une transaction).
+  - `CiqualFood.search` stocké mais l'index renormalise (les `Food` fusionnés n'ont pas le champ).
+  - Bornes surplus / protéines / lipides non exportées en constantes (aides chiffrées retirées de l'écran Objectifs).
+  - Bundle d'entrée 458 kB / 143 kB gzip (+23 kB depuis J3) : à surveiller avec la remarque Zod (J1).
+- Remarques non bloquantes reportées (J3) :
   - Débutant : pectoraux souvent sous la cible à 5 séances/sem. (un seul exercice niveau 1) ; 5 × 60 min dépasse
     les cibles (excès inévitable).
   - Prettier : 23 fichiers antérieurs à J3 non formatés (`npx prettier --list-different src e2e`).
@@ -144,8 +182,6 @@ Prochain : J4 — Séance guidée.
   - Bornes métier non contrôlées à l'import pour les tables encore inutilisées (aliments, journal…) : à ajouter avec
     leurs jalons.
 - Remarques non bloquantes du reviewer reportées (J0) :
-  - Avant J4 (séance guidée) : `registerType: 'autoUpdate'` peut recharger la page lors d'un nouveau déploiement ;
-    persister l'état de séance dans Dexie à chaque série (déjà prévu SPEC) et envisager `registerType: 'prompt'`.
   - `tseslint.config()` déprécié → migrer vers `defineConfig` de `eslint/config`.
   - CI : actions GitHub en Node 20 dépréciées (checkout@v4, setup-node@v4…) → passer aux versions majeures suivantes.
   - Envisager Playwright en CI.
