@@ -111,7 +111,9 @@ describe('checkExercise', () => {
     delete carry.repRange
     expect(checkExercise({ ...carry, durationRange: [20, 60] })).toBeNull()
     expect(checkExercise({ ...carry, durationRange: [2, 60] })).toContain('durée')
-    expect(checkExercise({ ...carry, durationRange: [20, 60], repRange: [8, 12] })).toContain('une seule cible')
+    expect(checkExercise({ ...carry, durationRange: [20, 60], repRange: [8, 12] })).toContain(
+      'une seule cible',
+    )
     expect(checkExercise(carry)).toContain('Indique une cible')
   })
   it('deux cibles ou aucune cible refusées pour les autres types', () => {
@@ -120,9 +122,9 @@ describe('checkExercise', () => {
     delete none.repRange
     expect(checkExercise(none)).toContain('répétitions')
     expect(checkExercise({ ...none, loadType: 'timed' })).toContain('durée')
-    expect(checkExercise({ ...none, loadType: 'timed', durationRange: [20, 40], repRange: [5, 8] })).toContain(
-      'une seule cible',
-    )
+    expect(
+      checkExercise({ ...none, loadType: 'timed', durationRange: [20, 40], repRange: [5, 8] }),
+    ).toContain('une seule cible')
     expect(checkExercise({ ...none, durationRange: [20, 40] })).toContain('répétitions')
   })
   it('bornes de texte : setup/progression 500, lignes 300, 12 lignes par liste', () => {
@@ -130,7 +132,9 @@ describe('checkExercise', () => {
     expect(bad({ technique: { ...t, setup: 'x'.repeat(MAX_SETUP_LENGTH) } })).toBeNull()
     expect(bad({ technique: { ...t, setup: 'x'.repeat(MAX_SETUP_LENGTH + 1) } })).toContain('mise en place')
     expect(bad({ progressionCriteria: 'x'.repeat(MAX_PROGRESSION_CRITERIA_LENGTH) })).toBeNull()
-    expect(bad({ progressionCriteria: 'x'.repeat(MAX_PROGRESSION_CRITERIA_LENGTH + 1) })).toContain('progression')
+    expect(bad({ progressionCriteria: 'x'.repeat(MAX_PROGRESSION_CRITERIA_LENGTH + 1) })).toContain(
+      'progression',
+    )
     const line = 'x'.repeat(MAX_TECHNIQUE_LINE_LENGTH)
     expect(bad({ technique: { ...t, steps: [line] } })).toBeNull()
     expect(bad({ technique: { ...t, cues: [line + 'x'] } })).toContain('300')

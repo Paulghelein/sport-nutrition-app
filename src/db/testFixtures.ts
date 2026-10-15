@@ -72,7 +72,10 @@ export function makeFullTables(): BackupFile['tables'] {
       {
         exerciseId: 'goblet-squat',
         loadKg: 16,
+        targetDurationSec: 40,
         recentFeelings: ['ok', 'easy'],
+        topStreak: 2,
+        tempo: true,
         lastPerformedOn: '2026-02-28',
         updatedAt: NOW,
       },

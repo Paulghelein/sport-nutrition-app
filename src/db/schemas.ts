@@ -146,7 +146,10 @@ export const exercisePrefSchema = z.strictObject({
 export const exerciseStateSchema = z.strictObject({
   exerciseId: id,
   loadKg: num.nullable(),
+  targetDurationSec: num.positive().optional(),
   recentFeelings: z.array(feeling),
+  topStreak: num.int().nonnegative().optional(),
+  tempo: z.boolean().optional(),
   lastPerformedOn: localDate.optional(),
   updatedAt: isoDateTime,
 }) satisfies z.ZodType<ExerciseState>
@@ -171,7 +174,9 @@ export const sessionSchema = z.strictObject({
     z.strictObject({
       id,
       kind: z.enum(['single', 'superset', 'finisher']),
-      exercises: z.array(z.strictObject({ exerciseId: id, restSec: num, sets: z.array(setEntry) })),
+      exercises: z.array(
+        z.strictObject({ exerciseId: id, restSec: num, tempo: str.optional(), sets: z.array(setEntry) }),
+      ),
     }),
   ),
   deload: z.boolean(),

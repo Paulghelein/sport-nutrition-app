@@ -1,19 +1,9 @@
 // Exercices, préférences, état de progression, séances et modèles (SPEC §3).
-// Les champs du moteur (ExerciseState, Session) seront affinés par le chef en J3/J4 si besoin.
 import type { ContentSource, Id, IsoDateTime, LocalDate, Range } from './common'
 import type { EquipmentId, TrainingLevel } from './profile'
 
 export type MovementPattern =
-  | 'hinge'
-  | 'squat'
-  | 'lunge'
-  | 'push_h'
-  | 'push_v'
-  | 'pull'
-  | 'core'
-  | 'carry'
-  | 'arms'
-  | 'calves'
+  'hinge' | 'squat' | 'lunge' | 'push_h' | 'push_v' | 'pull' | 'core' | 'carry' | 'arms' | 'calves'
 
 /** Groupes musculaires suivis par le calcul de volume. Libellés français dans l'UI. */
 export type MuscleGroup =
@@ -90,14 +80,27 @@ export interface ExercisePref {
 
 export type Feeling = 'easy' | 'ok' | 'hard'
 
-/** État de progression d'un exercice (SPEC §3.3). */
+/**
+ * État de progression d'un exercice (SPEC §3.3), mis à jour après chaque séance par le moteur.
+ * Une ligne existe dès qu'un exercice a été fait ou débloqué (variante acceptée) : le niveau atteint
+ * dans un schéma est le plus haut niveau parmi ses exercices ayant un état (au moins `Profile.level`).
+ */
 export interface ExerciseState {
   /** Clé primaire. */
   exerciseId: Id
   /** Charge de travail actuelle ; `null` pour le poids du corps. */
   loadKg: number | null
-  /** Ressentis des dernières séances, le plus récent en dernier (au plus 10). */
+  /** Durée visée par série en secondes (gainage, portés) ; absente pour un exercice en répétitions. */
+  targetDurationSec?: number
+  /**
+   * Ressenti dominant de chaque séance (un par séance : `hard` si au moins la moitié des séries sont `hard`),
+   * le plus récent en dernier (au plus 10).
+   */
   recentFeelings: Feeling[]
+  /** Séances consécutives avec toutes les séries au haut de la fourchette à la charge actuelle ; défaut 0. */
+  topStreak?: number
+  /** Tempo 3-1-1 proposé et accepté (charge max atteinte sans variante disponible). */
+  tempo?: boolean
   lastPerformedOn?: LocalDate
   updatedAt: IsoDateTime
 }
@@ -120,6 +123,8 @@ export interface SetEntry {
 export interface SessionExercise {
   exerciseId: Id
   restSec: number
+  /** Tempo imposé (ex. `'3-1-1'` : 3 s de descente, 1 s de pause, 1 s de montée) ; absent = tempo libre. */
+  tempo?: string
   sets: SetEntry[]
 }
 

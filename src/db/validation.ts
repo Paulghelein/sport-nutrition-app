@@ -2,7 +2,7 @@
 // Fonctions pures : elles renvoient un message français affichable tel quel, ou `null` si tout est valide.
 // `today` est toujours fourni par l'appelant.
 import { ageOn, isValidLocalDate } from '../domain/shared/dates'
-import type { Equipment, ExerciseInput, LocalDate, Profile, Range, Settings } from '../types'
+import type { EngineSettings, Equipment, ExerciseInput, LocalDate, Profile, Range, Settings } from '../types'
 
 export const MIN_AGE = 14
 export const MAX_AGE = 100
@@ -115,6 +115,17 @@ export function checkCoachUrl(url: string | null): string | null {
 
 export function checkSettings(s: Pick<Settings, 'coachUrl'>): string | null {
   return checkCoachUrl(s.coachUrl)
+}
+
+/** Réglages du moteur : deload toutes les 3 à 12 semaines, cibles entières 0–30 avec min ≤ max. */
+export function checkEngineSettings(e: EngineSettings): string | null {
+  if (!Number.isInteger(e.deloadEveryWeeks) || e.deloadEveryWeeks < 3 || e.deloadEveryWeeks > 12)
+    return 'La fréquence du deload doit être un nombre entier de semaines entre 3 et 12.'
+  for (const r of Object.values(e.volumeTargets)) {
+    if (!isIntRange(r, 0, 30))
+      return 'Chaque cible doit être un nombre entier de séries entre 0 et 30, minimum ≤ maximum.'
+  }
+  return null
 }
 
 function isIntRange(r: Range | undefined, lo: number, hi: number): boolean {

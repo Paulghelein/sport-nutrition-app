@@ -3,10 +3,12 @@
 import { liveQuery } from 'dexie'
 import { SINGLETON_ID } from '../types'
 import type {
+  EngineSettings,
   Equipment,
   EquipmentId,
   Exercise,
   ExerciseInput,
+  ExerciseState,
   ExercisePref,
   ExercisePreference,
   Id,
@@ -14,15 +16,17 @@ import type {
   LocalDate,
   Measurement,
   Profile,
+  Session,
   Settings,
   WeighIn,
 } from '../types'
 import { db } from './database'
 import { defaultEquipment, defaultSettings } from './defaults'
 import { toLocalDate } from '../domain/shared/dates'
-import { equipmentSchema, exerciseSchema, profileSchema } from './schemas'
+import { equipmentSchema, exerciseSchema, exerciseStateSchema, profileSchema } from './schemas'
 import {
   checkCoachUrl,
+  checkEngineSettings,
   checkEquipment,
   checkExercise,
   checkMeasurement,
@@ -100,13 +104,32 @@ export async function getSettings(): Promise<Settings> {
   return (await db.settings.get(SINGLETON_ID)) ?? defaultSettings(EPOCH)
 }
 
-export type SettingsPatch = Partial<Omit<Settings, 'id' | 'updatedAt'>>
+/** Le moteur se modifie par `updateEngineSettings` (fusion transactionnelle + validation). */
+export type SettingsPatch = Partial<Omit<Settings, 'id' | 'updatedAt' | 'engine'>>
 
 export async function updateSettings(patch: SettingsPatch, now: IsoDateTime = nowIso()): Promise<Settings> {
   if (patch.coachUrl !== undefined) fail(checkCoachUrl(patch.coachUrl))
   return db.transaction('rw', db.settings, async () => {
     const current = (await db.settings.get(SINGLETON_ID)) ?? defaultSettings(now)
     const next: Settings = { ...current, ...patch, id: SINGLETON_ID, updatedAt: now }
+    await db.settings.put(next)
+    return next
+  })
+}
+
+/**
+ * Met à jour les réglages du moteur en une transaction : `update` reçoit les réglages en base au moment
+ * de l'écriture (pas une copie lue plus tôt), ce qui évite qu'une action en efface une autre.
+ */
+export async function updateEngineSettings(
+  update: (current: EngineSettings) => EngineSettings,
+  now: IsoDateTime = nowIso(),
+): Promise<Settings> {
+  return db.transaction('rw', db.settings, async () => {
+    const current = (await db.settings.get(SINGLETON_ID)) ?? defaultSettings(now)
+    const engine = update(current.engine)
+    fail(checkEngineSettings(engine))
+    const next: Settings = { ...current, engine, id: SINGLETON_ID, updatedAt: now }
     await db.settings.put(next)
     return next
   })
@@ -333,6 +356,40 @@ export async function setExercisePreference(
     if (existing?.reason !== undefined) row.reason = existing.reason
     await db.exercisePrefs.put(row)
   })
+}
+
+// ---------- Séances et états de progression ----------
+
+/** Séances par date croissante, puis `startedAt`, puis id (ordre stable). Tri en mémoire : pas d'index composite. */
+export async function listSessions(): Promise<Session[]> {
+  const rows = await db.sessions.toArray()
+  return rows.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) ||
+      (a.startedAt ?? '').localeCompare(b.startedAt ?? '') ||
+      a.id.localeCompare(b.id),
+  )
+}
+
+export async function listExerciseStates(): Promise<ExerciseState[]> {
+  return db.exerciseState.toArray()
+}
+
+/** Upsert de plusieurs états en une transaction ; `updatedAt` = `now`. Renvoie les lignes écrites. */
+export async function saveExerciseStates(
+  states: ExerciseState[],
+  now: IsoDateTime = nowIso(),
+): Promise<ExerciseState[]> {
+  const rows = states.map((s) => ({ ...s, updatedAt: now }))
+  for (const row of rows) {
+    if (!exerciseStateSchema.safeParse(row).success) {
+      throw new ValidationError('État de progression invalide.')
+    }
+  }
+  await db.transaction('rw', db.exerciseState, async () => {
+    await db.exerciseState.bulkPut(rows)
+  })
+  return rows
 }
 
 // ---------- Onboarding ----------

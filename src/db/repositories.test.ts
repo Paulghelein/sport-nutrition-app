@@ -10,14 +10,18 @@ import {
   getEquipment,
   getProfile,
   getSettings,
+  listExerciseStates,
   listMeasurements,
+  listSessions,
   listWeighIns,
   observe,
   requestPersistentStorage,
   saveEquipment,
+  saveExerciseStates,
   saveProfile,
   updateMeasurement,
   updateSettings,
+  updateEngineSettings,
   updateWeighIn,
   upsertWeighIn,
 } from './repositories'
@@ -31,7 +35,7 @@ import {
   checkWeeklySessions,
   checkWeighIn,
 } from './validation'
-import { NOW, makeProfile } from './testFixtures'
+import { NOW, makeFullTables, makeProfile } from './testFixtures'
 
 const EPOCH = '1970-01-01T00:00:00.000Z'
 const LATER = '2026-03-02T09:00:00.000Z'
@@ -155,6 +159,25 @@ describe('réglages', () => {
     await updateSettings({ lastExportAt: LATER }, LATER)
     expect(await getSettings()).toMatchObject({ coachUrl: 'https://x.test', lastExportAt: LATER })
   })
+
+  it('updateEngineSettings fusionne sur la valeur en base et valide', async () => {
+    await updateSettings({ coachUrl: 'https://x.test' }, LATER)
+    await Promise.all([
+      updateEngineSettings((e) => ({ ...e, deloadEveryWeeks: 8 }), LATER),
+      updateEngineSettings((e) => ({ ...e, volumeTargets: { ...e.volumeTargets, chest: [6, 10] } }), LATER),
+    ])
+    expect(await getSettings()).toMatchObject({
+      coachUrl: 'https://x.test',
+      engine: { deloadEveryWeeks: 8, volumeTargets: { chest: [6, 10] } },
+    })
+    await expect(
+      updateEngineSettings((e) => ({ ...e, volumeTargets: { biceps: [9, 4] } }), LATER),
+    ).rejects.toBeInstanceOf(ValidationError)
+    await expect(updateEngineSettings((e) => ({ ...e, deloadEveryWeeks: 0 }), LATER)).rejects.toBeInstanceOf(
+      ValidationError,
+    )
+    expect((await getSettings()).engine.deloadEveryWeeks).toBe(8)
+  })
 })
 
 describe('pesées', () => {
@@ -262,6 +285,69 @@ describe('completeOnboarding', () => {
       completeOnboarding({ ...input(), weighIn: { date: '2026-03-01', weightKg: 3 } }),
     ).rejects.toThrow()
     expect(await db.profile.count()).toBe(0)
+  })
+})
+
+function fail(): never {
+  throw new Error('fixture manquante')
+}
+
+describe('séances et états', () => {
+  const base = makeFullTables().sessions[0] ?? fail()
+  const state0 = () => makeFullTables().exerciseState[0] ?? fail()
+  const session = (id: string, date: string, startedAt?: string) => {
+    const { startedAt: _drop, ...rest } = base
+    void _drop
+    return { ...rest, id, date, ...(startedAt ? { startedAt } : {}) }
+  }
+
+  it('listSessions trie par date, puis startedAt, puis id', async () => {
+    await db.sessions.bulkPut([
+      session('c', '2026-03-02'),
+      session('b', '2026-03-01', '2026-03-01T18:00:00.000Z'),
+      session('z', '2026-03-01', '2026-03-01T08:00:00.000Z'),
+      session('a', '2026-03-01', '2026-03-01T18:00:00.000Z'),
+    ])
+    expect((await listSessions()).map((s) => s.id)).toEqual(['z', 'a', 'b', 'c'])
+  })
+
+  it('listSessions renvoie [] sans données', async () => {
+    expect(await listSessions()).toEqual([])
+  })
+
+  it('saveExerciseStates upsert, horodate et conserve les nouveaux champs', async () => {
+    const state = state0()
+    expect(await listExerciseStates()).toEqual([])
+    const written = await saveExerciseStates([state, { ...state, exerciseId: 'plank', loadKg: null }], LATER)
+    expect(written.every((s) => s.updatedAt === LATER)).toBe(true)
+    await saveExerciseStates([{ ...state, loadKg: 20, topStreak: 0 }], '2026-03-03T09:00:00.000Z')
+    const all = await listExerciseStates()
+    expect(all).toHaveLength(2)
+    const goblet = all.find((s) => s.exerciseId === state.exerciseId)
+    expect(goblet).toMatchObject({
+      loadKg: 20,
+      topStreak: 0,
+      tempo: true,
+      targetDurationSec: 40,
+      updatedAt: '2026-03-03T09:00:00.000Z',
+    })
+  })
+
+  it('saveExerciseStates valide tout avant d’écrire et refuse un état invalide', async () => {
+    const state = state0()
+    await expect(
+      saveExerciseStates([state, { ...state, exerciseId: 'x', recentFeelings: ['nope' as never] }]),
+    ).rejects.toBeInstanceOf(ValidationError)
+    await expect(saveExerciseStates([{ ...state, topStreak: -1 }])).rejects.toBeInstanceOf(ValidationError)
+    await expect(saveExerciseStates([{ ...state, targetDurationSec: 0 }])).rejects.toBeInstanceOf(
+      ValidationError,
+    )
+    expect(await db.exerciseState.count()).toBe(0)
+  })
+
+  it('saveExerciseStates propage un échec d’écriture', async () => {
+    vi.spyOn(db.exerciseState, 'bulkPut').mockRejectedValue(new Error('boom'))
+    await expect(saveExerciseStates([state0()])).rejects.toThrow()
   })
 })
 
