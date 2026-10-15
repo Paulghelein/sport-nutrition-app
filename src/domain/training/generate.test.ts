@@ -3,13 +3,7 @@ import type { EngineInput, SessionPlan } from '../../types/engine'
 import type { Exercise, LibraryExercise, Session } from '../../types/training'
 import { addDays } from '../shared/dates'
 import { estimateMinutes, estimateSeconds } from './estimate'
-import {
-  FINISHER_SWING_IDS,
-  SESSION_FORMATS,
-  generateSession,
-  lightSetsLine,
-  replacementCandidates,
-} from './generate'
+import { SESSION_FORMATS, generateSession, lightSetsLine, replacementCandidates } from './generate'
 import { patternLevels } from './levels'
 import { isAvailable } from './library'
 import { isAdjustable } from './loads'
@@ -125,7 +119,8 @@ describe('formats (SPEC §3.2 étape 5)', () => {
       expect(fin).toHaveLength(1)
       expect(plan.blocks.at(-1)?.kind).toBe('finisher')
       const fx = byId(input.library, fin[0]?.exercises[0]?.exerciseId ?? '')
-      expect(fx.pattern === 'carry' || FINISHER_SWING_IDS.includes(fx.id)).toBe(true)
+      expect(fx.finisher).toBe(true)
+      expect(['carry', 'hinge']).toContain(fx.pattern)
     }
   })
 

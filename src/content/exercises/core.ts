@@ -173,6 +173,7 @@ export const coreExercises: Exercise[] = [
       ],
     },
     illustration: 'turkish-get-up',
+    learnUnloaded: true,
     source: 'seed',
     updatedAt: SEED_UPDATED_AT,
   },

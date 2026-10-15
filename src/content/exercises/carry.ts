@@ -33,6 +33,7 @@ export const carryExercises: Exercise[] = [
       ],
     },
     illustration: 'farmer-carry',
+    finisher: true,
     source: 'seed',
     updatedAt: SEED_UPDATED_AT,
   },
@@ -67,6 +68,7 @@ export const carryExercises: Exercise[] = [
       ],
     },
     illustration: 'suitcase-carry',
+    finisher: true,
     source: 'seed',
     updatedAt: SEED_UPDATED_AT,
   },
@@ -83,7 +85,8 @@ export const carryExercises: Exercise[] = [
     compound: true,
     unilateral: true,
     loadStepKg: 1,
-    progressionCriteria: '3 × 60 s par côté à la même charge sur 2 séances, buste droit → augmente la charge de 1 kg',
+    progressionCriteria:
+      '3 × 60 s par côté à la même charge sur 2 séances, buste droit → augmente la charge de 1 kg',
     technique: {
       setup:
         'Monte la kettlebell en position « rack » : poing près de l’épaule, coude collé contre les côtes, la kettlebell reposant sur l’avant-bras et la poitrine.',
@@ -101,6 +104,7 @@ export const carryExercises: Exercise[] = [
       ],
     },
     illustration: 'rack-carry',
+    finisher: true,
     source: 'seed',
     updatedAt: SEED_UPDATED_AT,
   },

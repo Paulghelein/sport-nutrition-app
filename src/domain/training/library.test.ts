@@ -278,7 +278,7 @@ describe('missingEquipment', () => {
     expect(missingEquipment(ex({ id: 'n', equipment: [] }), equipment([]))).toEqual([])
   })
 
-  it('liste le matériel non possédé dans l\'ordre de ex.equipment', () => {
+  it("liste le matériel non possédé dans l'ordre de ex.equipment", () => {
     const e = ex({ id: 'r', equipment: ['table', 'kettlebell', 'mat', 'bench', 'pullup_bar'] })
     expect(missingEquipment(e, equipment(['mat']))).toEqual(['table', 'bench', 'pullup_bar'])
   })

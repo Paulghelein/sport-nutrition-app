@@ -1,5 +1,5 @@
 // Charges réglables de la kettlebell (SPEC §2) : toute charge proposée est min + k × pas, dans [min, max].
-import type { KettlebellSpec } from '../../types/profile'
+import type { Equipment, KettlebellSpec } from '../../types/profile'
 
 const EPS = 1e-9
 
@@ -68,4 +68,13 @@ export function nextLoadDown(kg: number, stepKg: number, kb: KettlebellSpec): nu
   if (below.length === 0) return null
   const within = below.filter((w) => w >= kg - stepKg - EPS)
   return within.length > 0 ? (within[0] as number) : (below[below.length - 1] as number)
+}
+
+/**
+ * Charge saisie plausible (garde-fou de l'interface contre une faute de frappe, ex. 160 au lieu de 16) :
+ * nombre fini, > 0 et ≤ charge maximale de la kettlebell réglable. Pas de borne basse au min de la kettlebell
+ * (une autre kettlebell plus légère reste possible). `recordSet` reste tolérant : c'est à l'UI de refuser.
+ */
+export function isPlausibleLoad(kg: number, equipment: Pick<Equipment, 'kettlebell'>): boolean {
+  return Number.isFinite(kg) && kg > 0 && kg <= equipment.kettlebell.maxKg + EPS
 }

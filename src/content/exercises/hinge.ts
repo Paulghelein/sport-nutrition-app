@@ -68,6 +68,7 @@ export const hingeExercises: Exercise[] = [
       ],
     },
     illustration: 'two-hand-swing',
+    finisher: true,
     source: 'seed',
     updatedAt: SEED_UPDATED_AT,
   },
@@ -84,7 +85,8 @@ export const hingeExercises: Exercise[] = [
     compound: true,
     unilateral: true,
     loadStepKg: 2,
-    progressionCriteria: '3 × 16 propres par main à la même charge sur 2 séances → augmente la charge de 2 kg',
+    progressionCriteria:
+      '3 × 16 propres par main à la même charge sur 2 séances → augmente la charge de 2 kg',
     technique: {
       setup:
         'Même départ que le swing à deux mains, mais tu ne tiens le kettlebell que d’une main. Garde l’autre bras libre, loin du kettlebell.',
@@ -102,6 +104,7 @@ export const hingeExercises: Exercise[] = [
       ],
     },
     illustration: 'one-hand-swing',
+    finisher: true,
     source: 'seed',
     updatedAt: SEED_UPDATED_AT,
   },

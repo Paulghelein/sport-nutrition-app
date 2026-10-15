@@ -14,6 +14,7 @@ import type {
   Session,
   SessionBlock,
   SessionDuration,
+  SessionExercise,
 } from '../../types/training'
 import { mergeLibrary } from './library'
 
@@ -136,4 +137,20 @@ export const DURATIONS: readonly SessionDuration[] = [20, 30, 45, 60]
 
 export function planExerciseIds(plan: SessionPlan): string[] {
   return plan.blocks.flatMap((b) => b.exercises.map((e) => e.exerciseId))
+}
+
+/** Valeur présente (tests) : lève une erreur si `undefined` (remplace l'assertion non nulle `!`, interdite). */
+export function must<T>(x: T | undefined): T {
+  if (x === undefined) throw new Error('valeur absente')
+  return x
+}
+
+/** Exercice `e` du bloc `b` d'une séance ou d'une liste de blocs (tests). */
+export function exAt(
+  target: { blocks: readonly SessionBlock[] } | readonly SessionBlock[],
+  b: number,
+  e: number,
+): SessionExercise {
+  const blocks = 'blocks' in target ? target.blocks : target
+  return must(blocks[b]?.exercises[e])
 }

@@ -13,6 +13,7 @@ import type {
 import { doneSets, dominantFeeling } from './feeling'
 import { isAvailable, sortLibrary } from './library'
 import { adjustableLoads, maxLoad, nextLoadDown, nextLoadUp, snapLoadDown } from './loads'
+import { isLearningUnloaded } from './sets'
 
 /** Ressentis conservés dans l'état. */
 export const MAX_RECENT_FEELINGS = 10
@@ -54,6 +55,8 @@ function clamp(x: number, lo: number, hi: number): number {
 /**
  * État initial d'un exercice débloqué (variante acceptée) ou fait pour la première fois :
  * charge de départ prudente = plus petite charge réglable ; durée visée = bas de la fourchette.
+ * Exercice `learnUnloaded` (ex. Turkish get-up) : `loadKg: null` même s'il est `kettlebell` (apprentissage
+ * sans charge, voir `applySessionResult`).
  */
 export function unlockState(
   exercise: Exercise,
@@ -63,7 +66,10 @@ export function unlockState(
 ): ExerciseState {
   const state: ExerciseState = {
     exerciseId: exercise.id,
-    loadKg: exercise.loadType === 'kettlebell' ? (adjustableLoads(equipment.kettlebell)[0] ?? null) : null,
+    loadKg:
+      exercise.loadType === 'kettlebell' && exercise.learnUnloaded !== true
+        ? (adjustableLoads(equipment.kettlebell)[0] ?? null)
+        : null,
     recentFeelings: [],
     topStreak: 0,
     updatedAt: now,
@@ -79,9 +85,6 @@ function trailingCount<T>(list: readonly T[], value: T): number {
 }
 
 const PREF_RANK: Record<ExercisePreference, number> = { liked: 0, neutral: 1, disliked: 2, hidden: 3 }
-
-/** Exercices complexes à apprendre d'abord sans charge (la kettlebell minimale est déjà lourde au-dessus de la tête). */
-export const LEARN_UNLOADED_IDS: readonly string[] = ['turkish-get-up']
 
 /**
  * Variante du niveau supérieur : même schéma, niveau + 1, disponible, non masquée ; `liked` d'abord.
@@ -126,7 +129,11 @@ export function nextLevelVariant(
  * - au maximum (charge, durée ou poids du corps), `topStreak ≥ 2` et pas 2 `hard` consécutifs → suggestion
  *   `level_up` (au plus profil + 1), sinon `tempo` ;
  * - séance en deload (`deload: true`) : ressenti enregistré, charge et durée inchangées, `topStreak` conservé,
- *   aucune suggestion.
+ *   aucune suggestion ;
+ * - apprentissage sans charge (exercice `kettlebell` + `learnUnloaded`, état `loadKg: null`) : pas de charge tant
+ *   que le haut de fourchette n'est pas atteint `LEVEL_UP_STREAK` séances de suite (ressenti `hard` : pas de
+ *   passage) ; ensuite plus petite charge réglable (`change: 'increase'`, `topStreak` remis à 0) ; jamais de
+ *   suggestion pendant l'apprentissage ; le ressenti est enregistré, rien ne baisse.
  * Si aucune série n'a été faite, l'état est rendu tel quel (`change: 'none'`).
  */
 export function applySessionResult(params: SessionResultParams): ProgressionOutcome {
@@ -139,9 +146,10 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
   if (done.length === 0) return { state: base, change: 'none' }
 
   const loaded = exercise.loadType === 'kettlebell'
+  const learning = isLearningUnloaded(exercise, base)
   const range = exercise.durationRange
   const reps = exercise.repRange
-  const currentLoad = loaded ? snapLoadDown(base.loadKg ?? kb.minKg, kb) : null
+  const currentLoad = loaded && !learning ? snapLoadDown(base.loadKg ?? kb.minKg, kb) : null
   const currentDuration =
     range !== undefined ? clamp(base.targetDurationSec ?? range[0], range[0], range[1]) : undefined
 
@@ -172,6 +180,16 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
 
   if (deload) {
     // Semaine allégée : on ne juge pas la progression sur un volume réduit.
+  } else if (learning) {
+    // Apprentissage sans charge : la plus petite charge réglable seulement après LEVEL_UP_STREAK séances au haut
+    // de la fourchette, sans séances `hard` en série (geste maîtrisé, pas subi).
+    change = 'hold'
+    const first = adjustableLoads(kb)[0]
+    if (topReached && !twoHard && streak >= LEVEL_UP_STREAK && first !== undefined) {
+      load = first
+      change = 'increase'
+      streak = 0
+    }
   } else if (decreaseDue) {
     const down = load !== null ? nextLoadDown(load, exercise.loadStepKg, kb) : null
     if (down !== null) {
@@ -223,6 +241,7 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
   let suggestion: ProgressionSuggestion | undefined
   if (
     !deload &&
+    !learning &&
     !twoHard &&
     change !== 'decrease' &&
     loadAtMax &&
@@ -231,9 +250,10 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
   ) {
     const variant = nextLevelVariant(exercise, library, equipment, profileLevel)
     if (variant !== undefined) {
-      const unloaded = LEARN_UNLOADED_IDS.includes(variant.id)
-        ? ' Apprends-le d’abord sans charge (une chaussure posée sur le poing), puis avec la kettlebell la plus légère.'
-        : ''
+      const unloaded =
+        variant.learnUnloaded === true
+          ? ' Apprends-le d’abord sans charge (une chaussure posée sur le poing), puis avec la kettlebell la plus légère.'
+          : ''
       suggestion = {
         kind: 'level_up',
         exerciseId: exercise.id,

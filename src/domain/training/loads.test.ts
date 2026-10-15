@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { adjustableLoads, isAdjustable, maxLoad, nextLoadDown, nextLoadUp, snapLoadDown } from './loads'
+import {
+  adjustableLoads,
+  isAdjustable,
+  isPlausibleLoad,
+  maxLoad,
+  nextLoadDown,
+  nextLoadUp,
+  snapLoadDown,
+} from './loads'
 
 const KB = { minKg: 12, maxKg: 24, stepKg: 1 }
 const KB2 = { minKg: 12, maxKg: 24, stepKg: 2 }
@@ -52,5 +60,18 @@ describe('charges réglables', () => {
     expect(nextLoadDown(13, 2, KB)).toBe(12)
     expect(nextLoadDown(16, 1, KB4)).toBe(12)
     expect(nextLoadDown(12, 2, KB)).toBeNull()
+  })
+})
+
+describe('isPlausibleLoad', () => {
+  const equipment = { kettlebell: { minKg: 12, maxKg: 24, stepKg: 1 } }
+  it('0 < charge ≤ max de la kettlebell ; faute de frappe ou valeur invalide refusée', () => {
+    expect(isPlausibleLoad(16, equipment)).toBe(true)
+    expect(isPlausibleLoad(24, equipment)).toBe(true)
+    expect(isPlausibleLoad(8, equipment)).toBe(true)
+    expect(isPlausibleLoad(160, equipment)).toBe(false)
+    expect(isPlausibleLoad(0, equipment)).toBe(false)
+    expect(isPlausibleLoad(-4, equipment)).toBe(false)
+    expect(isPlausibleLoad(Number.NaN, equipment)).toBe(false)
   })
 })

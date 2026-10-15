@@ -10,7 +10,7 @@
 // 4. deload : séries divisées par deux (au moins 2), charge inchangée (séance plus courte, volontairement).
 import type { LocalDate } from '../../types/common'
 import type { EngineInput, MuscleVolume, PatternLevels, SessionPlan } from '../../types/engine'
-import type { KettlebellSpec } from '../../types/profile'
+import type { Equipment, KettlebellSpec } from '../../types/profile'
 import type {
   ExerciseState,
   LibraryExercise,
@@ -21,15 +21,15 @@ import type {
   SessionBlock,
   SessionDuration,
   SessionExercise,
-  SetEntry,
 } from '../../types'
 import { daysBetween } from '../shared/dates'
 import { deloadSets, deloadStatus } from './deload'
 import { estimateSeconds } from './estimate'
 import { patternLevels } from './levels'
-import { isAvailable, sortLibrary } from './library'
+import { PATTERN_ORDER, isAvailable, sortLibrary } from './library'
 import { snapLoadDown } from './loads'
 import { seededUnit } from './random'
+import { buildSessionExercise, isBallistic, isFinisherExercise } from './sets'
 import {
   MUSCLE_GROUPS,
   addExerciseVolume,
@@ -90,12 +90,8 @@ const REST_SCALES_UP = [1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
 const REST_SCALES_SUPERSET = [0.7, 0.8, 0.9, ...REST_SCALES_UP] as const
 /** Coût (en secondes d'écart équivalentes) d'un exercice de dernier recours retenu dans la séance. */
 const LAST_RESORT_COST = 240
-/** Tempo proposé quand la charge max est atteinte sans variante (SPEC §3.3). */
-export const TEMPO_3_1_1 = '3-1-1'
 /** Séries du finisher (60 min). */
 const FINISHER_SETS = 2
-/** Exercices de hinge acceptés comme finisher (swings), en plus des portés (`carry`). */
-export const FINISHER_SWING_IDS: readonly string[] = ['two-hand-swing', 'one-hand-swing']
 
 const MAIN_LIFT_EXCLUDED: readonly MovementPattern[] = ['core', 'carry']
 
@@ -106,6 +102,7 @@ interface Context {
   date: LocalDate
   format: Format
   durationMin: SessionDuration
+  equipment: Equipment
   kb: KettlebellSpec
   levels: PatternLevels
   targetMid: Record<MuscleGroup, number>
@@ -162,6 +159,7 @@ function buildContext(input: EngineInput): Context {
     date: input.date,
     format: SESSION_FORMATS[input.durationMin],
     durationMin: input.durationMin,
+    equipment: input.equipment,
     kb: input.equipment.kettlebell,
     levels,
     targetMid,
@@ -303,28 +301,13 @@ function selectExercises(ctx: Context, count: number): Selection {
 
 function selectFinisher(ctx: Context, chosen: readonly LibraryExercise[]): LibraryExercise | undefined {
   const pool = ctx.candidates.filter(
-    (ex) =>
-      !chosen.includes(ex) &&
-      (ex.pattern === 'carry' || FINISHER_SWING_IDS.includes(ex.id)) &&
-      !hitsFatigued(ctx, ex),
+    (ex) => !chosen.includes(ex) && isFinisherExercise(ex) && !hitsFatigued(ctx, ex),
   )
   return argmax(pool, (ex) => exerciseScore(ctx, ex, emptyVolume()))?.item
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 // Séries et blocs
-
-function plannedSets(ctx: Context, ex: LibraryExercise, count: number): SetEntry[] {
-  const state = ctx.states.get(ex.id)
-  const entry: SetEntry = {}
-  if (ex.repRange !== undefined) entry.targetReps = [ex.repRange[0], ex.repRange[1]]
-  else if (ex.durationRange !== undefined) {
-    const [lo, hi] = ex.durationRange
-    entry.targetDurationSec = Math.min(hi, Math.max(lo, state?.targetDurationSec ?? lo))
-  }
-  if (ex.loadType === 'kettlebell') entry.loadKg = snapLoadDown(state?.loadKg ?? ctx.kb.minKg, ctx.kb)
-  return Array.from({ length: count }, () => ({ ...entry }))
-}
 
 function scaledRest(restSec: number, scale: number): number {
   return Math.round((restSec * scale) / 5) * 5
@@ -432,12 +415,9 @@ function buildBlocks(
 ): SessionBlock[] {
   const list = ordered.slice(0, cfg.count)
   const setsOf = (ex: LibraryExercise): number => (isMainLift(ex) ? cfg.mainSets : cfg.accessorySets)
-  const toSe = (ex: LibraryExercise, sets: number, rest: number): SessionExercise => {
-    const se: SessionExercise = { exerciseId: ex.id, restSec: rest, sets: plannedSets(ctx, ex, sets) }
-    // Tempo accepté (ExerciseState.tempo) : seulement pour un exercice en répétitions.
-    if (ex.repRange !== undefined && ctx.states.get(ex.id)?.tempo === true) se.tempo = TEMPO_3_1_1
-    return se
-  }
+  // Tempo accepté (ExerciseState.tempo) : seulement pour un exercice en répétitions (voir buildSessionExercise).
+  const toSe = (ex: LibraryExercise, sets: number, rest: number): SessionExercise =>
+    buildSessionExercise(ex, ctx.states.get(ex.id), ctx.equipment, sets, rest)
 
   const groups = ctx.format.supersets ? bestPairing(list) : list.map((_, i) => [i])
   if (cfg.mergeSingle) mergeLoneExercise(groups, list)
@@ -563,13 +543,11 @@ const MOBILITY: Record<Family | 'general', string[]> = {
   other: ['20 secondes de planche facile, respiration calme.'],
 }
 
-/** Mouvements balistiques (swings) : échauffement spécifique, jamais « sans charge ». */
-export const BALLISTIC_IDS: readonly string[] = FINISHER_SWING_IDS
-
 /** Ligne « séries légères » du premier mouvement de l'échauffement. */
 export function lightSetsLine(ex: LibraryExercise, first: SessionExercise, kb: KettlebellSpec): string {
   const set = first.sets[0]
-  if (BALLISTIC_IDS.includes(ex.id)) {
+  // Balistique (swing) : échauffement spécifique, jamais « sans charge » (isBallistic, drapeau `finisher`).
+  if (isBallistic(ex)) {
     return `${ex.name} : 10 charnières de hanche à vide, puis 1 série de 5 swings souples à ${kb.minKg} kg, trajectoire contrôlée.`
   }
   if (ex.durationRange !== undefined && set?.targetDurationSec !== undefined) {
@@ -588,7 +566,11 @@ export function lightSetsLine(ex: LibraryExercise, first: SessionExercise, kb: K
   return `${ex.name} : 1 série de 6 répétitions faciles, lentement.`
 }
 
-function buildWarmup(
+/**
+ * Échauffement (SPEC §3.2 étape 6) : mobilité adaptée aux familles de mouvements présentes (≈ 1 ligne par minute),
+ * puis séries légères du premier exercice.
+ */
+export function buildWarmup(
   blocks: readonly SessionBlock[],
   byId: ReadonlyMap<string, LibraryExercise>,
   warmupMin: number,
@@ -645,14 +627,7 @@ export function generateSession(input: EngineInput): SessionPlan {
     }))
   }
 
-  const used = blocks.flatMap((b) => b.exercises.map((e) => byId.get(e.exerciseId)))
-  const covered = new Set<MuscleGroup>()
-  for (const ex of used) for (const g of ex?.muscles.primary ?? []) covered.add(g)
-  const noProjection = emptyVolume()
-  const focus = MUSCLE_GROUPS.filter(
-    (g) =>
-      covered.has(g) && ctx.targetMid[g] > 0 && !ctx.fatigued.has(g) && deficit(ctx, g, noProjection) > 0,
-  ).sort((a, b) => deficit(ctx, b, noProjection) - deficit(ctx, a, noProjection))
+  const focus = focusFromContext(ctx, library, blocks)
 
   return {
     date: input.date,
@@ -687,4 +662,51 @@ export function replacementCandidates(
     .map((ex) => ({ ex, score: exerciseScore(ctx, ex, none) }))
     .sort((a, b) => b.score - a.score)
     .map((x) => x.ex)
+}
+
+/**
+ * Exercices ajoutables à une séance (édition avant départ, SPEC §3.5) : matériel possédé, non masqués, cible
+ * définie, niveau ≤ niveau atteint du schéma (l'ajout manuel ne débloque jamais un niveau non atteint) ;
+ * triés par schéma (PATTERN_ORDER) puis pertinence (même score que la génération).
+ */
+export function addCandidates(
+  input: EngineInput,
+  /** Ids déjà présents dans la séance (exclus). */
+  excludeIds: readonly string[] = [],
+): LibraryExercise[] {
+  const ctx = buildContext(input)
+  const none = emptyVolume()
+  const excluded = new Set(excludeIds)
+  return ctx.candidates
+    .filter((ex) => !excluded.has(ex.id))
+    .map((ex) => ({ ex, score: exerciseScore(ctx, ex, none) }))
+    .sort(
+      (a, b) =>
+        PATTERN_ORDER.indexOf(a.ex.pattern) - PATTERN_ORDER.indexOf(b.ex.pattern) || b.score - a.score,
+    )
+    .map((x) => x.ex)
+}
+
+/**
+ * Groupes visés par une séance (`SessionPlan.focus`) : groupes travaillés en primaire, avec une cible, non
+ * fatigués et en déficit, du plus grand déficit au plus petit.
+ */
+export function planFocus(input: EngineInput, blocks: readonly SessionBlock[]): MuscleGroup[] {
+  return focusFromContext(buildContext(input), input.library, blocks)
+}
+
+/** `planFocus` sur un contexte déjà construit (évite de recalculer volume, fatigue et niveaux). */
+function focusFromContext(
+  ctx: Context,
+  library: readonly LibraryExercise[],
+  blocks: readonly SessionBlock[],
+): MuscleGroup[] {
+  const byId = new Map(library.map((e) => [e.id, e]))
+  const covered = new Set<MuscleGroup>()
+  for (const b of blocks)
+    for (const e of b.exercises) for (const g of byId.get(e.exerciseId)?.muscles.primary ?? []) covered.add(g)
+  const none = emptyVolume()
+  return MUSCLE_GROUPS.filter(
+    (g) => covered.has(g) && ctx.targetMid[g] > 0 && !ctx.fatigued.has(g) && deficit(ctx, g, none) > 0,
+  ).sort((a, b) => deficit(ctx, b, none) - deficit(ctx, a, none))
 }
