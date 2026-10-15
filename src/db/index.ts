@@ -34,6 +34,42 @@ export {
   updateWeighIn,
   upsertWeighIn,
 } from './repositories'
+export {
+  abandonSession,
+  completeSession,
+  createTemplate,
+  deleteSession,
+  deleteTemplate,
+  getActiveSession,
+  getSession,
+  listTemplates,
+  resolveSuggestion,
+  saveSessionProgress,
+  startSession,
+  updateDoneSession,
+  updateTemplate,
+} from './sessions'
+export type { SessionTemplateInput } from './sessions'
+export {
+  acceptKcalSuggestion,
+  addLogEntries,
+  createFood,
+  deleteFood,
+  deleteLogEntry,
+  getCiqualFood,
+  getCiqualVersion,
+  getFoodRow,
+  listCiqualFoods,
+  listFoodRows,
+  listLogBetween,
+  listLogForDate,
+  replaceCiqual,
+  restoreCiqualFood,
+  setFoodFavorite,
+  updateFood,
+  updateLogEntry,
+  updateNutritionParams,
+} from './nutrition'
 export type {
   MeasurementInput,
   MeasurementPatch,
@@ -53,6 +89,9 @@ export {
 export type { ParseResult, RawBackup, TableCounts } from './backup'
 export {
   MAX_DURATION_SEC,
+  MAX_FOOD_NAME_LENGTH,
+  MAX_TEMPLATE_NAME_LENGTH,
+  MAX_TEMPLATE_SETS,
   MAX_EXERCISE_NAME_LENGTH,
   MAX_PROGRESSION_CRITERIA_LENGTH,
   MAX_REPS,
@@ -67,10 +106,15 @@ export {
   checkCoachUrl,
   checkEquipment,
   checkExercise,
+  checkFoodInput,
+  checkLogEntry,
   checkMeasurement,
+  checkNutritionParams,
   checkProfile,
   checkProfileIdentity,
+  checkSessionRow,
   checkSettings,
+  checkTemplate,
   checkWeeklySessions,
   checkWeighIn,
 } from './validation'

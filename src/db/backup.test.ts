@@ -413,3 +413,117 @@ describe('tolérance de fuseau à l’import', () => {
     expect(mk('2026-03-03').ok).toBe(false)
   })
 })
+
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- indices de fixtures de test connus */
+describe('sauvegarde v2 (Ciqual, bornes J4/J5)', () => {
+  const ciqualRow = {
+    id: 'ciqual-1',
+    code: '1',
+    name: 'Riz',
+    group: 'g',
+    search: 'riz',
+    per100g: { kcal: 1, protein: 0, carbs: 0, fat: 0 },
+  }
+  const wrapV = (schemaVersion: number, tables = makeFullTables()) => ({
+    app: 'forge',
+    schemaVersion,
+    exportedAt: NOW,
+    tables,
+  })
+  const errorsOf = (v: unknown) => {
+    const r = parseBackup(JSON.stringify(v), '2026-03-01')
+    if (r.ok) throw new Error('devrait être refusé')
+    return r.errors.join('\n')
+  }
+
+  it('exporte en schemaVersion 2 sans la table ciqual', async () => {
+    await db.ciqual.put(ciqualRow)
+    const b = await exportBackup(NOW)
+    expect(b.schemaVersion).toBe(2)
+    expect(Object.keys(b.tables)).not.toContain('ciqual')
+    expect(JSON.stringify(b)).not.toContain('ciqual-1"')
+  })
+
+  it('importe une sauvegarde v1 et v2, refuse la v3', () => {
+    expect(parseBackup(JSON.stringify(wrapV(1)), '2026-03-01').ok).toBe(true)
+    expect(parseBackup(JSON.stringify(wrapV(2)), '2026-03-01').ok).toBe(true)
+    expect(errorsOf(wrapV(3))).toMatch(/plus récente/)
+  })
+
+  it('migrateBackup v1 → v2 est l’identité', () => {
+    const raw = { app: 'forge', schemaVersion: 1, exportedAt: NOW, tables: {} }
+    expect(migrateBackup(raw)).toEqual(raw)
+  })
+
+  it('replace ne vide pas la table ciqual et garde la ciqualVersion locale', async () => {
+    await db.ciqual.put(ciqualRow)
+    await db.settings.put({ ...makeFullTables().settings[0]!, ciqualVersion: 'local-r1' })
+    const t = makeFullTables()
+    t.settings = [{ ...t.settings[0]!, ciqualVersion: 'fichier-r9' }]
+    const r = mustParse(JSON.stringify(wrapV(2, t)))
+    await importBackup(r.backup, 'replace')
+    expect(await db.ciqual.count()).toBe(1)
+    expect((await getSettings()).ciqualVersion).toBe('local-r1')
+  })
+
+  it('téléphone neuf : la ciqualVersion du fichier n’est pas reprise (replace et merge)', async () => {
+    const t = makeFullTables()
+    t.settings = [{ ...t.settings[0]!, ciqualVersion: 'fichier-r9' }]
+    const r = mustParse(JSON.stringify(wrapV(2, t)))
+    await importBackup(r.backup, 'replace')
+    expect((await getSettings()).ciqualVersion).toBeUndefined()
+    await importBackup(r.backup, 'merge')
+    expect((await getSettings()).ciqualVersion).toBeUndefined()
+  })
+
+  it('refuse un profil aux objectifs nutritionnels hors bornes', () => {
+    for (const patch of [{ surplus: 2 }, { kcalAdjustment: 50000 }, { proteinPerKg: 5 }, { fatShare: 0.9 }]) {
+      const t = makeFullTables()
+      t.profile = [{ ...t.profile[0]!, nutrition: { ...t.profile[0]!.nutrition, ...patch } }]
+      expect(errorsOf(wrapV(2, t))).toMatch(/profile/)
+    }
+  })
+
+  it('refuse les aliments hors bornes', () => {
+    const mk = (patch: Record<string, unknown>) => {
+      const t = makeFullTables()
+      t.foods = [{ ...t.foods[0]!, per100g: { ...t.foods[0]!.per100g, ...patch } }]
+      return errorsOf(wrapV(2, t))
+    }
+    expect(mk({ kcal: 901 })).toMatch(/foods/)
+    expect(mk({ protein: -1 })).toMatch(/foods/)
+    expect(mk({ fat: 101 })).toMatch(/foods/)
+    const t = makeFullTables()
+    t.foods = [{ ...t.foods[0]!, name: '  ' }]
+    expect(errorsOf(wrapV(2, t))).toMatch(/nom/)
+  })
+
+  it('refuse les entrées de journal incohérentes', () => {
+    const t = makeFullTables()
+    t.foodLog = [{ ...t.foodLog[1]!, origin: { kind: 'food', foodId: 'x', grams: 0 } }]
+    expect(errorsOf(wrapV(2, t))).toMatch(/quantité/)
+    const t2 = makeFullTables()
+    t2.foodLog = [{ ...t2.foodLog[1]!, name: '' }]
+    expect(errorsOf(wrapV(2, t2))).toMatch(/nom/)
+    const t3 = makeFullTables()
+    t3.foodLog = [{ ...t3.foodLog[1]!, macros: { kcal: -5, protein: 0, carbs: 0, fat: 0 } }]
+    expect(errorsOf(wrapV(2, t3))).toMatch(/macros/)
+  })
+
+  it('refuse les séances avec répétitions ou durées négatives', () => {
+    const t = makeFullTables()
+    t.sessions[0]!.blocks[0]!.exercises[0]!.sets[0]!.actualReps = -2
+    expect(errorsOf(wrapV(2, t))).toMatch(/sessions/)
+  })
+
+  it('accepte les nouveaux champs de séance', () => {
+    const t = makeFullTables()
+    t.sessions[0]!.restEndsAt = NOW
+    t.sessions[0]!.progressionAppliedAt = NOW
+    t.sessions[0]!.suggestions = [
+      { kind: 'tempo', exerciseId: 'goblet-squat', message: 'm', status: 'pending' },
+    ]
+    t.sessions[0]!.blocks[0]!.exercises[0]!.replacedFrom = 'x'
+    expect(parseBackup(JSON.stringify(wrapV(2, t)), '2026-03-01').ok).toBe(true)
+  })
+})

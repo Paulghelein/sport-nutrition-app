@@ -2,7 +2,20 @@
 // Fonctions pures : elles renvoient un message français affichable tel quel, ou `null` si tout est valide.
 // `today` est toujours fourni par l'appelant.
 import { ageOn, isValidLocalDate } from '../domain/shared/dates'
-import type { EngineSettings, Equipment, ExerciseInput, LocalDate, Profile, Range, Settings } from '../types'
+import type {
+  EngineSettings,
+  Equipment,
+  ExerciseInput,
+  FoodInput,
+  FoodLogEntry,
+  LocalDate,
+  NutritionParams,
+  Profile,
+  Range,
+  Session,
+  SessionTemplate,
+  Settings,
+} from '../types'
 
 export const MIN_AGE = 14
 export const MAX_AGE = 100
@@ -57,7 +70,7 @@ export function checkWeeklySessions(p: {
 }
 
 export function checkProfile(p: Profile, today: LocalDate): string | null {
-  return checkProfileIdentity(p, today) ?? checkWeeklySessions(p)
+  return checkProfileIdentity(p, today) ?? checkWeeklySessions(p) ?? checkNutritionParams(p.nutrition)
 }
 
 /** Kettlebell réglable : valeurs positives, min ≤ max, (max − min) multiple du pas. */
@@ -193,6 +206,155 @@ export function checkExercise(input: ExerciseInput): string | null {
     }
     if (list.some((t) => t.trim().length > MAX_TECHNIQUE_LINE_LENGTH)) {
       return `Chaque ligne d’étape, conseil ou erreur est limitée à ${MAX_TECHNIQUE_LINE_LENGTH} caractères.`
+    }
+  }
+  return null
+}
+
+// ---------- Aliments, journal, objectifs (J5) ----------
+
+export const MAX_FOOD_NAME_LENGTH = 80
+export const MAX_FOOD_KCAL_PER_100G = 900
+export const MAX_MACRO_PER_100G = 100
+export const MAX_PORTION_G = 5000
+export const MAX_LOG_GRAMS = 5000
+export const MAX_LOG_KCAL = 10000
+export const MAX_LOG_MACRO_G = 1000
+export const MAX_LOG_NAME_LENGTH = 120
+export const MAX_LOG_PORTIONS = 50
+
+/** Aliment (saisie, surcharge Ciqual, import) : nom, valeurs pour 100 g (kcal 0–900, macros 0–100 g), portion. */
+export function checkFoodInput(f: FoodInput): string | null {
+  const name = f.name.trim()
+  if (name.length === 0) return 'Le nom de l’aliment est obligatoire.'
+  if (name.length > MAX_FOOD_NAME_LENGTH) {
+    return `Le nom ne peut pas dépasser ${MAX_FOOD_NAME_LENGTH} caractères.`
+  }
+  const { kcal, protein, carbs, fat, fiber } = f.per100g
+  if (!Number.isFinite(kcal) || kcal < 0 || kcal > MAX_FOOD_KCAL_PER_100G) {
+    return `Les calories pour 100 g doivent être comprises entre 0 et ${MAX_FOOD_KCAL_PER_100G}.`
+  }
+  const macroOk = (v: number) => Number.isFinite(v) && v >= 0 && v <= MAX_MACRO_PER_100G
+  if (![protein, carbs, fat].every(macroOk) || (fiber !== undefined && !macroOk(fiber))) {
+    return `Protéines, glucides, lipides et fibres pour 100 g doivent être compris entre 0 et ${MAX_MACRO_PER_100G} g.`
+  }
+  if (f.defaultPortionG !== undefined) {
+    if (!Number.isFinite(f.defaultPortionG) || f.defaultPortionG <= 0 || f.defaultPortionG > MAX_PORTION_G) {
+      return `La portion habituelle doit être comprise entre 0 et ${MAX_PORTION_G} g.`
+    }
+  }
+  return null
+}
+
+/** Entrée du journal : date valide, nom non vide, macros finies ≥ 0, quantité > 0 selon l'origine. */
+export function checkLogEntry(e: FoodLogEntry): string | null {
+  if (!isValidLocalDate(e.date)) return DATE_FORMAT_MSG
+  if (e.name.trim().length === 0) return 'Le nom de l’entrée est obligatoire.'
+  if (e.name.trim().length > MAX_LOG_NAME_LENGTH) {
+    return `Le nom ne peut pas dépasser ${MAX_LOG_NAME_LENGTH} caractères.`
+  }
+  const m = e.macros
+  if (![m.kcal, m.protein, m.carbs, m.fat].every((v) => Number.isFinite(v) && v >= 0)) {
+    return 'Les calories et macros d’une entrée doivent être des nombres positifs ou nuls.'
+  }
+  if (m.kcal > MAX_LOG_KCAL || [m.protein, m.carbs, m.fat].some((v) => v > MAX_LOG_MACRO_G)) {
+    return `Une entrée ne peut pas dépasser ${MAX_LOG_KCAL} kcal ni ${MAX_LOG_MACRO_G} g de macros.`
+  }
+  const o = e.origin
+  if (o.kind === 'food' && (!Number.isFinite(o.grams) || o.grams <= 0 || o.grams > MAX_LOG_GRAMS)) {
+    return `La quantité d’un aliment doit être supérieure à 0 g et au plus ${MAX_LOG_GRAMS} g.`
+  }
+  if (
+    o.kind === 'recipe' &&
+    (!Number.isFinite(o.portions) || o.portions <= 0 || o.portions > MAX_LOG_PORTIONS)
+  ) {
+    return `Le nombre de portions doit être supérieur à 0 et au plus ${MAX_LOG_PORTIONS}.`
+  }
+  return null
+}
+
+/** Objectifs nutritionnels : surplus 0,05–0,20, protéines 1,6–2,2 g/kg, lipides 0,20–0,35, ajustement ±1000 kcal. */
+export function checkNutritionParams(p: NutritionParams): string | null {
+  if (!Number.isFinite(p.surplus) || p.surplus < 0.05 || p.surplus > 0.2) {
+    return 'Le surplus calorique doit être compris entre 5 % et 20 %.'
+  }
+  if (!Number.isFinite(p.proteinPerKg) || p.proteinPerKg < 1.6 || p.proteinPerKg > 2.2) {
+    return 'Les protéines doivent être comprises entre 1,6 et 2,2 g par kg.'
+  }
+  if (!Number.isFinite(p.fatShare) || p.fatShare < 0.2 || p.fatShare > 0.35) {
+    return 'La part de lipides doit être comprise entre 20 % et 35 % des calories.'
+  }
+  if (!Number.isFinite(p.kcalAdjustment) || p.kcalAdjustment < -1000 || p.kcalAdjustment > 1000) {
+    return 'L’ajustement calorique doit être compris entre −1000 et +1000 kcal.'
+  }
+  if (p.kcalAdjustedOn !== undefined && !isValidLocalDate(p.kcalAdjustedOn)) return DATE_FORMAT_MSG
+  return null
+}
+
+// ---------- Séances et modèles (J4) ----------
+
+export const MAX_TEMPLATE_NAME_LENGTH = 60
+export const MIN_TEMPLATE_SETS = 1
+export const MAX_TEMPLATE_SETS = 10
+
+function isNonNegative(v: number | undefined): boolean {
+  return v === undefined || (Number.isFinite(v) && v >= 0)
+}
+
+/** Cohérence légère d'une séance (import, écriture) : répétitions, durées, charges et repos finis et ≥ 0. */
+export function checkSessionRow(s: Session): string | null {
+  if (!isValidLocalDate(s.date)) return DATE_FORMAT_MSG
+  if (!isNonNegative(s.estimatedMin)) return 'La durée estimée d’une séance doit être positive ou nulle.'
+  for (const block of s.blocks) {
+    for (const ex of block.exercises) {
+      if (!isNonNegative(ex.restSec)) return 'Le repos d’un exercice doit être positif ou nul.'
+      for (const set of ex.sets) {
+        if (
+          !isNonNegative(set.actualReps) ||
+          !isNonNegative(set.actualDurationSec) ||
+          !isNonNegative(set.targetDurationSec) ||
+          !isNonNegative(set.loadKg)
+        ) {
+          return 'Les répétitions, durées et charges d’une série doivent être positives ou nulles.'
+        }
+      }
+    }
+  }
+  const c = s.cursor
+  if (c && ![c.block, c.exercise, c.set].every((v) => Number.isInteger(v) && v >= 0)) {
+    return 'La position dans la séance est invalide.'
+  }
+  return null
+}
+
+/** Modèle de séance : nom 1–60 caractères, au moins un bloc, séries entières 1–10, repos 0–600 s. */
+export function checkTemplate(t: Pick<SessionTemplate, 'name' | 'blocks'>): string | null {
+  const name = t.name.trim()
+  if (name.length === 0) return 'Le nom du modèle est obligatoire.'
+  if (name.length > MAX_TEMPLATE_NAME_LENGTH) {
+    return `Le nom ne peut pas dépasser ${MAX_TEMPLATE_NAME_LENGTH} caractères.`
+  }
+  if (t.blocks.length === 0) return 'Un modèle doit contenir au moins un exercice.'
+  for (const b of t.blocks) {
+    if (!Number.isInteger(b.sets) || b.sets < MIN_TEMPLATE_SETS || b.sets > MAX_TEMPLATE_SETS) {
+      return `Le nombre de séries doit être un entier entre ${MIN_TEMPLATE_SETS} et ${MAX_TEMPLATE_SETS}.`
+    }
+    if (!Number.isInteger(b.restSec) || b.restSec < MIN_REST_SEC || b.restSec > MAX_REST_SEC) {
+      return `Le repos doit être un nombre entier de secondes entre ${MIN_REST_SEC} et ${MAX_REST_SEC}.`
+    }
+    if (b.reps !== undefined && !isIntRange(b.reps, MIN_REPS, MAX_REPS)) {
+      return `Les répétitions doivent être des entiers entre ${MIN_REPS} et ${MAX_REPS}, minimum ≤ maximum.`
+    }
+    if (
+      b.durationSec !== undefined &&
+      (!Number.isInteger(b.durationSec) ||
+        b.durationSec < MIN_DURATION_SEC ||
+        b.durationSec > MAX_DURATION_SEC)
+    ) {
+      return `La durée doit être en secondes entières, entre ${MIN_DURATION_SEC} et ${MAX_DURATION_SEC}.`
+    }
+    if (b.loadKg !== undefined && (!Number.isFinite(b.loadKg) || b.loadKg < 0)) {
+      return 'La charge doit être positive ou nulle.'
     }
   }
   return null

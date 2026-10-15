@@ -17,8 +17,11 @@ import { primaryKeys, rowSchemas } from './schemas'
 import {
   checkEquipment,
   checkExercise,
+  checkFoodInput,
+  checkLogEntry,
   checkMeasurement,
   checkProfile,
+  checkSessionRow,
   checkSettings,
   checkWeighIn,
 } from './validation'
@@ -27,13 +30,18 @@ const MAX_ERRORS = 10
 
 export type TableCounts = Record<TableName, number>
 
+/** Tables sauvegardées (la table de référence `ciqual` n'en fait pas partie). */
+function backupTables() {
+  return TABLE_NAMES.map((name) => db.table(name))
+}
+
 function emptyCounts(): TableCounts {
   return Object.fromEntries(TABLE_NAMES.map((t) => [t, 0])) as TableCounts
 }
 
 /** Lit toutes les tables dans une transaction de lecture cohérente. */
 export async function exportBackup(now: IsoDateTime): Promise<BackupFile> {
-  return db.transaction('r', db.tables, async () => {
+  return db.transaction('r', backupTables(), async () => {
     const entries = await Promise.all(
       TABLE_NAMES.map(async (name) => [name, await db.table(name).toArray()] as const),
     )
@@ -67,7 +75,7 @@ export interface RawBackup {
 /**
  * Point d'extension : met à niveau une sauvegarde créée par une version antérieure du schéma
  * (appelée AVANT la validation des lignes, avec `schemaVersion` = version du fichier).
- * Identité tant que la seule version est la 1.
+ * v1 → v2 : identité. La v2 n'ajoute que la table de référence `ciqual` (hors sauvegarde) et des champs optionnels.
  */
 export function migrateBackup(raw: RawBackup): RawBackup {
   return raw
@@ -94,6 +102,12 @@ function businessCheck(name: TableName, data: unknown, today: LocalDate): string
       return checkEquipment(data as TableRows['equipment'])
     case 'settings':
       return checkSettings(data as TableRows['settings'])
+    case 'foods':
+      return checkFoodInput(data as TableRows['foods'])
+    case 'foodLog':
+      return checkLogEntry(data as TableRows['foodLog'])
+    case 'sessions':
+      return checkSessionRow(data as TableRows['sessions'])
     case 'exercises': {
       // Une surcharge de suppression est une copie de l'original : elle n'est pas rejouée contre les règles de saisie.
       const row = data as TableRows['exercises']
@@ -245,9 +259,12 @@ export async function importBackup(
   now: IsoDateTime = new Date().toISOString(),
 ): Promise<ImportReport> {
   const counts = emptyCounts()
-  await db.transaction('rw', db.tables, async () => {
+  await db.transaction('rw', backupTables(), async () => {
+    // La version Ciqual locale décrit la table `ciqual` de CET appareil : jamais reprise du fichier.
+    const localCiqualVersion = (await db.settings.get(SINGLETON_ID))?.ciqualVersion
     if (mode === 'replace') {
-      await Promise.all(db.tables.map((t) => t.clear()))
+      // La table `ciqual` n'est pas vidée (données de référence).
+      await Promise.all(backupTables().map((t) => t.clear()))
     } else {
       // weighIns a un index unique sur `date` : une pesée importée à une date déjà prise
       // sous un autre id remplace l'existante.
@@ -262,7 +279,15 @@ export async function importBackup(
       }
     }
     for (const name of TABLE_NAMES) {
-      const rows = backup.tables[name]
+      let rows: unknown[] = backup.tables[name]
+      if (name === 'settings') {
+        rows = backup.tables.settings.map((row) => {
+          const next = { ...row }
+          delete next.ciqualVersion
+          if (localCiqualVersion !== undefined) next.ciqualVersion = localCiqualVersion
+          return next
+        })
+      }
       if (rows.length > 0) await db.table(name).bulkPut(rows)
       counts[name] = rows.length
     }
