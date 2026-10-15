@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J1 — Données et profil : **terminé et validé sur iPhone le 2026-10-15**.
-Prochain : J2 — Exercices.
+J2 — Exercices : **terminé le 2026-10-15, en attente de validation sur iPhone**.
+Prochain : J3 — Moteur (après validation de J2).
 
 ## Décisions prises
 
@@ -43,6 +43,22 @@ Prochain : J2 — Exercices.
 - 2026-10-15 (J1) : export iOS en deux temps (« Préparer » puis « Enregistrer ou partager ») pour appeler
   `navigator.share` dans le geste utilisateur ; repli téléchargement avec confirmation manuelle « C'est enregistré ».
 - 2026-10-15 (J1) : `navigator.storage.persist()` demandé au démarrage (limite l'éviction des données par iOS).
+- 2026-10-15 (J2) : cible d'un exercice = exactement un de `repRange` / `durationRange`. `loadType` décrit la charge :
+  `timed` = gainage au poids du corps (durée), `bodyweight` = reps, `kettlebell` = reps ou durée (portés chargés).
+  Le moteur J3 devra faire porter la double progression sur la durée pour les portés, puis la charge.
+- 2026-10-15 (J2) : 45 exercices de départ (`src/content/exercises/<pattern>.ts`), ids anglais kebab-case **figés** ;
+  SVG dans `src/content/illustrations/<id>.svg` chargés par `import.meta.glob(?raw)`, injectés (contenu de confiance
+  embarqué uniquement). Contenu et SVG dans un chunk séparé (`useLibrary`, 15 kB gzip), écrans en `lazy()`.
+  Matériel requis = strict minimum (pompes inclinées sur une table → aucun) ; au moins un exercice de niveau 1 par
+  schéma disponible avec le matériel par défaut (testé). Exercices unilatéraux : série complète d'un côté puis de l'autre.
+- 2026-10-15 (J2) : fusion seed + base + préférences par la fonction pure `mergeLibrary` (src/domain/training/library.ts).
+  Suppression d'un exercice de départ = surcharge `deleted` (restaurable, « Exercices supprimés ») ; suppression d'un
+  exercice perso = suppression logique (`deleted: true`, préférence et état gardés) pour que l'historique J4 garde un nom.
+  Enregistrer sans changement ne crée pas de surcharge.
+- 2026-10-15 (J2) : routes `/seance/exercices[/nouveau|/supprimes|/:id|/:id/modifier]` ; filtres dans l'URL ;
+  brouillon de formulaire en `sessionStorage`. `Button` a une prop `width` (`w-full` n'est plus forcé).
+- 2026-10-15 (J2) : illustrations générées par un petit script Python à squelette articulé (hors dépôt) pour 24
+  dessins ; les retoucher = éditer les SVG directement.
 
 ## Fait
 
@@ -57,9 +73,23 @@ Prochain : J2 — Exercices.
   onboarding en 6 étapes, bloc Poids (résumé, courbe pesées + moyenne 7 j, historique modifiable), Réglages
   (profil, matériel, sauvegarde). 93 tests Vitest, 11 e2e (onboarding, pesées, sauvegarde aller-retour, hors ligne).
 
+- J2 Exercices (2026-10-15) : 45 exercices sur les 10 schémas × 3 niveaux de SPEC §3.1 (+ tractions négatives,
+  rowing australien, tractions), fiches techniques et SVG ; bibliothèque (recherche sans accents, filtres schéma /
+  niveau / matériel / masqués), fiche (illustration, muscles, prescription, technique, variantes, vidéo, préférence),
+  création / modification / suppression / restauration d'exercices, préférences liked/neutral/disliked/hidden.
+  308 tests Vitest (dont 139 d'intégrité du contenu), 22 e2e.
+
 ## À faire ensuite
 
-- J2 (Exercices).
+- Validation J2 sur iPhone, puis J3 (Moteur).
+- Remarques non bloquantes reportées (J2) :
+  - Illustrations les plus faibles : pompes archer, dead bug, pompes diamant (≈ pompes) ; kettlebells en cercle vide
+    sur les dessins d'origine vs disque plein sur les redessinés (harmoniser si besoin).
+  - `box-goblet-squat` demande une chaise mais n'exige pas `bench` (un canapé suffit) : à revoir si gênant.
+  - Bundle principal 435 kB (137 kB gzip, +19 kB) : barrels `src/ui` / `src/db` ; le chunk `useLibrary` est chargé
+    dès `/seance` (compteur). À traiter avec la remarque Zod de J1.
+  - J3 : ne pas proposer le Turkish get-up à un débutant sans critère validé ; double progression en durée pour les portés.
+  - Pas encore d'écran pour restaurer un exercice perso supprimé.
 - Remarques non bloquantes du reviewer reportées (J1) :
   - `Sheet` : une seule feuille montée à la fois ; gérer l'empilement (compteur `inert`, pile pour Échap/Tab) quand
     J4/J6 en auront besoin.
