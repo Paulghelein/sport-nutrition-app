@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J2 — Exercices : **terminé le 2026-10-15, en attente de validation sur iPhone**.
-Prochain : J3 — Moteur (après validation de J2).
+J2 — Exercices : **terminé et validé sur iPhone le 2026-10-15**.
+Prochain : J3 — Moteur.
 
 ## Décisions prises
 
@@ -81,7 +81,7 @@ Prochain : J3 — Moteur (après validation de J2).
 
 ## À faire ensuite
 
-- Validation J2 sur iPhone, puis J3 (Moteur).
+- J3 (Moteur).
 - Remarques non bloquantes reportées (J2) :
   - Illustrations les plus faibles : pompes archer, dead bug, pompes diamant (≈ pompes) ; kettlebells en cercle vide
     sur les dessins d'origine vs disque plein sur les redessinés (harmoniser si besoin).
