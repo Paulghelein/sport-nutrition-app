@@ -1,6 +1,6 @@
 // Brouillon du formulaire d'exercice : nombres en texte, listes avec lignes vides tolérées.
 // Aucune règle métier ici : la validation est faite par `checkExercise` (src/db).
-import { PATTERN_ORDER, defaultLoadStep } from '../domain/training'
+import { PATTERN_ORDER, defaultLoadStep } from '../domain/training/library'
 import type {
   EquipmentId,
   ExerciseInput,

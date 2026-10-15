@@ -12,6 +12,7 @@ import { SettingsScreen } from './screens/SettingsScreen'
 const LibraryScreen = lazy(() => import('./training/LibraryScreen'))
 const ExerciseScreen = lazy(() => import('./training/ExerciseScreen'))
 const ExerciseFormScreen = lazy(() => import('./training/ExerciseFormScreen'))
+const PreviewScreen = lazy(() => import('./training/PreviewScreen'))
 const DeletedScreen = lazy(() => import('./training/DeletedScreen'))
 
 function Tabs() {
@@ -28,6 +29,7 @@ function Tabs() {
           <Suspense fallback={<div aria-busy="true" className="min-h-40" />}>
             <Routes>
               <Route path="/seance" element={<SessionScreen />} />
+              <Route path="/seance/apercu" element={<PreviewScreen />} />
               <Route path="/seance/exercices" element={<LibraryScreen />} />
               <Route path="/seance/exercices/nouveau" element={<ExerciseFormScreen />} />
               <Route path="/seance/exercices/supprimes" element={<DeletedScreen />} />
