@@ -1,0 +1,107 @@
+import type { Exercise } from '../../types'
+import { SEED_UPDATED_AT } from './meta'
+
+export const carryExercises: Exercise[] = [
+  {
+    id: 'farmer-carry',
+    name: 'Farmer carry',
+    pattern: 'carry',
+    level: 1,
+    muscles: { primary: ['forearms', 'traps'], secondary: ['abs', 'glutes', 'shoulders', 'lower_back'] },
+    equipment: ['kettlebell'],
+    loadType: 'kettlebell',
+    durationRange: [30, 60],
+    restSec: 60,
+    compound: true,
+    unilateral: false,
+    loadStepKg: 1,
+    progressionCriteria: '3 × 60 s sans te pencher → suitcase carry',
+    technique: {
+      setup:
+        'Plie les genoux, dos plat, et attrape la kettlebell à deux mains par la poignée. Redresse-toi avec elle devant les cuisses, bras tendus.',
+      steps: [
+        'Tiens-toi bien droit, épaules en arrière et vers le bas.',
+        'Serre les abdos comme avant un petit coup.',
+        'Marche à petits pas réguliers pendant la durée prévue.',
+        'Repose la kettlebell en pliant les genoux, le dos plat.',
+      ],
+      cues: ['Grand et droit', 'Petits pas réguliers', 'Épaules basses'],
+      mistakes: [
+        'Se pencher en avant ou arrondir le dos : reste droit.',
+        'Hausser les épaules : garde-les basses.',
+        'Poser la charge en se courbant : plie les genoux.',
+      ],
+    },
+    illustration: 'farmer-carry',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+  {
+    id: 'suitcase-carry',
+    name: 'Suitcase carry',
+    pattern: 'carry',
+    level: 2,
+    muscles: { primary: ['abs', 'forearms'], secondary: ['traps', 'glutes', 'shoulders', 'lower_back'] },
+    equipment: ['kettlebell'],
+    loadType: 'kettlebell',
+    durationRange: [30, 60],
+    restSec: 60,
+    compound: true,
+    unilateral: true,
+    loadStepKg: 1,
+    progressionCriteria: '3 × 60 s par côté sans pencher le buste → rack carry',
+    technique: {
+      setup:
+        'Plie les genoux, dos plat, et attrape la kettlebell d’une main, sur le côté. Redresse-toi, bras tendu le long du corps.',
+      steps: [
+        'Tiens-toi droit, comme si tu n’avais pas de charge.',
+        'Serre les abdos pour t’empêcher de pencher du côté de la charge.',
+        'Marche à pas réguliers pendant la durée prévue.',
+        'Repose la kettlebell avec les genoux pliés, puis change de main.',
+      ],
+      cues: ['Épaules de niveau', 'Ne penche pas', 'Abdos serrés'],
+      mistakes: [
+        'Se pencher du côté de la charge : redresse-toi, allège si besoin.',
+        'Lever l’épaule portée : garde-la basse.',
+        'Marcher trop vite : des pas lents et stables.',
+      ],
+    },
+    illustration: 'suitcase-carry',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+  {
+    id: 'rack-carry',
+    name: 'Rack carry',
+    pattern: 'carry',
+    level: 3,
+    muscles: { primary: ['abs', 'forearms'], secondary: ['shoulders', 'traps', 'glutes', 'lower_back'] },
+    equipment: ['kettlebell'],
+    loadType: 'kettlebell',
+    durationRange: [30, 60],
+    restSec: 60,
+    compound: true,
+    unilateral: true,
+    loadStepKg: 1,
+    progressionCriteria: '3 × 60 s par côté à la même charge sur 2 séances, buste droit → augmente la charge de 1 kg',
+    technique: {
+      setup:
+        'Monte la kettlebell en position « rack » : poing près de l’épaule, coude collé contre les côtes, la kettlebell reposant sur l’avant-bras et la poitrine.',
+      steps: [
+        'Garde le coude collé au buste et le poignet droit.',
+        'Serre les abdos et les fessiers, les côtes rentrées.',
+        'Marche à pas réguliers pendant la durée prévue.',
+        'Redescends la kettlebell avec contrôle, puis change de côté.',
+      ],
+      cues: ['Coude collé au buste', 'Côtes rentrées', 'Pas lents et stables'],
+      mistakes: [
+        'Se cambrer pour compenser la charge : serre les abdos.',
+        'Laisser le coude s’écarter : colle-le au corps.',
+        'Pencher le buste du côté opposé : reste droit.',
+      ],
+    },
+    illustration: 'rack-carry',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+]

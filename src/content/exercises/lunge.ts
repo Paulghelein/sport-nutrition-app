@@ -1,0 +1,107 @@
+import type { Exercise } from '../../types'
+import { SEED_UPDATED_AT } from './meta'
+
+export const lungeExercises: Exercise[] = [
+  {
+    id: 'reverse-lunge-bw',
+    name: 'Fente arrière poids du corps',
+    pattern: 'lunge',
+    level: 1,
+    muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'abs'] },
+    equipment: [],
+    loadType: 'bodyweight',
+    repRange: [8, 12],
+    restSec: 75,
+    compound: true,
+    unilateral: true,
+    loadStepKg: 2,
+    progressionCriteria: '3 × 12 propres par jambe → fente arrière goblet',
+    technique: {
+      setup:
+        'Debout, pieds à la largeur des hanches, mains sur les hanches. Repère-toi près d’un mur ou d’une chaise si tu manques d’équilibre.',
+      steps: [
+        'Fais un grand pas en arrière avec une jambe, sur la pointe du pied.',
+        'Descends en fléchissant les deux genoux, buste droit.',
+        'Arrête-toi quand le genou arrière frôle le sol, le genou avant au-dessus de la cheville.',
+        'Pousse avec le pied avant pour revenir debout.',
+      ],
+      cues: ['Buste droit, regard devant', 'Descends droit, pas vers l’avant', 'Appui sur le pied avant'],
+      mistakes: [
+        'Faire un pas trop court : le genou avant part trop loin.',
+        'Pencher le buste vers l’avant.',
+        'Taper le genou arrière au sol : descends en contrôle.',
+      ],
+    },
+    illustration: 'reverse-lunge-bw',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+  {
+    id: 'reverse-lunge-goblet',
+    name: 'Fente arrière goblet',
+    pattern: 'lunge',
+    level: 2,
+    muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'abs', 'lower_back'] },
+    equipment: ['kettlebell'],
+    loadType: 'kettlebell',
+    repRange: [8, 12],
+    restSec: 90,
+    compound: true,
+    unilateral: true,
+    loadStepKg: 2,
+    progressionCriteria: '3 × 12 propres par jambe à la même charge sur 2 séances → split squat bulgare',
+    technique: {
+      setup:
+        'Tiens le kettlebell contre ta poitrine, coudes vers le bas. Pieds à la largeur des hanches, buste droit.',
+      steps: [
+        'Fais un grand pas en arrière avec une jambe, sur la pointe du pied.',
+        'Descends en fléchissant les deux genoux, dos plat et poitrine haute.',
+        'Frôle le sol avec le genou arrière, sans le poser.',
+        'Pousse avec le pied avant pour revenir à la position de départ.',
+      ],
+      cues: ['Kettlebell collé à la poitrine', 'Buste droit', 'Descends droit'],
+      mistakes: [
+        'Laisser le kettlebell t’entraîner vers l’avant.',
+        'Arrondir le dos en descendant.',
+        'Pousser avec le pied arrière au lieu du pied avant.',
+      ],
+    },
+    illustration: 'reverse-lunge-goblet',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+  {
+    id: 'bulgarian-split-squat',
+    name: 'Split squat bulgare',
+    pattern: 'lunge',
+    level: 3,
+    muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'abs', 'lower_back'] },
+    equipment: ['kettlebell', 'bench'],
+    loadType: 'kettlebell',
+    repRange: [8, 12],
+    restSec: 90,
+    compound: true,
+    unilateral: true,
+    loadStepKg: 2,
+    progressionCriteria: '3 × 12 propres par jambe avec la kettlebell la plus lourde → tempo lent (3 s à la descente)',
+    technique: {
+      setup:
+        'Dos à une chaise stable ou à un banc. Pose le dessus du pied arrière sur l’assise, à un grand pas devant le support. Tiens la kettlebell contre la poitrine par les cornes (sans charge au début si besoin).',
+      steps: [
+        'Place le pied avant assez loin pour que le genou reste au-dessus de la cheville en bas.',
+        'Descends en fléchissant le genou avant, buste droit ou légèrement penché.',
+        'Descends jusqu’à ce que la cuisse avant soit parallèle au sol.',
+        'Pousse avec le pied avant pour remonter, en gardant l’équilibre.',
+      ],
+      cues: ['Descends droit, comme sur un rail', 'Poids sur le pied avant', 'Ventre serré'],
+      mistakes: [
+        'Placer le pied avant trop près : le genou dépasse trop les orteils.',
+        'Pousser avec la jambe arrière au lieu de la jambe avant.',
+        'Utiliser un support instable (chaise à roulettes) : prends une chaise solide.',
+      ],
+    },
+    illustration: 'bulgarian-split-squat',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+]

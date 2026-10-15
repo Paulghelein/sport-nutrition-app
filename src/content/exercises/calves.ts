@@ -1,0 +1,107 @@
+import type { Exercise } from '../../types'
+import { SEED_UPDATED_AT } from './meta'
+
+export const calvesExercises: Exercise[] = [
+  {
+    id: 'calf-raise',
+    name: 'Élévations sur pointes (deux jambes)',
+    pattern: 'calves',
+    level: 1,
+    muscles: { primary: ['calves'], secondary: [] },
+    equipment: [],
+    loadType: 'bodyweight',
+    repRange: [12, 20],
+    restSec: 60,
+    compound: false,
+    unilateral: false,
+    loadStepKg: 1,
+    progressionCriteria: '3 × 20 lentes → une jambe',
+    technique: {
+      setup:
+        'Debout sur le bord d’une marche, avant des pieds appuyé, talons dans le vide. Tiens-toi à un mur ou à une rampe pour l’équilibre.',
+      steps: [
+        'Descends les talons sous le niveau de la marche, jambes quasi tendues.',
+        'Monte le plus haut possible sur la pointe des pieds.',
+        'Marque une pause d’une seconde en haut.',
+        'Redescends en 2 secondes jusqu’à l’étirement.',
+      ],
+      cues: ['Monte bien haut', 'Pause en haut', 'Descends jusqu’à l’étirement'],
+      mistakes: [
+        'Faire des demi-répétitions : va de l’étirement à la pointe.',
+        'Rebondir en bas : contrôle le mouvement.',
+        'Plier les genoux pour compenser : garde-les quasi tendus.',
+      ],
+    },
+    illustration: 'calf-raise',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+  {
+    id: 'single-leg-calf-raise',
+    name: 'Élévations sur pointe (une jambe)',
+    pattern: 'calves',
+    level: 2,
+    muscles: { primary: ['calves'], secondary: [] },
+    equipment: [],
+    loadType: 'bodyweight',
+    repRange: [10, 15],
+    restSec: 60,
+    compound: false,
+    unilateral: true,
+    loadStepKg: 1,
+    progressionCriteria: '3 × 15 lentes par jambe → une jambe lestée',
+    technique: {
+      setup:
+        'Debout sur une jambe au bord d’une marche, talon dans le vide, l’autre pied relevé derrière. Une main sur un mur ou une rampe.',
+      steps: [
+        'Descends le talon sous le niveau de la marche, jambe quasi tendue.',
+        'Monte le plus haut possible sur la pointe du pied.',
+        'Marque une pause d’une seconde en haut.',
+        'Redescends en 2 secondes, puis termine la série et change de jambe.',
+      ],
+      cues: ['Monte bien haut', 'Pause en haut', 'Descente lente'],
+      mistakes: [
+        'S’appuyer trop sur le mur : ne l’utilise que pour l’équilibre.',
+        'Faire des demi-répétitions : va de l’étirement à la pointe.',
+        'Rebondir en bas : contrôle le mouvement.',
+      ],
+    },
+    illustration: 'single-leg-calf-raise',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+  {
+    id: 'weighted-single-leg-calf-raise',
+    name: 'Élévations sur pointe (une jambe lestée)',
+    pattern: 'calves',
+    level: 3,
+    muscles: { primary: ['calves'], secondary: ['forearms'] },
+    equipment: ['kettlebell'],
+    loadType: 'kettlebell',
+    repRange: [10, 15],
+    restSec: 60,
+    compound: false,
+    unilateral: true,
+    loadStepKg: 1,
+    progressionCriteria: '3 × 15 lentes par jambe → augmente la charge',
+    technique: {
+      setup:
+        'Debout sur une jambe au bord d’une marche, talon dans le vide. Tiens la kettlebell dans la main du même côté, bras le long du corps, et une main libre sur un mur pour l’équilibre.',
+      steps: [
+        'Descends le talon sous le niveau de la marche, jambe quasi tendue.',
+        'Monte le plus haut possible sur la pointe du pied.',
+        'Marque une pause d’une seconde en haut.',
+        'Redescends en 2 secondes, puis termine la série et change de jambe.',
+      ],
+      cues: ['Monte bien haut', 'Pause en haut', 'Buste droit'],
+      mistakes: [
+        'Se pencher sur le côté à cause de la charge : reste droit, allège si besoin.',
+        'Faire des demi-répétitions : va de l’étirement à la pointe.',
+        'Rebondir en bas : contrôle le mouvement.',
+      ],
+    },
+    illustration: 'weighted-single-leg-calf-raise',
+    source: 'seed',
+    updatedAt: SEED_UPDATED_AT,
+  },
+]
