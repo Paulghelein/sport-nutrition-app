@@ -25,3 +25,29 @@ test("l'app s'ouvre hors ligne (lien profond + rechargement)", async ({ page, co
   await page.goto('./progres')
   await expect(page.getByRole('img', { name: /Courbe de poids/ })).toBeVisible()
 })
+
+test('le journal fonctionne en mode avion (recherche Ciqual + ajout)', async ({ page, context }) => {
+  await page.goto('./')
+  await completeOnboarding(page)
+  await page.evaluate('navigator.serviceWorker.ready.then(() => true)')
+  const controlled = async (): Promise<boolean> =>
+    page.evaluate<boolean>('navigator.serviceWorker.controller !== null')
+  if (!(await controlled())) await page.reload()
+  await expect.poll(controlled).toBe(true)
+
+  // Hors ligne avant tout chargement de Ciqual : le chunk de données doit venir du précache.
+  await context.setOffline(true)
+  await page.goto('./nutrition')
+  await page.getByRole('link', { name: 'Ajouter au repas : Déjeuner' }).click()
+  const search = page.getByRole('searchbox', { name: 'Rechercher un aliment' })
+  await search.fill('poulet cru')
+  const chicken = page.getByRole('button', { name: /Poulet blanc, viande et peau crues/ })
+  await expect(chicken).toBeVisible({ timeout: 30_000 })
+  await chicken.click()
+  const sheet = page.getByRole('dialog', { name: /Poulet blanc, viande et peau crues/ })
+  await sheet.getByLabel('Quantité').fill('150')
+  await expect(sheet.getByTestId('preview')).toContainText('183 kcal')
+  await sheet.getByRole('button', { name: 'Ajouter' }).click()
+  await page.getByRole('button', { name: /^Terminer/ }).click()
+  await expect(page.getByTestId('kcal-consumed')).toHaveText('183')
+})

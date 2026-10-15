@@ -10,6 +10,7 @@ const BackupSection = lazy(() =>
 )
 
 const EngineSection = lazy(() => import('../settings/EngineSection'))
+const NutritionGoalsSection = lazy(() => import('../settings/NutritionGoalsSection'))
 
 export function SettingsScreen() {
   return (
@@ -17,6 +18,11 @@ export function SettingsScreen() {
       <h1 className="text-3xl font-bold">Réglages</h1>
       <ProfileSection />
       <EquipmentSection />
+      <ErrorBoundary>
+        <Suspense fallback={<div className="mt-8 h-40" aria-busy="true" />}>
+          <NutritionGoalsSection />
+        </Suspense>
+      </ErrorBoundary>
       <ErrorBoundary>
         <Suspense fallback={<div className="mt-8 h-40" aria-busy="true" />}>
           <EngineSection />

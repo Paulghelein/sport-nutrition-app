@@ -90,7 +90,21 @@ function Guided() {
   )
 }
 
+/** Délai avant de préparer la base d'aliments en tâche de fond (après l'affichage du premier écran). */
+const CIQUAL_PRELOAD_DELAY_MS = 2000
+
 function Shell() {
+  // Premier lancement (ou nouvelle version de Ciqual) : chargement dans Dexie en tâche de fond, pour que le journal
+  // soit prêt quand on l'ouvre. Module et JSON chargés à la demande : rien dans le bundle de démarrage.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('./nutrition/ciqualLoader')
+        .then((m) => m.ensureCiqualLoaded())
+        .catch((e: unknown) => console.warn('Préparation de la base d’aliments reportée', e))
+    }, CIQUAL_PRELOAD_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <Routes>
       <Route path={GUIDED_PATH} element={<Guided />} />
