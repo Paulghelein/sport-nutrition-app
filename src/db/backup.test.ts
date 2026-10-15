@@ -450,9 +450,53 @@ describe('sauvegarde v2 (Ciqual, bornes J4/J5)', () => {
     expect(errorsOf(wrapV(3))).toMatch(/plus récente/)
   })
 
-  it('migrateBackup v1 → v2 est l’identité', () => {
+  it('migrateBackup v1 → v2 : identité sans exercices, drapeaux posés sinon', () => {
     const raw = { app: 'forge', schemaVersion: 1, exportedAt: NOW, tables: {} }
     expect(migrateBackup(raw)).toEqual(raw)
+    const base = makeFullTables().exercises[0]!
+    const ex = (id: string, extra: Record<string, unknown> = {}, source = 'seed') => ({
+      ...base,
+      id,
+      source,
+      ...extra,
+    })
+    const v1 = {
+      ...raw,
+      tables: {
+        exercises: [
+          ex('turkish-get-up'),
+          ex('two-hand-swing'),
+          ex('farmer-carry', { finisher: false }),
+          ex('rack-carry', {}, 'user'),
+          ex('goblet-squat'),
+        ],
+      },
+    }
+    const out = migrateBackup(v1).tables.exercises as Record<string, unknown>[]
+    expect(out[0]?.learnUnloaded).toBe(true)
+    expect(out[0]?.finisher).toBeUndefined()
+    expect(out[1]?.finisher).toBe(true)
+    expect(out[2]?.finisher).toBe(false)
+    expect(out[3]?.finisher).toBeUndefined()
+    expect(out[4]?.finisher).toBeUndefined()
+    expect(v1.tables.exercises[0]).not.toHaveProperty('learnUnloaded')
+    // v2 : inchangé
+    expect(migrateBackup({ ...v1, schemaVersion: 2 })).toEqual({ ...v1, schemaVersion: 2 })
+  })
+
+  it('import d’une sauvegarde v1 : drapeaux des surcharges posés', () => {
+    const t = makeFullTables()
+    const base = t.exercises[0]!
+    t.exercises = [
+      { ...base, id: 'turkish-get-up', source: 'seed' },
+      { ...base, id: 'two-hand-swing', source: 'seed' },
+      { ...base, id: 'suitcase-carry', source: 'seed', finisher: false },
+    ]
+    const r = mustParse(JSON.stringify(wrapV(1, t)))
+    const rows = r.backup.tables.exercises
+    expect(rows[0]?.learnUnloaded).toBe(true)
+    expect(rows[1]?.finisher).toBe(true)
+    expect(rows[2]?.finisher).toBe(false)
   })
 
   it('replace ne vide pas la table ciqual et garde la ciqualVersion locale', async () => {

@@ -30,6 +30,21 @@ describe('migration Dexie v1 → v2', () => {
     await old.table('sessions').bulkPut(tables.sessions)
     await old.table('foodLog').bulkPut(tables.foodLog)
     await old.table('weighIns').bulkPut(tables.weighIns)
+    const seedRow = (id: string, extra: Record<string, unknown> = {}, source = 'seed') => ({
+      ...tables.exercises[0],
+      id,
+      source,
+      ...extra,
+    })
+    await old
+      .table('exercises')
+      .bulkPut([
+        seedRow('turkish-get-up'),
+        seedRow('two-hand-swing'),
+        seedRow('farmer-carry', { finisher: false }),
+        seedRow('rack-carry', {}, 'user'),
+        seedRow('goblet-squat'),
+      ])
     old.close()
 
     const upgraded = new AppDB(name)
@@ -41,6 +56,12 @@ describe('migration Dexie v1 → v2', () => {
     expect(await upgraded.sessions.toArray()).toEqual(tables.sessions)
     expect(await upgraded.foodLog.where('date').equals('2026-02-28').count()).toBe(2)
     expect((await upgraded.weighIns.toArray()).length).toBe(2)
+    const ex = Object.fromEntries((await upgraded.exercises.toArray()).map((e) => [e.id, e]))
+    expect(ex['turkish-get-up']?.learnUnloaded).toBe(true)
+    expect(ex['two-hand-swing']?.finisher).toBe(true)
+    expect(ex['farmer-carry']?.finisher).toBe(false)
+    expect(ex['rack-carry']?.finisher).toBeUndefined()
+    expect(ex['goblet-squat']?.finisher).toBeUndefined()
     upgraded.close()
     await Dexie.delete(name)
   })

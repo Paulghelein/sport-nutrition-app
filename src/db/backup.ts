@@ -10,7 +10,7 @@ import type {
   TableName,
   TableRows,
 } from '../types'
-import { DB_SCHEMA_VERSION, db } from './database'
+import { DB_SCHEMA_VERSION, applyV2SeedFlag, db } from './database'
 import { defaultSettings } from './defaults'
 import { updateSettings } from './repositories'
 import { primaryKeys, rowSchemas } from './schemas'
@@ -75,10 +75,18 @@ export interface RawBackup {
 /**
  * Point d'extension : met à niveau une sauvegarde créée par une version antérieure du schéma
  * (appelée AVANT la validation des lignes, avec `schemaVersion` = version du fichier).
- * v1 → v2 : identité. La v2 n'ajoute que la table de référence `ciqual` (hors sauvegarde) et des champs optionnels.
+ * v1 → v2 : pose les drapeaux `finisher` / `learnUnloaded` manquants sur les surcharges `seed` (`V2_SEED_FLAGS`) ;
+ * le reste (table `ciqual` hors sauvegarde, champs optionnels) ne demande rien.
  */
 export function migrateBackup(raw: RawBackup): RawBackup {
-  return raw
+  if (raw.schemaVersion >= 2 || !Array.isArray(raw.tables.exercises)) return raw
+  // Même règle que l'`upgrade()` Dexie v2 : drapeaux manquants des surcharges `seed` (copie, l'entrée n'est pas modifiée).
+  const exercises = raw.tables.exercises.map((row: unknown) => {
+    if (typeof row !== 'object' || row === null) return row
+    const copy = { ...(row as Record<string, unknown>) }
+    return applyV2SeedFlag(copy) ? copy : row
+  })
+  return { ...raw, tables: { ...raw.tables, exercises } }
 }
 
 export type ParseResult =
