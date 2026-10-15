@@ -41,7 +41,9 @@ test('onboarding complet avec virgule décimale, puis profil visible dans Régla
   await expect(page.getByText('Dernière pesée').first()).toBeVisible()
   await expect(page.getByRole('button', { name: /^Modifier la pesée .*72,5 kg$/ })).toBeVisible()
 
-  // Persistance après rechargement : plus d'onboarding.
+  // Persistance après rechargement : plus d'onboarding. On attend la fin du chargement des modules à la demande
+  // (graphique) : un rechargement en plein `import()` est signalé comme erreur par WebKit.
+  await page.waitForLoadState('networkidle')
   await page.reload()
   await expect(page).toHaveURL(/\/progres$/)
 

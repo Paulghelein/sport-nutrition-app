@@ -15,13 +15,30 @@ interface SheetProps {
 }
 
 /**
+ * Pile des feuilles ouvertes (la dernière est au-dessus). Seule la feuille du dessus reçoit Échap / Tab ;
+ * les autres et `#root` sont `inert` tant qu'une feuille les recouvre.
+ */
+const stack: HTMLElement[] = []
+
+function syncInert(): void {
+  const root = document.getElementById('root')
+  if (stack.length > 0) root?.setAttribute('inert', '')
+  else root?.removeAttribute('inert')
+  stack.forEach((el, i) => {
+    if (i < stack.length - 1) el.setAttribute('inert', '')
+    else el.removeAttribute('inert')
+  })
+}
+
+/**
  * Feuille modale en bas d'écran. Se monte quand elle est affichée : `{open && <Sheet …>}`.
- * Une seule Sheet montée à la fois (inert et Échap ne sont pas empilables) ; l'empilement sera traité
- * quand un écran en aura besoin.
+ * Empilable : une feuille ouverte depuis une autre passe au-dessus ; à sa fermeture, la précédente
+ * reprend le focus et les touches.
  */
 export function Sheet({ title, onClose, busy = false, children }: SheetProps) {
   const titleId = useId()
   const panel = useRef<HTMLDivElement>(null)
+  const overlay = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
 
   useEffect(() => {
@@ -30,13 +47,13 @@ export function Sheet({ title, onClose, busy = false, children }: SheetProps) {
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
-    const overflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     // Le contenu sous la feuille ne reçoit ni focus ni défilement (iOS laisse sinon défiler <main>).
-    const root = document.getElementById('root')
-    root?.setAttribute('inert', '')
+    const self = overlay.current
+    if (self) stack.push(self)
+    syncInert()
     panel.current?.focus()
     const onKey = (e: KeyboardEvent) => {
+      if (self !== stack[stack.length - 1]) return
       if (e.key === 'Escape') {
         closeRef.current()
         return
@@ -61,14 +78,19 @@ export function Sheet({ title, onClose, busy = false, children }: SheetProps) {
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = overflow
-      root?.removeAttribute('inert')
+      const i = self ? stack.indexOf(self) : -1
+      if (i >= 0) stack.splice(i, 1)
+      syncInert()
       previous?.focus?.()
     }
   }, [])
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-end bg-black/70" onClick={() => closeRef.current()}>
+    <div
+      ref={overlay}
+      className="fixed inset-0 z-[60] flex items-end bg-black/70"
+      onClick={() => closeRef.current()}
+    >
       <div
         ref={panel}
         role="dialog"

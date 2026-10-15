@@ -20,6 +20,14 @@ body,
   height: 100%;
 }
 
+/* Le document ne défile jamais : seul <main> défile. Sinon iOS (mode standalone) fait rebondir toute la page
+   et décale la barre d'onglets sur les écrans longs. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   background-color: var(--color-bg);

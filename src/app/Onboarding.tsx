@@ -153,7 +153,7 @@ export function Onboarding() {
         ) : null}
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6">
+      <main className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6">
         <div className="mx-auto max-w-xl">
           {step === 'welcome' ? (
             <div className="pt-10">

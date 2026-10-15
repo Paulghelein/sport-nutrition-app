@@ -54,11 +54,12 @@ const tabs: { to: string; label: string; icon: ReactNode }[] = [
   },
 ]
 
+/** Barre d'onglets dans le flux (dernier enfant de la colonne plein écran), jamais `fixed` : même hauteur partout. */
 export function TabBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-bg/95 backdrop-blur"
+      className="z-50 shrink-0 border-t border-white/10 bg-bg"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',

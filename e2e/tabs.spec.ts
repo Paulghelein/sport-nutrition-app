@@ -38,3 +38,46 @@ test('navigation par onglets', async ({ page }) => {
 
   expect(errors).toEqual([])
 })
+
+// Régression J3 : la barre d'onglets doit avoir la même position et la même taille sur tous les écrans, et le
+// document ne doit jamais défiler (seul <main> défile), même après le focus d'un radio masqué (ChoiceGroup).
+test('barre d’onglets identique sur tous les écrans', async ({ page }) => {
+  await page.goto('./')
+  await completeOnboarding(page)
+  const routes = [
+    'seance',
+    'seance/apercu?duree=30',
+    'seance/exercices',
+    'seance/exercices/goblet-squat',
+    'seance/exercices/nouveau',
+    'seance/historique',
+    'nutrition',
+    'progres',
+    'reglages',
+  ]
+  const nav = page.getByRole('navigation', { name: 'Navigation principale' })
+  let reference: { y: number; height: number; width: number } | undefined
+  for (const r of routes) {
+    await page.goto(`./${r}`)
+    await expect(nav).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    const box = await nav.boundingBox()
+    if (!box) throw new Error(`barre absente sur ${r}`)
+    const metrics = { y: Math.round(box.y), height: Math.round(box.height), width: Math.round(box.width) }
+    reference ??= metrics
+    expect(metrics, r).toEqual(reference)
+    const doc = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      inner: window.innerHeight,
+    }))
+    expect(doc.height, `document plus haut que l’écran sur ${r}`).toBeLessThanOrEqual(doc.inner)
+  }
+
+  // Le focus d'un radio en bas d'un long formulaire ne doit pas faire défiler le document.
+  await page.goto('./seance/exercices/nouveau')
+  const radios = page.locator('input[type="radio"]')
+  await radios.last().focus()
+  expect(await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0)).toBe(0)
+  const box = await nav.boundingBox()
+  expect(Math.round(box?.y ?? -1)).toBe(reference?.y)
+})

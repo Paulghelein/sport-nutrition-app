@@ -35,7 +35,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' : une nouvelle version attend l'accord de l'utilisateur (UpdatePrompt) au lieu de recharger en pleine séance.
+      registerType: 'prompt',
       injectRegister: 'auto',
       manifest: {
         id: base,

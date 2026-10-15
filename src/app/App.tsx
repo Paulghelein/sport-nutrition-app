@@ -1,9 +1,10 @@
-import { Suspense, lazy, useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useRef } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { getSettings, requestPersistentStorage } from '../db'
 import { TabBar, useLiveQuery } from '../ui'
+import { UpdatePrompt } from '../ui/UpdatePrompt'
 import { Onboarding } from './Onboarding'
-import { NutritionScreen } from './screens/NutritionScreen'
+import { GUIDED_PATH } from './routes'
 import { ProgressScreen } from './screens/ProgressScreen'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
@@ -14,15 +15,38 @@ const ExerciseScreen = lazy(() => import('./training/ExerciseScreen'))
 const ExerciseFormScreen = lazy(() => import('./training/ExerciseFormScreen'))
 const PreviewScreen = lazy(() => import('./training/PreviewScreen'))
 const DeletedScreen = lazy(() => import('./training/DeletedScreen'))
+// J4 — séance guidée (plein écran, sans barre d'onglets), récapitulatif, historique, modèles.
+const GuidedScreen = lazy(() => import('./training/GuidedScreen'))
+const RecapScreen = lazy(() => import('./training/RecapScreen'))
+const HistoryScreen = lazy(() => import('./training/HistoryScreen'))
+const HistoryDetailScreen = lazy(() => import('./training/HistoryDetailScreen'))
+const TemplatesScreen = lazy(() => import('./training/TemplatesScreen'))
+// J5 — journal alimentaire.
+const JournalScreen = lazy(() => import('./nutrition/JournalScreen'))
+const AddFoodScreen = lazy(() => import('./nutrition/AddFoodScreen'))
+const FoodScreen = lazy(() => import('./nutrition/FoodScreen'))
+const FoodFormScreen = lazy(() => import('./nutrition/FoodFormScreen'))
 
 function Tabs() {
+  const mainRef = useRef<HTMLElement>(null)
+  const { pathname } = useLocation()
+  // <main> est le seul élément qui défile (et le bloc conteneur des éléments `absolute`, ex. radios sr-only :
+  // sinon ils allongent le document et iOS le fait défiler au focus, ce qui décale la barre d’onglets).
+  // On le remet en haut à chaque changement d’écran.
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <>
       <main
-        className="flex-1 overflow-y-auto overflow-x-hidden px-4"
+        ref={mainRef}
+        className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4"
         style={{
           paddingTop: 'calc(env(safe-area-inset-top) + 1rem)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 6rem)',
+          paddingBottom: '2rem',
+          paddingLeft: 'calc(env(safe-area-inset-left) + 1rem)',
+          paddingRight: 'calc(env(safe-area-inset-right) + 1rem)',
         }}
       >
         <div className="mx-auto max-w-xl">
@@ -35,7 +59,15 @@ function Tabs() {
               <Route path="/seance/exercices/supprimes" element={<DeletedScreen />} />
               <Route path="/seance/exercices/:id" element={<ExerciseScreen />} />
               <Route path="/seance/exercices/:id/modifier" element={<ExerciseFormScreen />} />
-              <Route path="/nutrition" element={<NutritionScreen />} />
+              <Route path="/seance/recap/:id" element={<RecapScreen />} />
+              <Route path="/seance/historique" element={<HistoryScreen />} />
+              <Route path="/seance/historique/:id" element={<HistoryDetailScreen />} />
+              <Route path="/seance/modeles" element={<TemplatesScreen />} />
+              <Route path="/nutrition" element={<JournalScreen />} />
+              <Route path="/nutrition/ajouter" element={<AddFoodScreen />} />
+              <Route path="/nutrition/aliments/nouveau" element={<FoodFormScreen />} />
+              <Route path="/nutrition/aliments/:id" element={<FoodScreen />} />
+              <Route path="/nutrition/aliments/:id/modifier" element={<FoodFormScreen />} />
               <Route path="/progres" element={<ProgressScreen />} />
               <Route path="/reglages" element={<SettingsScreen />} />
               <Route path="*" element={<Navigate to="/seance" replace />} />
@@ -43,8 +75,27 @@ function Tabs() {
           </Suspense>
         </div>
       </main>
+      <UpdatePrompt />
       <TabBar />
     </>
+  )
+}
+
+/** Mode guidé : plein écran, sans barre d'onglets ni invite de mise à jour (l'écran gère ses safe areas). */
+function Guided() {
+  return (
+    <Suspense fallback={<div aria-busy="true" className="flex-1" />}>
+      <GuidedScreen />
+    </Suspense>
+  )
+}
+
+function Shell() {
+  return (
+    <Routes>
+      <Route path={GUIDED_PATH} element={<Guided />} />
+      <Route path="*" element={<Tabs />} />
+    </Routes>
   )
 }
 
@@ -64,7 +115,7 @@ function Gate() {
   }
   if (!settings.data) return <div className="flex-1" aria-busy="true" />
   if (!settings.data.onboardingCompleted) return <Onboarding />
-  return <Tabs />
+  return <Shell />
 }
 
 export function App() {
@@ -74,7 +125,7 @@ export function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <div className="flex h-full flex-col bg-bg text-zinc-100">
+      <div className="flex h-full flex-col overflow-hidden bg-bg text-zinc-100">
         <Gate />
       </div>
     </BrowserRouter>
