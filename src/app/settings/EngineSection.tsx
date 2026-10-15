@@ -74,6 +74,10 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
   const [saved, setSaved] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirm, setConfirm] = useState<MuscleGroup | 'all' | null>(null)
+  // Groupe dont un champ a le focus : ni avertissement ni message pendant la saisie (ils arrivent à la sortie du champ).
+  const [focused, setFocused] = useState<MuscleGroup | null>(null)
+  // Groupes dont le message de validation est affiché (après une sortie de champ ou un enregistrement).
+  const [checked, setChecked] = useState<ReadonlySet<MuscleGroup>>(new Set())
 
   const rows = {} as Record<MuscleGroup, Row>
   for (const g of MUSCLE_GROUPS) rows[g] = edits[g] ?? toRow(loaded[g])
@@ -171,10 +175,31 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
 
   const edit = (g: MuscleGroup, key: 'min' | 'max', v: string) => {
     setSaved(null)
-    setEdits((d) => ({ ...d, [g]: { ...rows[g], [key]: v } }))
+    const row = { ...rows[g], [key]: v }
+    setEdits((d) => {
+      // Ramené à la valeur enregistrée : le groupe quitte le brouillon et suit de nouveau la base.
+      const kept = Object.entries(d).filter(([k]) => k !== g)
+      const next = Object.fromEntries(kept) as Partial<Record<MuscleGroup, Row>>
+      if (!sameRow(row, toRow(loaded[g]))) next[g] = row
+      return next
+    })
+    setChecked((prev) => {
+      if (!prev.has(g)) return prev
+      const next = new Set(prev)
+      next.delete(g)
+      return next
+    })
   }
 
-  const warns = warnings(rows)
+  const leaveGroup = (g: MuscleGroup) => {
+    setFocused((cur) => (cur === g ? null : cur))
+    setChecked((prev) => new Set(prev).add(g))
+  }
+
+  // Pendant la saisie d'un groupe, ses valeurs partielles (« 1 » en route vers « 12 ») ne déclenchent rien.
+  const stable = {} as Record<MuscleGroup, Row>
+  for (const g of MUSCLE_GROUPS) stable[g] = g === focused ? toRow(loaded[g]) : rows[g]
+  const warns = warnings(stable)
 
   return (
     <Card>
@@ -196,12 +221,22 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
           </p>
           <ul className="m-0 flex list-none flex-col gap-4 p-0">
             {MUSCLE_GROUPS.map((g) => {
+              const problem = checked.has(g) && focused !== g ? checkRow(g, rows[g]) : null
               const valid = checkRow(g, rows[g]) === null
-              const isDefault = valid && same([Number(rows[g].min), Number(rows[g].max)], defaults[g])
+              const isDefault =
+                focused !== g && valid && same([Number(rows[g].min), Number(rows[g].max)], defaults[g])
               const hint = `${defaults[g][0]}–${defaults[g][1]}`
               return (
                 <li key={g}>
-                  <div role="group" aria-label={muscleLabel(g)}>
+                  <div
+                    role="group"
+                    aria-label={muscleLabel(g)}
+                    onFocus={() => setFocused(g)}
+                    onBlur={(e) => {
+                      // Le focus reste dans le groupe (passage de « Minimum » à « Maximum ») : rien à valider.
+                      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) leaveGroup(g)
+                    }}
+                  >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-base font-semibold">{muscleLabel(g)}</span>
                       {isDefault ? (
@@ -234,6 +269,7 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
                         maxLength={2}
                       />
                     </div>
+                    {problem ? <p className="m-0 mt-1.5 text-sm text-red-300">{problem}</p> : null}
                   </div>
                 </li>
               )

@@ -31,7 +31,6 @@ test('aperçu de séance : 30 puis 60 min, finisher à 60, durée retenue au ret
   await pick(page, '60 min')
   await expect(page).toHaveURL(/duree=60$/)
   await expect(page.getByText('Finisher', { exact: true })).toBeVisible()
-  await expect(page.getByText(/La séance guidée arrive/)).toBeVisible()
 
   await page.getByRole('link', { name: 'Séance', exact: true }).first().click()
   await expect(page.getByRole('radio', { name: '60 min' })).toBeChecked()

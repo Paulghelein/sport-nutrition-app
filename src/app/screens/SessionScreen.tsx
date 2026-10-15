@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { ErrorBoundary } from '../../ui'
+import { ActiveSessionCard, SessionLinks } from '../training/ActiveSessionCard'
 import { SessionLauncher } from '../training/SessionLauncher'
 import { EntryCard } from '../training/parts'
 
@@ -11,7 +12,9 @@ export function SessionScreen() {
   return (
     <section>
       <h1 className="text-3xl font-bold">Séance</h1>
+      <ActiveSessionCard />
       <SessionLauncher />
+      <SessionLinks />
       <ErrorBoundary>
         <Suspense fallback={<div className="mt-8 h-64" aria-busy="true" />}>
           <WeeklyVolume />

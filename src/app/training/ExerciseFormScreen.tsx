@@ -296,6 +296,20 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
               checked={draft.unilateral}
               onChange={(unilateral) => patch({ unilateral })}
             />
+            <CheckRow
+              label="Peut servir de finisher"
+              hint="Proposé en fin de séance de 60 min (swings, portés)."
+              checked={draft.finisher}
+              onChange={(finisher) => patch({ finisher })}
+            />
+            {draft.loadType === 'kettlebell' ? (
+              <CheckRow
+                label="Apprentissage sans charge"
+                hint="Geste complexe appris d’abord à vide (ex. Turkish get-up)."
+                checked={draft.learnUnloaded}
+                onChange={(learnUnloaded) => patch({ learnUnloaded })}
+              />
+            ) : null}
           </div>
         </FormSection>
 

@@ -26,6 +26,10 @@ export interface ExerciseDraft {
   restSec: string
   compound: boolean
   unilateral: boolean
+  /** Peut servir de finisher en fin de séance de 60 min. */
+  finisher: boolean
+  /** Geste appris d'abord sans charge (kettlebell). */
+  learnUnloaded: boolean
   loadStepKg: 1 | 2
   /** Vrai dès que l'utilisateur a choisi lui-même le palier (le changement de schéma ne l'écrase plus). */
   loadStepTouched: boolean
@@ -56,6 +60,8 @@ export function exerciseToDraft(input: ExerciseInput): ExerciseDraft {
     restSec: String(input.restSec),
     compound: input.compound,
     unilateral: input.unilateral,
+    finisher: input.finisher === true,
+    learnUnloaded: input.learnUnloaded === true,
     loadStepKg: input.loadStepKg,
     loadStepTouched: input.loadStepKg !== defaultLoadStep(input.pattern),
     primary: [...input.muscles.primary],
@@ -99,6 +105,9 @@ export function draftToExercise(draft: ExerciseDraft): ExerciseInput {
       mistakes: nonEmpty(draft.mistakes),
     },
   }
+  // Absent = non : on n'écrit les drapeaux que lorsqu'ils sont cochés.
+  if (draft.finisher) input.finisher = true
+  if (draft.learnUnloaded && draft.loadType === 'kettlebell') input.learnUnloaded = true
   if (usesDuration(draft)) input.durationRange = [parseDecimal(draft.durMin), parseDecimal(draft.durMax)]
   else input.repRange = [parseDecimal(draft.repMin), parseDecimal(draft.repMax)]
   const video = draft.videoUrl.trim()
@@ -158,7 +167,10 @@ export function loadExerciseDraft(key: string): ExerciseDraft | null {
     const raw = sessionStorage.getItem(KEY_PREFIX + key)
     if (raw === null) return null
     const parsed: unknown = JSON.parse(raw)
-    return isDraft(parsed) ? parsed : null
+    // Les brouillons enregistrés avant l'ajout des drapeaux n'ont pas ces deux champs : absent = non.
+    if (!isDraft(parsed)) return null
+    const flags = parsed as unknown as Record<string, unknown>
+    return { ...parsed, finisher: flags['finisher'] === true, learnUnloaded: flags['learnUnloaded'] === true }
   } catch {
     return null
   }
