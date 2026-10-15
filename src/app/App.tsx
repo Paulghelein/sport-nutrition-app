@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { getSettings, requestPersistentStorage } from '../db'
 import { TabBar, useLiveQuery } from '../ui'
@@ -7,6 +7,12 @@ import { NutritionScreen } from './screens/NutritionScreen'
 import { ProgressScreen } from './screens/ProgressScreen'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
+
+// Écrans de la bibliothèque chargés à la demande : `src/content` (exercices, SVG) reste hors du démarrage.
+const LibraryScreen = lazy(() => import('./training/LibraryScreen'))
+const ExerciseScreen = lazy(() => import('./training/ExerciseScreen'))
+const ExerciseFormScreen = lazy(() => import('./training/ExerciseFormScreen'))
+const DeletedScreen = lazy(() => import('./training/DeletedScreen'))
 
 function Tabs() {
   return (
@@ -19,13 +25,20 @@ function Tabs() {
         }}
       >
         <div className="mx-auto max-w-xl">
-          <Routes>
-            <Route path="/seance" element={<SessionScreen />} />
-            <Route path="/nutrition" element={<NutritionScreen />} />
-            <Route path="/progres" element={<ProgressScreen />} />
-            <Route path="/reglages" element={<SettingsScreen />} />
-            <Route path="*" element={<Navigate to="/seance" replace />} />
-          </Routes>
+          <Suspense fallback={<div aria-busy="true" className="min-h-40" />}>
+            <Routes>
+              <Route path="/seance" element={<SessionScreen />} />
+              <Route path="/seance/exercices" element={<LibraryScreen />} />
+              <Route path="/seance/exercices/nouveau" element={<ExerciseFormScreen />} />
+              <Route path="/seance/exercices/supprimes" element={<DeletedScreen />} />
+              <Route path="/seance/exercices/:id" element={<ExerciseScreen />} />
+              <Route path="/seance/exercices/:id/modifier" element={<ExerciseFormScreen />} />
+              <Route path="/nutrition" element={<NutritionScreen />} />
+              <Route path="/progres" element={<ProgressScreen />} />
+              <Route path="/reglages" element={<SettingsScreen />} />
+              <Route path="*" element={<Navigate to="/seance" replace />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
       <TabBar />
@@ -41,8 +54,8 @@ function Gate() {
     return (
       <main className="flex flex-1 items-center justify-center px-6 text-center">
         <p role="alert" className="text-zinc-300">
-          Impossible d’ouvrir les données de l’app. Ferme-la puis rouvre-la ; si le problème persiste, vérifie que
-          le stockage du navigateur n’est pas bloqué.
+          Impossible d’ouvrir les données de l’app. Ferme-la puis rouvre-la ; si le problème persiste, vérifie
+          que le stockage du navigateur n’est pas bloqué.
         </p>
       </main>
     )

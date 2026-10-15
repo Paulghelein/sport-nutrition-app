@@ -128,7 +128,7 @@ export function Onboarding() {
       >
         <div className="mx-auto flex max-w-xl items-center gap-3">
           {stepIndex > 0 ? (
-            <Button variant="ghost" className="!w-auto !px-2" onClick={() => go(-1)} aria-label="Retour">
+            <Button variant="ghost" width="auto" className="!px-2" onClick={() => go(-1)} aria-label="Retour">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M15 5l-7 7 7 7" />
               </svg>

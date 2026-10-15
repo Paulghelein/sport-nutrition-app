@@ -15,7 +15,16 @@ export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   big?: boolean
 }
 
-export function TextField({ label, value, onChange, hint, unit, big = false, className = '', ...input }: TextFieldProps) {
+export function TextField({
+  label,
+  value,
+  onChange,
+  hint,
+  unit,
+  big = false,
+  className = '',
+  ...input
+}: TextFieldProps) {
   const id = useId()
   const hintId = `${id}-hint`
   return (
@@ -71,4 +80,52 @@ export function IntegerField(props: Omit<TextFieldProps, 'type' | 'inputMode'>) 
 
 export function DateField(props: Omit<TextFieldProps, 'type' | 'inputMode'>) {
   return <TextField {...props} type="date" className={`${props.className ?? ''}`} />
+}
+
+export interface SelectFieldProps<T extends string> {
+  label: string
+  value: T
+  options: readonly { value: T; label: string }[]
+  onChange: (value: T) => void
+  hint?: string
+}
+
+/** Liste déroulante native (sélecteur iOS). */
+export function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  hint,
+}: SelectFieldProps<T>) {
+  const id = useId()
+  const hintId = `${id}-hint`
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-zinc-300">
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => {
+          const next = options.find((o) => o.value === e.target.value)
+          if (next) onChange(next.value)
+        }}
+        aria-describedby={hint ? hintId : undefined}
+        className={`${controlClass} min-h-12 text-base`}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {hint ? (
+        <p id={hintId} className="mt-1.5 text-sm text-zinc-400">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  )
 }

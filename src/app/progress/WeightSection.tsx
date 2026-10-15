@@ -34,7 +34,7 @@ export function WeightSection() {
     <Section
       title="Poids"
       action={
-        <Button id="add-weighin" className="!w-auto" onClick={() => setSheet({ weighIn: null })}>
+        <Button id="add-weighin" width="auto" onClick={() => setSheet({ weighIn: null })}>
           Ajouter une pesée
         </Button>
       }
