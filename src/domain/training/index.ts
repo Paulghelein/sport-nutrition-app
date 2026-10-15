@@ -1,3 +1,3 @@
 // Logique d'entraînement en fonctions pures. Agent : training-engine.
 
-export {}
+export * from './library'
