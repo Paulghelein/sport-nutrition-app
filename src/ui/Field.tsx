@@ -105,22 +105,39 @@ export function SelectField<T extends string>({
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-zinc-300">
         {label}
       </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => {
-          const next = options.find((o) => o.value === e.target.value)
-          if (next) onChange(next.value)
-        }}
-        aria-describedby={hint ? hintId : undefined}
-        className={`${controlClass} min-h-12 text-base`}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      {/* WebKit ignore min-height sur un <select> natif : hauteur fixe, apparence retirée, flèche dessinée. */}
+      <div className="relative">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => {
+            const next = options.find((o) => o.value === e.target.value)
+            if (next) onChange(next.value)
+          }}
+          aria-describedby={hint ? hintId : undefined}
+          className={`${controlClass} h-12 appearance-none pr-10 text-base`}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </div>
       {hint ? (
         <p id={hintId} className="mt-1.5 text-sm text-zinc-400">
           {hint}
