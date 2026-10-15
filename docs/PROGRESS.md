@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J1 — Données et profil : **livré le 2026-10-15, en attente de validation sur iPhone**.
-Prochain : J2 — Exercices (après validation de J1).
+J1 — Données et profil : **terminé et validé sur iPhone le 2026-10-15**.
+Prochain : J2 — Exercices.
 
 ## Décisions prises
 
@@ -59,10 +59,7 @@ Prochain : J2 — Exercices (après validation de J1).
 
 ## À faire ensuite
 
-- Validation J1 sur iPhone (voir points ci-dessous), puis J2 (Exercices).
-- À vérifier sur iPhone en PWA installée : feuille de partage + « Enregistrer dans Fichiers » ; repli téléchargement ;
-  sélecteur de fichier à l'import ; champs date natifs ; clavier décimal avec virgule ; activité par défaut
-  « légèrement actif » ; bouton « Ajouter une pesée » en haut de section (pouce).
+- J2 (Exercices).
 - Remarques non bloquantes du reviewer reportées (J1) :
   - `Sheet` : une seule feuille montée à la fois ; gérer l'empilement (compteur `inert`, pile pour Échap/Tab) quand
     J4/J6 en auront besoin.
