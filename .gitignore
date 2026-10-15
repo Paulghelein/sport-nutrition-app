@@ -1,0 +1,25 @@
+# Dépendances et builds
+node_modules
+dist
+dev-dist
+*.tsbuildinfo
+
+# Tests
+coverage
+playwright-report
+test-results
+blob-report
+
+# Environnement et secrets
+.env
+.env.*
+*.local
+.claude/settings.local.json
+
+# Système / éditeurs
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.log
+npm-debug.log*
