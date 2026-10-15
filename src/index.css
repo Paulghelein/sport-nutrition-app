@@ -1,8 +1,16 @@
 @import 'tailwindcss';
 
+@theme {
+  /* Doit rester égal à themeColor dans vite.config.ts et à <meta name="theme-color"> dans index.html. */
+  --color-bg: #0b0b0f;
+  --color-surface: #15151c;
+  --color-surface-hi: #1e1e27;
+  --color-line: #2c2c38;
+}
+
 :root {
   color-scheme: dark;
-  background-color: #0b0b0f;
+  background-color: var(--color-bg);
   color: #f4f4f5;
 }
 
@@ -14,7 +22,7 @@ body,
 
 body {
   margin: 0;
-  background-color: #0b0b0f;
+  background-color: var(--color-bg);
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;

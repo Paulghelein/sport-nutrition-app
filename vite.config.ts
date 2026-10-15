@@ -8,6 +8,7 @@ import type { Plugin } from 'vite'
 
 // L'app est servie par GitHub Pages sous https://<user>.github.io/sport-nutrition-app/
 const base = '/sport-nutrition-app/'
+// Doit rester égal à --color-bg (src/index.css).
 const themeColor = '#0b0b0f'
 
 // GitHub Pages : une URL inconnue renvoie 404.html, qui doit être l'app (fallback SPA).

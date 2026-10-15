@@ -58,7 +58,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0b0b0f]/95 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-bg/95 backdrop-blur"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
