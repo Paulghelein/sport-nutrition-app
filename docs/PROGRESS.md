@@ -4,7 +4,7 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J3 — Moteur : **terminé le 2026-10-15, en attente de test sur iPhone**.
+J3 — Moteur : **terminé et validé sur iPhone le 2026-10-15**.
 Prochain : J4 — Séance guidée.
 
 ## Décisions prises
@@ -107,6 +107,9 @@ Prochain : J4 — Séance guidée.
 ## À faire ensuite
 
 - J4 (Séance guidée).
+- Retours de l'utilisateur sur iPhone (J3), à corriger plus tard :
+  - Barre d'onglets du bas : décalage, elle n'a pas la même taille partout (à préciser avec l'utilisateur).
+  - Quelques autres détails d'interface (non précisés).
 - Remarques non bloquantes reportées (J3), à traiter en J4 :
   - Accepter une suggestion `level_up` (créer l'état via `unlockState`) ; pour le TGU (`LEARN_UNLOADED_IDS`),
     démarrer sans charge (`loadKg: null` ou indicateur d'apprentissage) plutôt qu'au minimum de la KB.
