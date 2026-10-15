@@ -2,7 +2,7 @@
 // Fonctions pures : elles renvoient un message français affichable tel quel, ou `null` si tout est valide.
 // `today` est toujours fourni par l'appelant.
 import { ageOn, isValidLocalDate } from '../domain/shared/dates'
-import type { Equipment, LocalDate, Profile, Settings } from '../types'
+import type { Equipment, ExerciseInput, LocalDate, Profile, Range, Settings } from '../types'
 
 export const MIN_AGE = 14
 export const MAX_AGE = 100
@@ -11,6 +11,19 @@ export const MAX_HEIGHT_CM = 250
 export const MIN_WEIGHT_KG = 30
 export const MAX_WEIGHT_KG = 250
 export const MAX_WEEKLY_SESSIONS = 7
+
+export const MAX_EXERCISE_NAME_LENGTH = 80
+export const MIN_REPS = 1
+export const MAX_REPS = 100
+export const MIN_DURATION_SEC = 5
+export const MAX_DURATION_SEC = 600
+export const MIN_REST_SEC = 0
+export const MAX_REST_SEC = 600
+export const MAX_SETUP_LENGTH = 500
+export const MAX_PROGRESSION_CRITERIA_LENGTH = 500
+export const MAX_TECHNIQUE_LINE_LENGTH = 300
+export const MAX_TECHNIQUE_LINES = 12
+export const MAX_VIDEO_URL_LENGTH = 2000
 
 const DATE_FORMAT_MSG = 'Date invalide : le format attendu est AAAA-MM-JJ.'
 
@@ -102,4 +115,74 @@ export function checkCoachUrl(url: string | null): string | null {
 
 export function checkSettings(s: Pick<Settings, 'coachUrl'>): string | null {
   return checkCoachUrl(s.coachUrl)
+}
+
+function isIntRange(r: Range | undefined, lo: number, hi: number): boolean {
+  if (!r || r.length !== 2) return false
+  const [min, max] = r
+  return Number.isInteger(min) && Number.isInteger(max) && min >= lo && min <= max && max <= hi
+}
+
+/** Exercice (création, modification, import) : message français ou `null`. */
+export function checkExercise(input: ExerciseInput): string | null {
+  const name = input.name.trim()
+  if (name.length === 0) return 'Le nom de l’exercice est obligatoire.'
+  if (name.length > MAX_EXERCISE_NAME_LENGTH) {
+    return `Le nom ne peut pas dépasser ${MAX_EXERCISE_NAME_LENGTH} caractères.`
+  }
+  const { primary, secondary } = input.muscles
+  if (primary.length === 0) return 'Choisis au moins un muscle principal.'
+  if (primary.some((m) => secondary.includes(m))) {
+    return 'Un muscle ne peut pas être à la fois principal et secondaire.'
+  }
+  const hasReps = input.repRange !== undefined
+  const hasDuration = input.durationRange !== undefined
+  if (hasReps && hasDuration) {
+    return 'Choisis une seule cible : des répétitions ou une durée, pas les deux.'
+  }
+  if (input.loadType === 'timed') {
+    if (!hasDuration) return 'Un exercice chronométré doit avoir une durée visée.'
+  } else if (input.loadType === 'bodyweight') {
+    if (!hasReps) return 'Un exercice au poids du corps doit avoir des répétitions visées.'
+  } else if (!hasReps && !hasDuration) {
+    return 'Indique une cible : des répétitions ou une durée.'
+  }
+  if (hasReps && !isIntRange(input.repRange, MIN_REPS, MAX_REPS)) {
+    return `Les répétitions visées doivent être des entiers entre ${MIN_REPS} et ${MAX_REPS}, minimum ≤ maximum.`
+  }
+  if (hasDuration && !isIntRange(input.durationRange, MIN_DURATION_SEC, MAX_DURATION_SEC)) {
+    return `La durée visée doit être en secondes entières, entre ${MIN_DURATION_SEC} et ${MAX_DURATION_SEC}, minimum ≤ maximum.`
+  }
+  if (!Number.isInteger(input.restSec) || input.restSec < MIN_REST_SEC || input.restSec > MAX_REST_SEC) {
+    return `Le repos doit être un nombre entier de secondes entre ${MIN_REST_SEC} et ${MAX_REST_SEC}.`
+  }
+  if (new Set(input.equipment).size !== input.equipment.length) return 'Le matériel contient un doublon.'
+  if (input.loadType === 'kettlebell' && !input.equipment.includes('kettlebell')) {
+    return 'Un exercice avec charge kettlebell requiert la kettlebell dans le matériel.'
+  }
+  if (input.videoUrl !== undefined && input.videoUrl.trim().length > MAX_VIDEO_URL_LENGTH) {
+    return `Le lien vidéo ne peut pas dépasser ${MAX_VIDEO_URL_LENGTH} caractères.`
+  }
+  if (input.videoUrl !== undefined && checkCoachUrl(input.videoUrl) !== null) {
+    return 'Le lien vidéo doit être une URL valide commençant par https://.'
+  }
+  const { steps, cues, mistakes } = input.technique
+  if ([...steps, ...cues, ...mistakes].some((t) => t.trim().length === 0)) {
+    return 'Les étapes, conseils et erreurs courantes ne peuvent pas contenir de ligne vide.'
+  }
+  if (input.progressionCriteria.trim().length > MAX_PROGRESSION_CRITERIA_LENGTH) {
+    return `Le critère de progression ne peut pas dépasser ${MAX_PROGRESSION_CRITERIA_LENGTH} caractères.`
+  }
+  if (input.technique.setup.trim().length > MAX_SETUP_LENGTH) {
+    return `La mise en place ne peut pas dépasser ${MAX_SETUP_LENGTH} caractères.`
+  }
+  for (const list of [steps, cues, mistakes]) {
+    if (list.length > MAX_TECHNIQUE_LINES) {
+      return `Chaque liste (étapes, conseils, erreurs) est limitée à ${MAX_TECHNIQUE_LINES} lignes.`
+    }
+    if (list.some((t) => t.trim().length > MAX_TECHNIQUE_LINE_LENGTH)) {
+      return `Chaque ligne d’étape, conseil ou erreur est limitée à ${MAX_TECHNIQUE_LINE_LENGTH} caractères.`
+    }
+  }
+  return null
 }

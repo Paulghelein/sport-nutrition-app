@@ -5,6 +5,11 @@ import { SINGLETON_ID } from '../types'
 import type {
   Equipment,
   EquipmentId,
+  Exercise,
+  ExerciseInput,
+  ExercisePref,
+  ExercisePreference,
+  Id,
   IsoDateTime,
   LocalDate,
   Measurement,
@@ -15,8 +20,15 @@ import type {
 import { db } from './database'
 import { defaultEquipment, defaultSettings } from './defaults'
 import { toLocalDate } from '../domain/shared/dates'
-import { equipmentSchema, profileSchema } from './schemas'
-import { checkCoachUrl, checkEquipment, checkMeasurement, checkProfile, checkWeighIn } from './validation'
+import { equipmentSchema, exerciseSchema, profileSchema } from './schemas'
+import {
+  checkCoachUrl,
+  checkEquipment,
+  checkExercise,
+  checkMeasurement,
+  checkProfile,
+  checkWeighIn,
+} from './validation'
 
 /** Erreur de validation dont le message (français) est affichable tel quel. */
 export class ValidationError extends Error {
@@ -195,6 +207,132 @@ export async function updateMeasurement(id: string, patch: MeasurementPatch): Pr
 
 export async function deleteMeasurement(id: string): Promise<void> {
   await db.measurements.delete(id)
+}
+
+// ---------- Exercices ----------
+
+export async function listExerciseRows(): Promise<Exercise[]> {
+  return db.exercises.toArray()
+}
+
+export async function listExercisePrefs(): Promise<ExercisePref[]> {
+  return db.exercisePrefs.toArray()
+}
+
+/** Ligne persistable : sans les champs de `LibraryExercise`, chaînes trimées, champs optionnels vides retirés. */
+function buildExerciseRow(
+  id: Id,
+  source: Exercise['source'],
+  input: ExerciseInput,
+  now: IsoDateTime,
+  validate = true,
+): Exercise {
+  const t = input.technique
+  const clean = (list: string[]) => list.map((s) => s.trim())
+  const row: Exercise = {
+    id,
+    name: input.name.trim(),
+    pattern: input.pattern,
+    level: input.level,
+    muscles: { primary: [...input.muscles.primary], secondary: [...input.muscles.secondary] },
+    equipment: [...input.equipment],
+    loadType: input.loadType,
+    restSec: input.restSec,
+    compound: input.compound,
+    unilateral: input.unilateral,
+    loadStepKg: input.loadStepKg,
+    progressionCriteria: input.progressionCriteria.trim(),
+    technique: {
+      setup: t.setup.trim(),
+      steps: clean(t.steps),
+      cues: clean(t.cues),
+      mistakes: clean(t.mistakes),
+    },
+    source,
+    updatedAt: now,
+  }
+  if (input.repRange !== undefined) row.repRange = [input.repRange[0], input.repRange[1]]
+  if (input.durationRange !== undefined) row.durationRange = [input.durationRange[0], input.durationRange[1]]
+  const illustration = input.illustration?.trim()
+  if (illustration) row.illustration = illustration
+  const videoUrl = input.videoUrl?.trim()
+  if (videoUrl) row.videoUrl = videoUrl
+  if (validate) fail(checkExercise(row))
+  if (!exerciseSchema.safeParse(row).success) {
+    throw new ValidationError('Exercice invalide : vérifie les champs saisis.')
+  }
+  return row
+}
+
+export async function createExercise(input: ExerciseInput, now: IsoDateTime = nowIso()): Promise<Exercise> {
+  const row = buildExerciseRow(newId(), 'user', input, now)
+  await db.exercises.add(row)
+  return row
+}
+
+/** Exercice personnel : met à jour la ligne. Exercice de départ : écrit (ou remplace) la surcharge. */
+export async function updateExercise(
+  current: Exercise,
+  input: ExerciseInput,
+  now: IsoDateTime = nowIso(),
+): Promise<Exercise> {
+  const row = buildExerciseRow(current.id, current.source, input, now)
+  if (current.source === 'user') {
+    return db.transaction('rw', db.exercises, async () => {
+      const existing = await db.exercises.get(current.id)
+      if (!existing || existing.deleted === true) throw new ValidationError('Exercice introuvable.')
+      await db.exercises.put(row)
+      return row
+    })
+  }
+  await db.exercises.put(row)
+  return row
+}
+
+/**
+ * Exercice personnel : suppression logique (`deleted: true`), la ligne, la préférence et l'état sont conservés
+ * pour que l'historique garde un nom à afficher. Exercice de départ : écrit une surcharge `deleted`.
+ */
+export async function deleteExercise(current: Exercise, now: IsoDateTime = nowIso()): Promise<void> {
+  if (current.source === 'user') {
+    await db.transaction('rw', db.exercises, async () => {
+      const row = await db.exercises.get(current.id)
+      if (!row || row.source !== 'user') return
+      await db.exercises.put({ ...row, deleted: true, updatedAt: now })
+    })
+    return
+  }
+  // `buildExerciseRow` ne copie que les champs de `Exercise` : `overridden` et `preference` sont écartés.
+  // Pas de revalidation : la ligne reprend `current` (original ou version modifiée) ; « Restaurer » ramène l'original.
+  const row = buildExerciseRow(current.id, 'seed', current, now, false)
+  row.deleted = true
+  await db.exercises.put(row)
+}
+
+/** Supprime la surcharge d'un exercice de départ (rétablit l'original ou annule une suppression). */
+export async function restoreExercise(id: Id): Promise<void> {
+  await db.transaction('rw', db.exercises, async () => {
+    const row = await db.exercises.get(id)
+    if (row?.source === 'seed') await db.exercises.delete(id)
+  })
+}
+
+/** `neutral` supprime la ligne ; sinon upsert en conservant un éventuel `reason`. */
+export async function setExercisePreference(
+  exerciseId: Id,
+  preference: ExercisePreference,
+  now: IsoDateTime = nowIso(),
+): Promise<void> {
+  await db.transaction('rw', db.exercisePrefs, async () => {
+    if (preference === 'neutral') {
+      await db.exercisePrefs.delete(exerciseId)
+      return
+    }
+    const existing = await db.exercisePrefs.get(exerciseId)
+    const row: ExercisePref = { exerciseId, preference, updatedAt: now }
+    if (existing?.reason !== undefined) row.reason = existing.reason
+    await db.exercisePrefs.put(row)
+  })
 }
 
 // ---------- Onboarding ----------

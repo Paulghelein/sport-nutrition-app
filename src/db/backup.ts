@@ -14,7 +14,14 @@ import { DB_SCHEMA_VERSION, db } from './database'
 import { defaultSettings } from './defaults'
 import { updateSettings } from './repositories'
 import { primaryKeys, rowSchemas } from './schemas'
-import { checkEquipment, checkMeasurement, checkProfile, checkSettings, checkWeighIn } from './validation'
+import {
+  checkEquipment,
+  checkExercise,
+  checkMeasurement,
+  checkProfile,
+  checkSettings,
+  checkWeighIn,
+} from './validation'
 
 const MAX_ERRORS = 10
 
@@ -87,6 +94,11 @@ function businessCheck(name: TableName, data: unknown, today: LocalDate): string
       return checkEquipment(data as TableRows['equipment'])
     case 'settings':
       return checkSettings(data as TableRows['settings'])
+    case 'exercises': {
+      // Une surcharge de suppression est une copie de l'original : elle n'est pas rejouée contre les règles de saisie.
+      const row = data as TableRows['exercises']
+      return row.deleted === true ? null : checkExercise(row)
+    }
     default:
       return null
   }
