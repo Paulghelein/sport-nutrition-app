@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CiqualDataset, CiqualFood, Food } from '../../types/nutrition'
-import { ciqualDatasetToFoods, ciqualToFood, mergeFoods } from './ciqual'
+import { ciqualDatasetToFoods, ciqualToFood, isCiqualOverrideModified, mergeFoods } from './ciqual'
 import { normalizeFoodSearch } from './search'
 import real from '../../content/foods/ciqual.json'
 import { CIQUAL_VERSION } from '../../content/foods/version'
@@ -100,5 +100,29 @@ describe('jeu Ciqual embarqué', () => {
   it('la recherche normalisée trouve « oeuf » même si la saisie est « œuf »', () => {
     const foods = ciqualDatasetToFoods(data)
     expect(foods.some((f) => f.search.startsWith(normalizeFoodSearch('Œuf')))).toBe(true)
+  })
+})
+
+describe('isCiqualOverrideModified', () => {
+  const orig = ciqualDatasetToFoods(ds)[0] as CiqualFood
+  const base = ciqualToFood(orig, NOW)
+  it('identique ou simple favori -> faux', () => {
+    expect(isCiqualOverrideModified(base, orig)).toBe(false)
+    expect(isCiqualOverrideModified({ ...base, favorite: true }, orig)).toBe(false)
+  })
+  it('chaque champ modifié -> vrai', () => {
+    expect(isCiqualOverrideModified({ ...base, name: 'Poulet' }, orig)).toBe(true)
+    for (const k of ['kcal', 'protein', 'carbs', 'fat', 'fiber'] as const) {
+      expect(isCiqualOverrideModified({ ...base, per100g: { ...base.per100g, [k]: 99 } }, orig)).toBe(true)
+    }
+    expect(isCiqualOverrideModified({ ...base, defaultPortionG: 150 }, orig)).toBe(true)
+    expect(isCiqualOverrideModified({ ...base, brand: 'X' }, orig)).toBe(true)
+    expect(isCiqualOverrideModified({ ...base, aisle: 'butcher' }, orig)).toBe(true)
+  })
+  it('fibres absentes de l’original : en ajouter est une modification', () => {
+    const noFiber = ciqualDatasetToFoods(ds)[1] as CiqualFood
+    const f = ciqualToFood(noFiber, NOW)
+    expect(isCiqualOverrideModified(f, noFiber)).toBe(false)
+    expect(isCiqualOverrideModified({ ...f, per100g: { ...f.per100g, fiber: 1 } }, noFiber)).toBe(true)
   })
 })

@@ -48,3 +48,24 @@ export function mergeFoods(
   for (const r of rows) if (!seen.has(r.id)) out.push(r)
   return out
 }
+
+/**
+ * Vrai si une surcharge `foods` d'un aliment Ciqual diffère de l'original (nom, valeurs pour 100 g, portion, marque,
+ * rayon) : l'UI propose alors « Rétablir l'original ». Le favori ne compte pas. L'original n'a ni portion, ni marque,
+ * ni rayon : en définir un est une modification.
+ */
+export function isCiqualOverrideModified(food: Food, original: CiqualFood): boolean {
+  const a = food.per100g
+  const b = original.per100g
+  return (
+    food.name !== original.name ||
+    a.kcal !== b.kcal ||
+    a.protein !== b.protein ||
+    a.carbs !== b.carbs ||
+    a.fat !== b.fat ||
+    a.fiber !== b.fiber ||
+    food.defaultPortionG !== undefined ||
+    food.brand !== undefined ||
+    food.aisle !== undefined
+  )
+}
