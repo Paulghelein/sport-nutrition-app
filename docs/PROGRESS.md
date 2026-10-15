@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J0 — Socle : **terminé, en attente de validation sur iPhone** (installation + ouverture en mode avion).
-Prochain : J1 — Données et profil (ne pas commencer avant validation).
+J0 — Socle : **terminé et validé sur iPhone le 2026-10-15**.
+Prochain : J1 — Données et profil.
 
 ## Décisions prises
 
@@ -36,7 +36,7 @@ Prochain : J1 — Données et profil (ne pas commencer avant validation).
 
 ## À faire ensuite
 
-- Validation J0 par l'utilisateur sur iPhone, puis J1 (Données et profil).
+- J1 (Données et profil).
 - Remarques non bloquantes du reviewer reportées :
   - Avant J4 (séance guidée) : `registerType: 'autoUpdate'` peut recharger la page lors d'un nouveau déploiement ;
     persister l'état de séance dans Dexie à chaque série (déjà prévu SPEC) et envisager `registerType: 'prompt'`.
@@ -47,4 +47,4 @@ Prochain : J1 — Données et profil (ne pas commencer avant validation).
 
 ## Points ouverts / questions pour l'utilisateur
 
-- Valider la couleur d'accent orange et l'icône « F » (provisoires).
+_(aucun — accent orange et icône « F » validés avec J0)_
