@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J2 — Exercices : **terminé et validé sur iPhone le 2026-10-15**.
-Prochain : J3 — Moteur.
+J3 — Moteur : **terminé le 2026-10-15, en attente de test sur iPhone**.
+Prochain : J4 — Séance guidée.
 
 ## Décisions prises
 
@@ -59,6 +59,26 @@ Prochain : J3 — Moteur.
   brouillon de formulaire en `sessionStorage`. `Button` a une prop `width` (`w-full` n'est plus forcé).
 - 2026-10-15 (J2) : illustrations générées par un petit script Python à squelette articulé (hors dépôt) pour 24
   dessins ; les retoucher = éditer les SVG directement.
+- 2026-10-15 (J3) : contrats du moteur dans `src/types/engine.ts` (`EngineInput`, `SessionPlan`, `ProgressionOutcome`…).
+  `ExerciseState` gagne `targetDurationSec`, `topStreak`, `tempo` (optionnels, pas de nouvelle version Dexie) ;
+  `SessionExercise.tempo` (`'3-1-1'`). Niveau atteint par schéma = max(profil, plus haut niveau ayant un état).
+- 2026-10-15 (J3) : cibles de volume par défaut : grands groupes 8–12 (dos 10–14 sans barre), biceps/triceps/abdos/
+  mollets 4–8, avant-bras/trapèzes/lombaires 0 (comptent pour la fatigue seulement). « < 48 h » approché par
+  « aujourd'hui ou hier » (≥ 4 séries en primaire → groupe mis en retrait).
+- 2026-10-15 (J3) : coût d'une séance : 60 s d'installation par exercice, série = reps (milieu) × 3 s (5 s en tempo)
+  ou durée, × 2 unilatéral, + repos ; superset = 20 s d'enchaînement et un seul repos (le plus long) après le tour ;
+  repos ajustés × 0,7–1,5 pour coller à la durée (±10 % vérifié en scénarios). À 20 min, le 3e exercice rejoint
+  parfois le superset (circuit).
+- 2026-10-15 (J3) : deload = séries max(2, ⌈n/2⌉), charge inchangée, pas de hausse ni de suggestion pendant le deload ;
+  séance « hard » = au moins la moitié des séries `hard`. Pas de durée +5 s ; portés : durée puis charge.
+- 2026-10-15 (J3) : sécurité : une variante proposée ne dépasse jamais `profileLevel + 1` (un débutant n'atteint jamais
+  le niveau 3, dont le Turkish get-up) ; pas de suggestion après 2 séances `hard`. Swings repérés par id
+  (`FINISHER_SWING_IDS`, `BALLISTIC_IDS`, `LEARN_UNLOADED_IDS`).
+- 2026-10-15 (J3) : `applySessionResult` n'est pas idempotente : une seule application par exercice et par séance.
+- 2026-10-15 (J3) : réglages du moteur modifiés uniquement par `updateEngineSettings` (fusion transactionnelle +
+  validation : deload 3–12 semaines, cibles 0–30) ; `updateSettings` n'accepte plus `engine`.
+- 2026-10-15 (J3) : ne jamais importer `domain/training` par son index depuis `src/ui` ou le code de démarrage
+  (le moteur entrerait dans le bundle principal).
 
 ## Fait
 
@@ -79,9 +99,27 @@ Prochain : J3 — Moteur.
   création / modification / suppression / restauration d'exercices, préférences liked/neutral/disliked/hidden.
   308 tests Vitest (dont 139 d'intégrité du contenu), 22 e2e.
 
+- J3 Moteur (2026-10-15) : moteur en fonctions pures (`src/domain/training/` : volume, niveaux, deload, estimation,
+  génération, progression, charges réglables, PRNG seedé sur la date) ; aperçu de séance `/seance/apercu?duree=` (non
+  enregistré), volume des 7 derniers jours sur l'écran Séance, Réglages > Moteur d'entraînement (deload, cibles par
+  groupe). 518 tests Vitest (dont 85 de scénarios de semaines simulées), 25 e2e.
+
 ## À faire ensuite
 
-- J3 (Moteur).
+- J4 (Séance guidée).
+- Remarques non bloquantes reportées (J3), à traiter en J4 :
+  - Accepter une suggestion `level_up` (créer l'état via `unlockState`) ; pour le TGU (`LEARN_UNLOADED_IDS`),
+    démarrer sans charge (`loadKg: null` ou indicateur d'apprentissage) plutôt qu'au minimum de la KB.
+  - Ne créer un état pour un exercice au-dessus du niveau atteint qu'après acceptation explicite (sinon déblocage du
+    schéma par simple ajout manuel) ; profil repassé de 2 à 1 avec un état niveau 3 → toujours proposé.
+  - Appeler `applySessionResult` une fois par exercice et par séance (séries fusionnées), avec `deload` et `profileLevel`.
+  - `replacementCandidates(…, excludeIds)` avec les ids déjà dans la séance.
+  - Drapeaux `finisher` / `learnUnloaded` sur l'exercice plutôt que des listes d'ids (SPEC §9).
+  - EngineSection : champs modifiables pendant l'écriture ; groupe touché puis ramené à sa valeur reste dans le brouillon.
+  - Débutant : pectoraux souvent sous la cible à 5 séances/sem. (un seul exercice niveau 1) ; 5 × 60 min dépasse
+    les cibles (excès inévitable).
+  - Prettier : 23 fichiers antérieurs à J3 non formatés (`npx prettier --list-different src e2e`).
+  - e2e : les `ChoiceGroup` (radios `sr-only`) ne se cochent pas avec `.check()` ; cliquer l'étiquette.
 - Remarques non bloquantes reportées (J2) :
   - Illustrations les plus faibles : pompes archer, dead bug, pompes diamant (≈ pompes) ; kettlebells en cercle vide
     sur les dessins d'origine vs disque plein sur les redessinés (harmoniser si besoin).
