@@ -1,3 +1,3 @@
 // Tendances, records, bilan hebdomadaire (fonctions pures).
 
-export {}
+export * from './weight'
