@@ -8,7 +8,9 @@ import type { Feeling, Session, SessionCursor, SessionSuggestion, ExerciseState 
  * Ordre de passage :
  * - bloc `single` / `finisher` : toutes les séries de l'exercice, dans l'ordre ;
  * - bloc `superset` : tour par tour (série 1 de A, série 1 de B, série 2 de A…) ; un exercice qui a moins de
- *   séries est sauté dans les tours suivants.
+ *   séries est sauté dans les tours suivants. Exception : un exercice remplacé en cours de route dans un superset
+ *   (inséré juste après l'exercice qu'il remplace, `replacedFrom`) reprend les tours restants de celui-ci
+ *   (A1 B1 | A2 C1 | A3 C2) au lieu de repartir au tour 1.
  * Les séries déjà `done` ou `skipped` sont sautées.
  */
 export type GuidedStep =

@@ -173,6 +173,7 @@ export const sessionSchema = z.strictObject({
   durationMin: sessionDuration,
   status: z.enum(['planned', 'in_progress', 'done', 'abandoned']),
   warmup: z.array(str),
+  warmupMin: num.optional(),
   blocks: z.array(
     z.strictObject({
       id,
@@ -217,6 +218,8 @@ export const sessionTemplateSchema = z.strictObject({
   durationMin: sessionDuration,
   blocks: z.array(
     z.strictObject({
+      group: num.optional(),
+      kind: z.enum(['single', 'superset', 'finisher']).optional(),
       exerciseId: id,
       sets: num,
       reps: range.optional(),

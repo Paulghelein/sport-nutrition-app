@@ -178,6 +178,8 @@ export interface Session {
   durationMin: SessionDuration
   status: SessionStatus
   warmup: string[]
+  /** Durée de l'échauffement prévue (pour recalculer `estimatedMin` après une édition) ; absente = séances antérieures à J4. */
+  warmupMin?: number
   blocks: SessionBlock[]
   deload: boolean
   estimatedMin: number
@@ -197,6 +199,13 @@ export interface Session {
 }
 
 export interface TemplateBlock {
+  /**
+   * Regroupement : les lignes consécutives de même `group` forment un même bloc de séance (superset, finisher) ;
+   * absent = bloc simple d'un exercice (modèles antérieurs à J4).
+   */
+  group?: number
+  /** Nature du bloc d'origine ; absent = `single`. */
+  kind?: SessionBlock['kind']
   exerciseId: Id
   sets: number
   reps?: Range
