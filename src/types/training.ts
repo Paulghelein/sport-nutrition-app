@@ -31,6 +31,12 @@ export type MuscleGroup =
   | 'hamstrings'
   | 'calves'
 
+/**
+ * Charge de l'exercice. La cible est donnée par `repRange` (répétitions) ou `durationRange` (secondes), exactement un :
+ * - `kettlebell` : chargé (charge suivie et progressive) ; cible en reps, ou en durée pour les portés ;
+ * - `bodyweight` : poids du corps, cible en reps ;
+ * - `timed` : poids du corps tenu (gainage), cible en durée.
+ */
 export type LoadType = 'kettlebell' | 'bodyweight' | 'timed'
 
 export interface Technique {
@@ -50,9 +56,9 @@ export interface Exercise {
   /** Matériel requis (vide = aucun). */
   equipment: EquipmentId[]
   loadType: LoadType
-  /** Répétitions visées ; requis sauf si `loadType === 'timed'`. */
+  /** Répétitions visées ; exactement un de `repRange` / `durationRange` (voir `LoadType`). */
   repRange?: Range
-  /** Durée visée en secondes ; requis si `loadType === 'timed'`. */
+  /** Durée visée en secondes ; requis si `loadType === 'timed'`, possible avec `kettlebell` (portés). */
   durationRange?: Range
   restSec: number
   compound: boolean
@@ -158,4 +164,18 @@ export interface SessionTemplate {
   blocks: TemplateBlock[]
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
+}
+
+/** Champs saisis à la création ou à la modification d'un exercice (formulaire, futur import Claude). */
+export type ExerciseInput = Omit<Exercise, 'id' | 'source' | 'deleted' | 'updatedAt'>
+
+/**
+ * Exercice tel que l'app le présente : contenu de départ (src/content/) fusionné avec les surcharges et
+ * créations en base (table `exercises`) et la préférence (table `exercisePrefs`, défaut `neutral`).
+ * Un exercice de départ supprimé (`deleted`) n'apparaît pas dans la bibliothèque.
+ */
+export interface LibraryExercise extends Exercise {
+  /** Exercice de départ modifié par l'utilisateur : « Rétablir l'original » est possible. */
+  overridden: boolean
+  preference: ExercisePreference
 }
