@@ -4,8 +4,10 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J4 — Séance guidée et J5 — Journal alimentaire : **terminés le 2026-10-15, en attente de validation sur iPhone**
-(une vraie séance de bout en bout + une journée complète loguée). Prochain : J6 — Recettes (39 recettes déjà écrites).
+J6 — Recettes et J7 — Scan : **terminés le 2026-10-16, en attente de validation sur iPhone** (une session de meal prep
+avec frigo + liste de courses ; une recette importée depuis Claude ; 5 produits du placard scannés et logués).
+Moteur de J8 (src/domain/progress) écrit et testé, sans écran. J4/J5 : aucun retour iPhone transmis à cette session.
+Prochain : écran Progrès (J8).
 
 ## Décisions prises
 
@@ -111,6 +113,33 @@ J4 — Séance guidée et J5 — Journal alimentaire : **terminés le 2026-10-15
   Écran Ajouter : on reste sur l'écran pour enchaîner (« Terminer (n ajoutés) »), jour/repas conservés partout.
 - 2026-10-15 : recettes de départ (J6 anticipé) : 39 recettes `src/content/recipes/`, ids anglais, codes Ciqual
   vérifiés par test ; skyr et whey sans code Ciqual (`per100g`). Non branchées.
+- 2026-10-16 (J6/J7) : pas de version Dexie 3 : les tables v1/v2 suffisaient (recipes, fridge, shoppingLists, foods
+  avec index `ean`). Nouveaux champs optionnels seulement (`ShoppingItem.key`/`manual`, `FoodInput.ean`,
+  `SetEntry.plannedLoadKg`) ; `migrateBackup` remplit `key` s'il manque. Accès J6 dans `src/db/recipes.ts`, J7 dans
+  `src/db/foods-off.ts`. Contrats : `src/types/recipes.ts`, `scan.ts`, `progress.ts`.
+- 2026-10-16 (J6) : recettes = seed + surcharges comme les exercices (`mergeRecipes`) ; favori sur une recette de départ =
+  surcharge, « Modifiée » seulement si le contenu diffère ; « Rétablir l'original » garde le favori (l'écran passe
+  l'original : src/db n'importe jamais src/content). Recette perso supprimée = ligne supprimée + frigo vidé (journal figé).
+- 2026-10-16 (J6) : macros d'une recette jamais stockées : calculées depuis l'aliment relié, sinon Ciqual, sinon
+  `per100g`, sinon « sans données » signalé (« ≈ ») ; Ciqual non chargé → bandeau et log bloqué (pas de macros fausses
+  figées). Log d'une portion = `perServing × portions`, frigo décrémenté dans la même transaction (`logRecipeEntries`) ;
+  « Annuler » du toast rend les portions (`undoRecipeEntries`, instantané) ; supprimer plus tard une entrée ne les rend pas.
+- 2026-10-16 (J6) : courses : clé de fusion `ciqual:<code>` / `food:<id>` / `name:<nom normalisé>` ; régénérer garde les
+  cochés et les articles manuels ; une liste courante. Rayons dans l'ordre d'un magasin (`AISLE_ORDER`).
+- 2026-10-16 (J6) : import : texte collé (bloc ```json de Claude) ou fichier ; Zod dans un chunk chargé par l'écran ;
+  valeurs françaises et anglaises acceptées ; aperçu validé avec les mêmes règles que l'enregistrement (validateurs
+  injectés) ; appariement Ciqual par nom volontairement prudent (premier mot, couverture ≥ 0,5, huile/beurre/jus/fumé…
+  exclus) : un faux lien fausse les macros, mieux vaut « pas de valeurs ». Types J9 (séance, exercice, préférence)
+  reconnus mais « pris en charge avec le bouton Claude ».
+- 2026-10-16 (J7) : Open Food Facts = seul appel réseau (`lookupOff`, fetch injecté dans src/domain : exception assumée
+  à la pureté, testée avec un faux fetch) ; `credentials: 'omit'`, `no-referrer`, délai 8 s ; seul l'EAN part.
+  Cache = ligne `foods` `off-<ean>` (une ligne perso avec le même EAN gagne). Produit incomplet ou peu plausible
+  (P+G+L > 105 g, kcal incohérentes) → formulaire pré-rempli. UPC-A converti en EAN-13. Flux caméra gardé ouvert entre
+  deux produits, coupé au démontage et en arrière-plan ; bip seulement pour une lecture caméra.
+- 2026-10-16 (J8) : semaines du lundi ; minutes d'une séance plafonnées à 2 × la durée prévue ; records de l'historique
+  par exercice (durée toutes charges) vs records d'une période = règles du récapitulatif ; bilan : `weight_stalled`
+  uniquement si `kcalSuggestion` est active (21 j, SPEC §4.1), `weight_too_fast` sur 14 jours avec ≥ 3 pesées.
+  `undoSet`/`skipSet` rétablissent la charge prévue (`plannedLoadKg`, 0 = pas de charge prévue).
 
 ## Fait
 
@@ -142,21 +171,37 @@ J4 — Séance guidée et J5 — Journal alimentaire : **terminés le 2026-10-15
 - J5 Journal alimentaire (2026-10-15) : script Ciqual → JSON, objectifs (Réglages), journal du jour (anneau, P/G/L,
   4 repas, copie d'hier), recherche sans accents, quantité, favoris / récents, saisie libre, aliments perso et
   surcharges Ciqual, hors ligne. Total : 873 tests Vitest, 41 e2e.
+- J6 Recettes (2026-10-16) : liste et filtres, fiche, création / modification / suppression / rétablir, mode cuisine,
+  frigo, liste de courses, import JSON, portion de recette dans le journal.
+- J7 Scan (2026-10-16) : scan caméra, saisie manuelle, Open Food Facts + cache, création d'aliment pré-remplie,
+  EAN sur les aliments, mention ODbL.
+- J8 moteur (2026-10-16) : régularité, force et records, volume vs cible, nutrition de la semaine, bilan du lundi.
+  Total : 1077 tests Vitest, 66 e2e. Bundle d'entrée 480 kB / 149,5 kB gzip (recettes, Ciqual, Zod d'import, @zxing
+  en chunks à la demande).
 
 ## À faire ensuite
 
-- Validation J4 + J5 sur iPhone, puis J6 (brancher `SEED_RECIPES`, fiche, mode cuisine, frigo, courses, import).
+- Validation J6 + J7 sur iPhone (et retours J4/J5 en attente), puis écran Progrès (J8) sur le moteur déjà écrit.
+- À vérifier sur iPhone (J6/J7) : barre d'onglets collée en bas en standalone (e2e OK, standalone non émulable) ;
+  lecture réelle d'un EAN, voyant caméra éteint en quittant l'écran / en arrière-plan, message « Réglages → Apps →
+  Safari → Caméra » exact, lampe (probablement absente), bip ; mode cuisine d'une main (boutons collés en bas, Wake
+  Lock) ; cases de courses 64 px ; formulaire de recette long ; « Depuis le frigo » présélectionné.
+- Remarques non bloquantes reportées (J6/J7/J8) :
+  - Stepper / Switch dupliqués dans src/app/recipes/parts.tsx (vs src/ui/Stepper, LibraryScreen) : mutualiser dans src/ui.
+  - Filtre e2e « Importing a module script failed » global (WebKit ne donne pas l'URL du chunk).
+  - Mode cuisine dans la barre d'onglets (pas plein écran comme le mode guidé) : à revoir selon le retour iPhone.
+  - Série de régularité au seuil fixe de 3 séances : un profil à 2 séances/sem. n'en aura jamais (min(3, profil) ?).
+  - `sessionDrafts.ts` (correction d'une séance faite) réécrit `loadKg` sans toucher `plannedLoadKg` (sans effet).
+  - « Riz basmati cru » sans candidat Ciqual sûr à l'import par nom (garde ses `per100g` s'ils sont fournis).
+  - Bundle d'entrée +22 kB (db/recipes, foods-off réexportés par src/db/index.ts) : avec la remarque Zod (J1).
 - À vérifier sur iPhone (J4) : son en mode silencieux, Wake Lock en standalone, lisibilité à 1 m, panneau du bas
   (« Comment faire ? » parfois sous le pli), repos de 20 s entre exercices de superset sans bip distinct.
 - À vérifier sur iPhone (J5) : anneau 176 px, bouton collant « Terminer », toasts de 7 s, noms Ciqual longs,
   « Copier d'hier » visible même si le repas du jour est rempli.
 - Remarques non bloquantes reportées (J4/J5) :
-  - `SetEntry` sans charge prévue : `undoSet` ne rétablit pas la charge prévue après une charge saisie différente.
   - Profil repassé de 2 à 1 avec un état niveau 3 : niveau conservé (choix assumé : les niveaux gagnés restent).
   - Aperçu édité en sessionStorage : charges figées au moment de l'édition (risque faible, même jour).
-  - Frigo non décrémenté au log d'une portion (J6, fonction dédiée en une transaction).
   - `CiqualFood.search` stocké mais l'index renormalise (les `Food` fusionnés n'ont pas le champ).
-  - Bornes surplus / protéines / lipides non exportées en constantes (aides chiffrées retirées de l'écran Objectifs).
   - Bundle d'entrée 458 kB / 143 kB gzip (+23 kB depuis J3) : à surveiller avec la remarque Zod (J1).
 - Remarques non bloquantes reportées (J3) :
   - Débutant : pectoraux souvent sous la cible à 5 séances/sem. (un seul exercice niveau 1) ; 5 × 60 min dépasse
@@ -181,8 +226,6 @@ J4 — Séance guidée et J5 — Journal alimentaire : **terminés le 2026-10-15
   - `weightTargetCorridor` prêt mais non affiché (J8).
   - `tests/format.test.ts` (cas Infinity) dépend de la base partagée : tester `checkWeighIn` directement.
   - Couverture Vitest chiffrée : `@vitest/coverage-v8` non installé (à décider).
-  - Bornes métier non contrôlées à l'import pour les tables encore inutilisées (aliments, journal…) : à ajouter avec
-    leurs jalons.
 - Remarques non bloquantes du reviewer reportées (J0) :
   - `tseslint.config()` déprécié → migrer vers `defineConfig` de `eslint/config`.
   - CI : actions GitHub en Node 20 dépréciées (checkout@v4, setup-node@v4…) → passer aux versions majeures suivantes.
