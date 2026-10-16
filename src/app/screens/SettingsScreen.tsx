@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
-import { ErrorBoundary } from '../../ui'
+import { Link } from 'react-router-dom'
+import { ErrorBoundary, Section, linkButtonClass } from '../../ui'
 import { EquipmentSection } from '../settings/EquipmentSection'
 import { ProfileSection } from '../settings/ProfileSection'
 
@@ -33,6 +34,14 @@ export function SettingsScreen() {
           <BackupSection />
         </Suspense>
       </ErrorBoundary>
+      <Section title="Importer">
+        <p className="mb-3 text-zinc-400">
+          Recettes et repas au format JSON, par exemple une réponse de Claude : aperçu avant d’enregistrer.
+        </p>
+        <Link to="/reglages/importer" className={linkButtonClass('secondary')}>
+          Importer des recettes ou des repas
+        </Link>
+      </Section>
     </>
   )
 }

@@ -52,8 +52,12 @@ test('barre d’onglets identique sur tous les écrans', async ({ page }) => {
     'seance/exercices/nouveau',
     'seance/historique',
     'nutrition',
+    'nutrition/recettes',
+    'nutrition/frigo',
+    'nutrition/courses',
     'progres',
     'reglages',
+    'reglages/importer',
   ]
   const nav = page.getByRole('navigation', { name: 'Navigation principale' })
   let reference: { y: number; height: number; width: number } | undefined
@@ -66,6 +70,9 @@ test('barre d’onglets identique sur tous les écrans', async ({ page }) => {
     const metrics = { y: Math.round(box.y), height: Math.round(box.height), width: Math.round(box.width) }
     reference ??= metrics
     expect(metrics, r).toEqual(reference)
+    // Collée au bas de l'écran (correctif fixed inset-0 du 16/10 : en standalone iOS, height: 100% s'arrêtait avant).
+    const viewport = await page.evaluate(() => window.innerHeight)
+    expect(Math.round(box.y + box.height), `barre décollée du bas sur ${r}`).toBe(viewport)
     const doc = await page.evaluate(() => ({
       height: document.documentElement.scrollHeight,
       inner: window.innerHeight,

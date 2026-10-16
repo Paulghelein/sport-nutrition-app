@@ -5,6 +5,7 @@ import {
   addLogEntries,
   deleteLogEntry,
   getProfile,
+  listFridge,
   listLogForDate,
   listWeighIns,
 } from '../../db'
@@ -19,6 +20,7 @@ import {
 import { addDays, formatDateFr, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { FoodLogEntry, KcalSuggestion, LocalDate, MealTotals, NutritionTargets } from '../../types'
 import { Button, Card, ErrorNote, errorMessage, linkButtonClass, useLiveQuery } from '../../ui'
+import { fmtPortions, portionsWord } from '../recipes/format'
 import { DaySummary } from './DaySummary'
 import { EntrySheet } from './EntrySheet'
 import { SLOT_LABEL, fmtG, fmtInt } from './format'
@@ -158,6 +160,9 @@ export default function JournalScreen() {
     return { entries, yesterday, profile, weighIns }
   }, [date])
 
+  const fridge = useLiveQuery(() => listFridge(), [])
+  const fridgePortions = (fridge.data ?? []).reduce((sum, f) => sum + f.portionsLeft, 0)
+
   const go = (target: LocalDate) => setParams(target === today ? {} : { date: target }, { replace: true })
 
   const log = data ? dayLog(data.entries, date) : undefined
@@ -213,6 +218,29 @@ export default function JournalScreen() {
   return (
     <>
       <h1 className="text-3xl font-bold">Nutrition</h1>
+      <nav aria-label="Recettes, frigo et courses" className="mt-2 grid grid-cols-3 gap-2">
+        {[
+          { to: '/nutrition/recettes', label: 'Recettes', aria: 'Recettes' },
+          {
+            to: '/nutrition/frigo',
+            label: fridgePortions > 0 ? `Frigo (${fmtPortions(fridgePortions)})` : 'Frigo',
+            aria:
+              fridgePortions > 0
+                ? `Frigo, ${fmtPortions(fridgePortions)} ${portionsWord(fridgePortions)}`
+                : 'Frigo',
+          },
+          { to: '/nutrition/courses', label: 'Courses', aria: 'Courses' },
+        ].map((l) => (
+          <Link
+            key={l.to}
+            to={l.to}
+            aria-label={l.aria}
+            className="flex min-h-11 items-center justify-center rounded-xl border border-line px-2 text-center text-base font-medium text-zinc-200 no-underline active:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
       <div className="mt-4 flex items-center gap-2">
         <button
           type="button"

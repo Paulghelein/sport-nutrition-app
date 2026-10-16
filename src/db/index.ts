@@ -71,6 +71,28 @@ export {
   updateLogEntry,
   updateNutritionParams,
 } from './nutrition'
+export {
+  commitImport,
+  createRecipe,
+  deleteFridgeItem,
+  deleteRecipe,
+  deleteShoppingList,
+  getRecipeRow,
+  getShoppingList,
+  listFridge,
+  listRecipeRows,
+  listShoppingLists,
+  logRecipeEntries,
+  prepareFridge,
+  restoreRecipe,
+  saveShoppingList,
+  setRecipeFavorite,
+  setShoppingItemChecked,
+  undoRecipeEntries,
+  updateFridgeItem,
+  updateRecipe,
+} from './recipes'
+export { cacheOffFood, findFoodByEan } from './foods-off'
 export type {
   MeasurementInput,
   MeasurementPatch,
@@ -91,6 +113,10 @@ export type { ParseResult, RawBackup, TableCounts } from './backup'
 export {
   MAX_DURATION_SEC,
   MAX_FOOD_NAME_LENGTH,
+  MAX_FRIDGE_DAYS,
+  MAX_INGREDIENT_GRAMS,
+  MAX_RECIPE_NAME_LENGTH,
+  MAX_RECIPE_SERVINGS,
   MAX_TEMPLATE_NAME_LENGTH,
   MAX_TEMPLATE_SETS,
   MAX_EXERCISE_NAME_LENGTH,
@@ -118,4 +144,7 @@ export {
   checkTemplate,
   checkWeeklySessions,
   checkWeighIn,
+  validateFridgeItem,
+  validateRecipeInput,
+  validateShoppingList,
 } from './validation'

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { addLogEntries, deleteLogEntry, listLogBetween, listLogForDate } from '../../db'
+import { addLogEntries, deleteLogEntry, listLogBetween, listLogForDate, undoRecipeEntries } from '../../db'
 import {
   favoriteItems,
   foodLogEntry,
@@ -11,8 +11,8 @@ import {
   searchFoodIndex,
 } from '../../domain/nutrition'
 import { addDays, formatDateFr, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
-import type { Food, FoodLogEntry, FreeEntryInput, QuickItem } from '../../types'
-import { Button, ChoiceGroup, ErrorNote, errorMessage, useLiveQuery } from '../../ui'
+import type { Food, FoodLogEntry, FridgeItem, FreeEntryInput, QuickItem } from '../../types'
+import { Button, ChoiceGroup, ErrorBoundary, ErrorNote, errorMessage, useLiveQuery } from '../../ui'
 import { FreeEntrySheet } from './FreeEntrySheet'
 import { QuantitySheet } from './QuantitySheet'
 import { SLOT_LABEL, SLOT_TO, fmtG, fmtInt, isMealSlot, slotForNow } from './format'
@@ -20,6 +20,9 @@ import { BackLink, StickyStack, Toast } from './parts'
 import { clearSearchSeed, peekSearchSeed } from './navContext'
 import type { ToastState } from './parts'
 import { useFoods } from './useFoods'
+
+// Recettes de départ et feuille de choix : hors du chunk de l'écran tant qu'on n'ouvre pas ce choix.
+const RecipePickerSheet = lazy(() => import('../recipes/RecipePickerSheet'))
 
 const rowClass =
   'flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3 py-2 text-left active:bg-surface-hi'
@@ -94,6 +97,7 @@ export default function AddFoodScreen() {
   const [tab, setTab] = useState<'recents' | 'favorites' | null>(null)
   const [picked, setPicked] = useState<Food | null>(null)
   const [freeOpen, setFreeOpen] = useState(false)
+  const [recipeOpen, setRecipeOpen] = useState(false)
   // Ajouts de cette session (repas + jour), conservés si on va voir une fiche aliment puis qu'on revient.
   const addedKey = `added:${slot}:${date}`
   const [storedAdded, setStoredAdded] = useState<string[]>(() => {
@@ -186,6 +190,19 @@ export default function AddFoodScreen() {
     setFreeOpen(false)
   }
 
+  const addRecipeEntries = (entries: FoodLogEntry[], fridgeBefore: FridgeItem[]) => {
+    const ids = entries.map((e) => e.id)
+    setAdded((a) => [...a, ...ids])
+    setToast({
+      message: `Ajouté : ${entries[0]?.name ?? 'recette'}`,
+      undo: async () => {
+        // Supprime les entrées et rend les portions au frigo (ligne recréée si elle était vidée).
+        await undoRecipeEntries(entries, fridgeBefore)
+        setAdded((a) => a.filter((id) => !ids.includes(id)))
+      },
+    })
+  }
+
   const createLink = `/nutrition/aliments/nouveau?repas=${slot}&date=${date}${searching ? `&nom=${encodeURIComponent(query.trim())}` : ''}`
 
   return (
@@ -214,7 +231,30 @@ export default function AddFoodScreen() {
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <Link
+        to={`/nutrition/scanner?repas=${slot}&date=${date}`}
+        className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-400 px-3 text-base font-semibold text-zinc-950 no-underline active:bg-orange-300"
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M8 9v6M12 9v6M16 9v6" />
+        </svg>
+        Scanner un code-barres
+      </Link>
+
+      <Button variant="secondary" className="mt-2" onClick={() => setRecipeOpen(true)}>
+        Portion de recette
+      </Button>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={() => setFreeOpen(true)}>
           Saisie libre
         </Button>
@@ -309,6 +349,18 @@ export default function AddFoodScreen() {
           onSubmit={(grams) => addFood(picked, grams)}
           onClose={() => setPicked(null)}
         />
+      ) : null}
+      {recipeOpen ? (
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <RecipePickerSheet
+              date={date}
+              slot={slot}
+              onLogged={addRecipeEntries}
+              onClose={() => setRecipeOpen(false)}
+            />
+          </Suspense>
+        </ErrorBoundary>
       ) : null}
       {freeOpen ? <FreeEntrySheet onSubmit={addFree} onClose={() => setFreeOpen(false)} /> : null}
     </>

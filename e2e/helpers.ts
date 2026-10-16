@@ -23,7 +23,10 @@ export function collectErrors(page: Page): string[] {
     // Ciqual en tâche de fond. Un vrai échec de chargement afficherait une erreur à l'écran, vérifiée par les tests.
     if (m.type() === 'error' && !m.text().includes('Importing a module script failed')) errors.push(m.text())
   })
-  page.on('pageerror', (e) => errors.push(e.message))
+  page.on('pageerror', (e) => {
+    // Même cas que ci-dessus, remonté comme rejet non géré.
+    if (!e.message.includes('Importing a module script failed')) errors.push(e.message)
+  })
   return errors
 }
 

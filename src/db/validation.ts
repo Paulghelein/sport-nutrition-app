@@ -2,19 +2,23 @@
 // Fonctions pures : elles renvoient un message français affichable tel quel, ou `null` si tout est valide.
 // `today` est toujours fourni par l'appelant.
 import { ageOn, isValidLocalDate } from '../domain/shared/dates'
+import { FAT_SHARE_RANGE, PROTEIN_PER_KG_RANGE, SURPLUS_RANGE } from '../domain/nutrition/targets'
 import type {
   EngineSettings,
   Equipment,
   ExerciseInput,
   FoodInput,
   FoodLogEntry,
+  FridgeItem,
   LocalDate,
   NutritionParams,
   Profile,
   Range,
+  RecipeInput,
   Session,
   SessionTemplate,
   Settings,
+  ShoppingList,
 } from '../types'
 
 export const MIN_AGE = 14
@@ -222,6 +226,8 @@ export const MAX_LOG_KCAL = 10000
 export const MAX_LOG_MACRO_G = 1000
 export const MAX_LOG_NAME_LENGTH = 120
 export const MAX_LOG_PORTIONS = 50
+/** EAN-8, UPC-A (12) ou EAN-13 : chiffres seuls. */
+const EAN_PATTERN = /^(\d{8}|\d{12}|\d{13})$/
 
 /** Aliment (saisie, surcharge Ciqual, import) : nom, valeurs pour 100 g (kcal 0–900, macros 0–100 g), portion. */
 export function checkFoodInput(f: FoodInput): string | null {
@@ -242,6 +248,9 @@ export function checkFoodInput(f: FoodInput): string | null {
     if (!Number.isFinite(f.defaultPortionG) || f.defaultPortionG <= 0 || f.defaultPortionG > MAX_PORTION_G) {
       return `La portion habituelle doit être comprise entre 0 et ${MAX_PORTION_G} g.`
     }
+  }
+  if (f.ean !== undefined && f.ean.trim() !== '' && !EAN_PATTERN.test(f.ean.trim())) {
+    return 'Le code-barres doit contenir 8, 12 ou 13 chiffres.'
   }
   return null
 }
@@ -275,14 +284,18 @@ export function checkLogEntry(e: FoodLogEntry): string | null {
 
 /** Objectifs nutritionnels : surplus 0,05–0,20, protéines 1,6–2,2 g/kg, lipides 0,20–0,35, ajustement ±1000 kcal. */
 export function checkNutritionParams(p: NutritionParams): string | null {
-  if (!Number.isFinite(p.surplus) || p.surplus < 0.05 || p.surplus > 0.2) {
-    return 'Le surplus calorique doit être compris entre 5 % et 20 %.'
+  const outside = (v: number, [min, max]: readonly [number, number]) =>
+    !Number.isFinite(v) || v < min || v > max
+  const pct = (v: number) => String(Math.round(v * 100))
+  const dec = (v: number) => String(v).replace('.', ',')
+  if (outside(p.surplus, SURPLUS_RANGE)) {
+    return `Le surplus calorique doit être compris entre ${pct(SURPLUS_RANGE[0])} % et ${pct(SURPLUS_RANGE[1])} %.`
   }
-  if (!Number.isFinite(p.proteinPerKg) || p.proteinPerKg < 1.6 || p.proteinPerKg > 2.2) {
-    return 'Les protéines doivent être comprises entre 1,6 et 2,2 g par kg.'
+  if (outside(p.proteinPerKg, PROTEIN_PER_KG_RANGE)) {
+    return `Les protéines doivent être comprises entre ${dec(PROTEIN_PER_KG_RANGE[0])} et ${dec(PROTEIN_PER_KG_RANGE[1])} g par kg.`
   }
-  if (!Number.isFinite(p.fatShare) || p.fatShare < 0.2 || p.fatShare > 0.35) {
-    return 'La part de lipides doit être comprise entre 20 % et 35 % des calories.'
+  if (outside(p.fatShare, FAT_SHARE_RANGE)) {
+    return `La part de lipides doit être comprise entre ${pct(FAT_SHARE_RANGE[0])} % et ${pct(FAT_SHARE_RANGE[1])} % des calories.`
   }
   if (!Number.isFinite(p.kcalAdjustment) || p.kcalAdjustment < -1000 || p.kcalAdjustment > 1000) {
     return 'L’ajustement calorique doit être compris entre −1000 et +1000 kcal.'
@@ -356,6 +369,98 @@ export function checkTemplate(t: Pick<SessionTemplate, 'name' | 'blocks'>): stri
     if (b.loadKg !== undefined && (!Number.isFinite(b.loadKg) || b.loadKg < 0)) {
       return 'La charge doit être positive ou nulle.'
     }
+  }
+  return null
+}
+
+// ---------- Recettes, frigo, courses (J6) ----------
+
+export const MAX_RECIPE_NAME_LENGTH = 120
+export const MAX_RECIPE_SERVINGS = 50
+export const MAX_RECIPE_MINUTES = 600
+export const MIN_FRIDGE_DAYS = 1
+export const MAX_FRIDGE_DAYS = 14
+export const MAX_INGREDIENT_GRAMS = 10000
+export const MAX_FRIDGE_PORTIONS = 1000
+export const MAX_SHOPPING_GRAMS = 1000000
+
+/** Recette (saisie, import JSON, import de sauvegarde) : message français ou `null`. */
+export function validateRecipeInput(r: RecipeInput): string | null {
+  const name = r.name.trim()
+  if (name.length === 0) return 'Le nom de la recette est obligatoire.'
+  if (name.length > MAX_RECIPE_NAME_LENGTH) {
+    return `Le nom ne peut pas dépasser ${MAX_RECIPE_NAME_LENGTH} caractères.`
+  }
+  if (r.meal.length === 0) return 'Choisis au moins un repas pour la recette.'
+  if (!Number.isInteger(r.servings) || r.servings < 1 || r.servings > MAX_RECIPE_SERVINGS) {
+    return `Le nombre de portions doit être un entier entre 1 et ${MAX_RECIPE_SERVINGS}.`
+  }
+  for (const m of [r.prepMinutes, r.cookMinutes]) {
+    if (!Number.isFinite(m) || m < 0 || m > MAX_RECIPE_MINUTES) {
+      return `Les temps de préparation et de cuisson doivent être compris entre 0 et ${MAX_RECIPE_MINUTES} minutes.`
+    }
+  }
+  if (
+    r.fridgeDays !== undefined &&
+    (!Number.isInteger(r.fridgeDays) || r.fridgeDays < MIN_FRIDGE_DAYS || r.fridgeDays > MAX_FRIDGE_DAYS)
+  ) {
+    return `La conservation au frigo doit être comprise entre ${MIN_FRIDGE_DAYS} et ${MAX_FRIDGE_DAYS} jours.`
+  }
+  if (r.ingredients.length === 0) return 'Ajoute au moins un ingrédient.'
+  for (const i of r.ingredients) {
+    if (i.name.trim().length === 0) return 'Chaque ingrédient doit avoir un nom.'
+    if (!Number.isFinite(i.grams) || i.grams <= 0 || i.grams > MAX_INGREDIENT_GRAMS) {
+      return `La quantité d’un ingrédient doit être supérieure à 0 g et au plus ${MAX_INGREDIENT_GRAMS} g.`
+    }
+    if (i.per100g !== undefined) {
+      const { kcal, protein, carbs, fat, fiber } = i.per100g
+      const ok = (v: number, max: number) => Number.isFinite(v) && v >= 0 && v <= max
+      if (
+        !ok(kcal, MAX_FOOD_KCAL_PER_100G) ||
+        ![protein, carbs, fat].every((v) => ok(v, MAX_MACRO_PER_100G)) ||
+        (fiber !== undefined && !ok(fiber, MAX_MACRO_PER_100G))
+      ) {
+        return `Les valeurs pour 100 g de « ${i.name.trim()} » sont hors limites.`
+      }
+    }
+  }
+  if (r.steps.length === 0) return 'Ajoute au moins une étape.'
+  if (r.steps.some((s) => s.trim().length === 0)) return 'Une étape ne peut pas être vide.'
+  return null
+}
+
+/** Ligne du frigo : dates valides, péremption ≥ préparation, portions restantes > 0 (0 = ligne supprimée). */
+export function validateFridgeItem(item: FridgeItem): string | null {
+  if (!isValidLocalDate(item.preparedOn) || !isValidLocalDate(item.expiresOn)) return DATE_FORMAT_MSG
+  if (item.expiresOn < item.preparedOn) return 'La date de péremption précède la date de préparation.'
+  if (
+    !Number.isFinite(item.portionsLeft) ||
+    item.portionsLeft <= 0 ||
+    item.portionsLeft > MAX_FRIDGE_PORTIONS
+  ) {
+    return `Les portions restantes doivent être supérieures à 0 et au plus ${MAX_FRIDGE_PORTIONS}.`
+  }
+  return null
+}
+
+/** Liste de courses : nom non vide, quantités finies ≥ 0, portions des sources > 0. */
+export function validateShoppingList(list: ShoppingList): string | null {
+  const name = list.name.trim()
+  if (name.length === 0) return 'Le nom de la liste est obligatoire.'
+  if (name.length > MAX_RECIPE_NAME_LENGTH) {
+    return `Le nom ne peut pas dépasser ${MAX_RECIPE_NAME_LENGTH} caractères.`
+  }
+  if (list.sources.some((s) => !Number.isFinite(s.portions) || s.portions <= 0)) {
+    return 'Le nombre de portions d’une recette de la liste doit être supérieur à 0.'
+  }
+  const ids = new Set<string>()
+  for (const i of list.items) {
+    if (i.name.trim().length === 0) return 'Chaque article doit avoir un nom.'
+    if (!Number.isFinite(i.grams) || i.grams < 0 || i.grams > MAX_SHOPPING_GRAMS) {
+      return 'La quantité d’un article doit être un nombre positif ou nul.'
+    }
+    if (ids.has(i.id)) return 'Identifiant d’article en double.'
+    ids.add(i.id)
   }
   return null
 }

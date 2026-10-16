@@ -10,6 +10,7 @@ import type {
   TableName,
   TableRows,
 } from '../types'
+import { shoppingKey } from '../domain/nutrition/shopping'
 import { DB_SCHEMA_VERSION, applyV2SeedFlag, db } from './database'
 import { defaultSettings } from './defaults'
 import { updateSettings } from './repositories'
@@ -24,6 +25,9 @@ import {
   checkSessionRow,
   checkSettings,
   checkWeighIn,
+  validateFridgeItem,
+  validateRecipeInput,
+  validateShoppingList,
 } from './validation'
 
 const MAX_ERRORS = 10
@@ -73,12 +77,40 @@ export interface RawBackup {
 }
 
 /**
+ * Sauvegardes écrites avant J6 : les articles de courses n'avaient pas de `key`. Elle est recalculée comme à la
+ * génération (`shoppingKey`) pour que « régénérer » conserve les coches ; un article ajouté à la main reçoit `manual:<id>`.
+ */
+function fillShoppingKeys(raw: RawBackup): RawBackup {
+  const lists = raw.tables.shoppingLists
+  if (!Array.isArray(lists)) return raw
+  const fix = (list: unknown): unknown => {
+    if (typeof list !== 'object' || list === null) return list
+    const l = list as Record<string, unknown>
+    if (!Array.isArray(l.items)) return list
+    const items = l.items.map((item: unknown) => {
+      if (typeof item !== 'object' || item === null) return item
+      const i = item as Record<string, unknown>
+      if (i.key !== undefined || typeof i.name !== 'string') return item
+      const foodId = typeof i.foodId === 'string' ? i.foodId : undefined
+      const key =
+        i.manual === true && typeof i.id === 'string'
+          ? `manual:${i.id}`
+          : shoppingKey({ name: i.name, foodId })
+      return { ...i, key }
+    })
+    return { ...l, items }
+  }
+  return { ...raw, tables: { ...raw.tables, shoppingLists: lists.map(fix) } }
+}
+
+/**
  * Point d'extension : met à niveau une sauvegarde créée par une version antérieure du schéma
  * (appelée AVANT la validation des lignes, avec `schemaVersion` = version du fichier).
  * v1 → v2 : pose les drapeaux `finisher` / `learnUnloaded` manquants sur les surcharges `seed` (`V2_SEED_FLAGS`) ;
  * le reste (table `ciqual` hors sauvegarde, champs optionnels) ne demande rien.
  */
-export function migrateBackup(raw: RawBackup): RawBackup {
+export function migrateBackup(input: RawBackup): RawBackup {
+  const raw = fillShoppingKeys(input)
   if (raw.schemaVersion >= 2 || !Array.isArray(raw.tables.exercises)) return raw
   // Même règle que l'`upgrade()` Dexie v2 : drapeaux manquants des surcharges `seed` (copie, l'entrée n'est pas modifiée).
   const exercises = raw.tables.exercises.map((row: unknown) => {
@@ -114,6 +146,15 @@ function businessCheck(name: TableName, data: unknown, today: LocalDate): string
       return checkFoodInput(data as TableRows['foods'])
     case 'foodLog':
       return checkLogEntry(data as TableRows['foodLog'])
+    case 'recipes': {
+      // Même exception que les exercices : une surcharge de suppression n'est pas rejouée contre les règles de saisie.
+      const row = data as TableRows['recipes']
+      return row.deleted === true ? null : validateRecipeInput(row)
+    }
+    case 'fridge':
+      return validateFridgeItem(data as TableRows['fridge'])
+    case 'shoppingLists':
+      return validateShoppingList(data as TableRows['shoppingLists'])
     case 'sessions':
       return checkSessionRow(data as TableRows['sessions'])
     case 'exercises': {

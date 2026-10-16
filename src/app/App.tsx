@@ -26,6 +26,16 @@ const JournalScreen = lazy(() => import('./nutrition/JournalScreen'))
 const AddFoodScreen = lazy(() => import('./nutrition/AddFoodScreen'))
 const FoodScreen = lazy(() => import('./nutrition/FoodScreen'))
 const FoodFormScreen = lazy(() => import('./nutrition/FoodFormScreen'))
+// J6 — recettes, mode cuisine, frigo, courses, import JSON.
+const RecipesScreen = lazy(() => import('./recipes/RecipesScreen'))
+const RecipeScreen = lazy(() => import('./recipes/RecipeScreen'))
+const RecipeFormScreen = lazy(() => import('./recipes/RecipeFormScreen'))
+const CookScreen = lazy(() => import('./recipes/CookScreen'))
+const FridgeScreen = lazy(() => import('./recipes/FridgeScreen'))
+const ShoppingScreen = lazy(() => import('./recipes/ShoppingScreen'))
+const ImportScreen = lazy(() => import('./recipes/ImportScreen'))
+// J7 — scan de code-barres.
+const ScanScreen = lazy(() => import('./scan/ScanScreen'))
 
 function Tabs() {
   const mainRef = useRef<HTMLElement>(null)
@@ -68,8 +78,17 @@ function Tabs() {
               <Route path="/nutrition/aliments/nouveau" element={<FoodFormScreen />} />
               <Route path="/nutrition/aliments/:id" element={<FoodScreen />} />
               <Route path="/nutrition/aliments/:id/modifier" element={<FoodFormScreen />} />
+              <Route path="/nutrition/recettes" element={<RecipesScreen />} />
+              <Route path="/nutrition/recettes/nouvelle" element={<RecipeFormScreen />} />
+              <Route path="/nutrition/recettes/:id" element={<RecipeScreen />} />
+              <Route path="/nutrition/recettes/:id/modifier" element={<RecipeFormScreen />} />
+              <Route path="/nutrition/recettes/:id/cuisine" element={<CookScreen />} />
+              <Route path="/nutrition/frigo" element={<FridgeScreen />} />
+              <Route path="/nutrition/courses" element={<ShoppingScreen />} />
+              <Route path="/nutrition/scanner" element={<ScanScreen />} />
               <Route path="/progres" element={<ProgressScreen />} />
               <Route path="/reglages" element={<SettingsScreen />} />
+              <Route path="/reglages/importer" element={<ImportScreen />} />
               <Route path="*" element={<Navigate to="/seance" replace />} />
             </Routes>
           </Suspense>
