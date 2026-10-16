@@ -199,7 +199,7 @@ export async function resolveSuggestion(
 
 export type SessionTemplateInput = Omit<SessionTemplate, 'id' | 'createdAt' | 'updatedAt'>
 
-function buildTemplate(
+export function buildTemplate(
   input: SessionTemplateInput,
   id: Id,
   createdAt: IsoDateTime,

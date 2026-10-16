@@ -3,9 +3,15 @@ import type { SessionTemplate } from '../../types/training'
 import { addDays } from '../shared/dates'
 import { estimateMinutes } from './estimate'
 import { generateSession } from './generate'
-import { sessionFromPlan, skipExercise } from './guided'
-import { planFromTemplate, setsBeforeDeload, templateFromSession, templateIssues } from './templates'
-import { T0, doneSession, exAt, makeInput, makeState, must, seedLibrary } from './testkit'
+import { restAfter, sessionFromPlan, sessionSteps, skipExercise } from './guided'
+import {
+  planFromTemplate,
+  setsBeforeDeload,
+  templateFromSession,
+  templateIssues,
+  templateTargetNotes,
+} from './templates'
+import { T0, doneSession, exAt, makeEquipment, makeInput, makeState, must, seedLibrary } from './testkit'
 
 const lib = seedLibrary()
 
@@ -233,5 +239,197 @@ describe('planFromTemplate', () => {
     const t = templateFromSession(plan.blocks, 'x', 45)
     const again = planFromTemplate({ ...t }, input)
     expect(again.blocks.flatMap((b) => b.exercises)).toEqual(plan.blocks.flatMap((b) => b.exercises))
+  })
+})
+
+describe('planFromTemplate avec useTemplateTargets (séance proposée par Claude)', () => {
+  const states = [
+    makeState('box-goblet-squat', { loadKg: 16 }),
+    makeState('farmer-carry', { loadKg: 16, targetDurationSec: 45 }),
+  ]
+  const claude = (blocks: SessionTemplate['blocks']): SessionTemplate => template({ blocks })
+  const opts = { useTemplateTargets: true }
+
+  it('défaut (false) : comportement inchangé, cibles du modèle ignorées', () => {
+    const t = claude([{ exerciseId: 'box-goblet-squat', sets: 3, reps: [5, 6], loadKg: 12, restSec: 90 }])
+    const input = makeInput({ states })
+    expect(planFromTemplate(t, input)).toEqual(planFromTemplate(t, input, {}))
+    expect(planFromTemplate(t, input, { useTemplateTargets: false })).toEqual(planFromTemplate(t, input))
+    expect(exAt(planFromTemplate(t, input), 0, 0).sets[0]).toEqual({ targetReps: [8, 12], loadKg: 16 })
+  })
+
+  it('reps et durée compatibles utilisés comme cibles, sur toutes les séries', () => {
+    const t = claude([
+      { exerciseId: 'box-goblet-squat', sets: 3, reps: [6, 8], restSec: 90 },
+      { exerciseId: 'farmer-carry', sets: 2, durationSec: 30, restSec: 60 },
+      { exerciseId: 'plank', sets: 2, durationSec: 25, restSec: 60 },
+    ])
+    const plan = planFromTemplate(t, makeInput({ states }), opts)
+    expect(exAt(plan, 0, 0).sets).toEqual(
+      Array.from({ length: 3 }, () => ({ targetReps: [6, 8], loadKg: 16 })),
+    )
+    expect(exAt(plan, 1, 0).sets).toEqual([
+      { targetDurationSec: 30, loadKg: 16 },
+      { targetDurationSec: 30, loadKg: 16 },
+    ])
+    expect(exAt(plan, 2, 0).sets[0]).toEqual({ targetDurationSec: 25 })
+    expect(plan.estimatedMin).toBe(estimateMinutes(plan.blocks, lib, plan.warmupMin))
+    expect(templateTargetNotes(t, makeInput({ states }))).toEqual([])
+  })
+
+  it('cibles incompatibles ou invalides : ignorées (cible du moteur) et signalées', () => {
+    const t = claude([
+      { exerciseId: 'plank', sets: 2, reps: [8, 12], restSec: 60 },
+      { exerciseId: 'box-goblet-squat', sets: 3, durationSec: 40, restSec: 90 },
+      { exerciseId: 'incline-push-up', sets: 3, reps: [12, 8], restSec: 60 },
+      { exerciseId: 'farmer-carry', sets: 2, durationSec: 600, restSec: 60 },
+    ])
+    const input = makeInput({ states })
+    const plan = planFromTemplate(t, input, opts)
+    expect(exAt(plan, 0, 0).sets[0]).toEqual({ targetDurationSec: 20 })
+    expect(exAt(plan, 1, 0).sets[0]).toEqual({ targetReps: [8, 12], loadKg: 16 })
+    expect(exAt(plan, 2, 0).sets[0]).toEqual({ targetReps: [8, 15] })
+    // Durée plafonnée au haut de la fourchette de l'exercice (faute de frappe).
+    expect(exAt(plan, 3, 0).sets[0]).toEqual({ targetDurationSec: 60, loadKg: 16 })
+    expect(templateTargetNotes(t, input)).toEqual([
+      'Planche : répétitions demandées ignorées (exercice en durée)',
+      'Goblet squat sur boîte : durée demandée ignorée (exercice en répétitions)',
+      'Pompes inclinées : répétitions demandées invalides, fourchette habituelle retenue',
+      'Farmer carry : 600 s demandées, 60 s retenues (maximum de l’exercice)',
+    ])
+  })
+
+  it('reps : haut plafonné au haut de la fourchette de l’exercice, bas ramené dessous ; signalé', () => {
+    const input = makeInput({ states })
+    const t = claude([
+      { exerciseId: 'box-goblet-squat', sets: 3, reps: [10, 20], restSec: 90 },
+      { exerciseId: 'incline-push-up', sets: 3, reps: [20, 25], restSec: 60 },
+    ])
+    const plan = planFromTemplate(t, input, opts)
+    expect(exAt(plan, 0, 0).sets[0]?.targetReps).toEqual([10, 12])
+    expect(exAt(plan, 1, 0).sets[0]?.targetReps).toEqual([15, 15])
+    expect(templateTargetNotes(t, input)).toEqual([
+      'Goblet squat sur boîte : 10-20 répétitions demandées, 10-12 retenues (maximum de l’exercice)',
+      'Pompes inclinées : 20-25 répétitions demandées, 15-15 retenues (maximum de l’exercice)',
+    ])
+  })
+
+  it('charge : Claude peut baisser, jamais dépasser la progression', () => {
+    const input = makeInput({ states })
+    const lower = planFromTemplate(
+      claude([{ exerciseId: 'box-goblet-squat', sets: 3, reps: [8, 12], loadKg: 12, restSec: 90 }]),
+      input,
+      opts,
+    )
+    expect(exAt(lower, 0, 0).sets.map((s) => s.loadKg)).toEqual([12, 12, 12])
+    const higher = claude([
+      { exerciseId: 'box-goblet-squat', sets: 3, reps: [8, 12], loadKg: 20, restSec: 90 },
+    ])
+    expect(exAt(planFromTemplate(higher, input, opts), 0, 0).sets[0]?.loadKg).toBe(16)
+    expect(templateTargetNotes(higher, input)).toEqual([
+      'Goblet squat sur boîte : 20 kg demandé, 16 kg retenu (ta progression)',
+    ])
+    // Sans état : plafond = plus petite charge réglable.
+    const fresh = makeInput()
+    expect(exAt(planFromTemplate(higher, fresh, opts), 0, 0).sets[0]?.loadKg).toBe(12)
+  })
+
+  it('charge arrondie vers le bas au pas réel et ramenée dans la plage de la kettlebell', () => {
+    const equipment = makeEquipment(['mat'], { minKg: 12, maxKg: 24, stepKg: 2 })
+    const input = makeInput({ states: [makeState('box-goblet-squat', { loadKg: 18 })], equipment })
+    const odd = claude([{ exerciseId: 'box-goblet-squat', sets: 3, loadKg: 15, restSec: 90 }])
+    expect(exAt(planFromTemplate(odd, input, opts), 0, 0).sets[0]?.loadKg).toBe(14)
+    const tiny = claude([{ exerciseId: 'box-goblet-squat', sets: 3, loadKg: 8, restSec: 90 }])
+    expect(exAt(planFromTemplate(tiny, input, opts), 0, 0).sets[0]?.loadKg).toBe(12)
+    expect(templateTargetNotes(odd, input)).toEqual([
+      'Goblet squat sur boîte : 15 kg demandé, 14 kg retenu (charge réglable)',
+    ])
+    expect(templateTargetNotes(tiny, input)).toEqual([
+      'Goblet squat sur boîte : 8 kg demandé, 12 kg retenu (minimum de ta kettlebell)',
+    ])
+    // Pas décimal : 12,5 kg affiché à la française.
+    const half = makeEquipment(['mat'], { minKg: 12, maxKg: 24, stepKg: 0.5 })
+    const inHalf = makeInput({ states: [makeState('box-goblet-squat', { loadKg: 12.5 })], equipment: half })
+    const t = claude([{ exerciseId: 'box-goblet-squat', sets: 3, loadKg: 14, restSec: 90 }])
+    expect(templateTargetNotes(t, inHalf)).toEqual([
+      'Goblet squat sur boîte : 14 kg demandé, 12,5 kg retenu (ta progression)',
+    ])
+  })
+
+  it('charge invalide ou sur un exercice sans kettlebell : ignorée', () => {
+    const input = makeInput({ states })
+    const t = claude([
+      { exerciseId: 'box-goblet-squat', sets: 3, loadKg: Number.NaN, restSec: 90 },
+      { exerciseId: 'box-goblet-squat', sets: 3, loadKg: 0, restSec: 90 },
+      { exerciseId: 'incline-push-up', sets: 3, loadKg: 10, restSec: 60 },
+    ])
+    const plan = planFromTemplate(t, input, opts)
+    expect(exAt(plan, 0, 0).sets[0]?.loadKg).toBe(16)
+    expect(exAt(plan, 1, 0).sets[0]?.loadKg).toBe(16)
+    expect(exAt(plan, 2, 0).sets[0]?.loadKg).toBeUndefined()
+    expect(templateTargetNotes(t, input)).toEqual([
+      'Pompes inclinées : charge demandée ignorée (exercice sans kettlebell)',
+    ])
+  })
+
+  it('exercice en apprentissage sans charge (TGU) : aucune charge', () => {
+    const input = makeInput({ profileLevel: 3, states: [makeState('turkish-get-up', { loadKg: null })] })
+    const t = claude([{ exerciseId: 'turkish-get-up', sets: 3, reps: [1, 2], loadKg: 8, restSec: 90 }])
+    const plan = planFromTemplate(t, input, opts)
+    expect(exAt(plan, 0, 0).sets[0]).toEqual({ targetReps: [1, 2] })
+    expect(templateTargetNotes(t, input)).toEqual([
+      'Turkish get-up : charge demandée ignorée (apprentissage sans charge)',
+    ])
+  })
+
+  it('deload : séries réduites comme d’habitude, cibles et charge du modèle conservées', () => {
+    const start = '2026-10-12'
+    const sessions = [0, 1, 2].map((d) => doneSession(addDays(start, d), [['incline-push-up', 3, 'hard']]))
+    const input = makeInput({ date: addDays(start, 3), sessions, states })
+    const t = claude([{ exerciseId: 'box-goblet-squat', sets: 4, reps: [6, 8], loadKg: 14, restSec: 90 }])
+    const plan = planFromTemplate(t, input, opts)
+    expect(plan.deload).toBe(true)
+    expect(exAt(plan, 0, 0).sets).toEqual([
+      { targetReps: [6, 8], loadKg: 14 },
+      { targetReps: [6, 8], loadKg: 14 },
+    ])
+  })
+
+  it('séries, repos, tempo et exercices écartés : comme sans l’option', () => {
+    const input = makeInput({ states: [...states, makeState('incline-push-up', { tempo: true })] })
+    const t = claude([
+      { exerciseId: 'disparu', sets: 3, reps: [5, 5], restSec: 60 },
+      { exerciseId: 'incline-push-up', sets: 2, reps: [6, 10], restSec: 75 },
+    ])
+    const plan = planFromTemplate(t, input, opts)
+    const push = exAt(plan, 0, 0)
+    expect(push.sets).toHaveLength(2)
+    expect(push.restSec).toBe(75)
+    expect(push.tempo).toBe('3-1-1')
+    expect(push.sets[0]).toEqual({ targetReps: [6, 10] })
+    expect(templateTargetNotes(t, input)).toEqual([])
+  })
+
+  it('superset de 3 exercices (circuit) : conservé et parcouru tour par tour en mode guidé', () => {
+    const t = claude([
+      { group: 0, kind: 'superset', exerciseId: 'box-goblet-squat', sets: 2, reps: [8, 10], restSec: 90 },
+      { group: 0, kind: 'superset', exerciseId: 'incline-push-up', sets: 2, reps: [8, 10], restSec: 60 },
+      { group: 0, kind: 'superset', exerciseId: 'dead-bug', sets: 2, restSec: 60 },
+    ])
+    const plan = planFromTemplate(t, makeInput({ states }), opts)
+    expect(plan.blocks).toHaveLength(1)
+    expect(plan.blocks[0]?.kind).toBe('superset')
+    expect(plan.blocks[0]?.exercises).toHaveLength(3)
+    const session = sessionFromPlan(plan, { id: 's', now: T0 })
+    expect(sessionSteps(session).map((c) => [c.exercise, c.set])).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+    ])
+    expect(restAfter(session, { block: 0, exercise: 1, set: 0 }, lib).kind).toBe('transition')
+    expect(restAfter(session, { block: 0, exercise: 2, set: 0 }, lib)).toEqual({ kind: 'round', seconds: 90 })
   })
 })

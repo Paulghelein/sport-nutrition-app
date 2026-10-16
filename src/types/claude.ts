@@ -72,6 +72,8 @@ export interface ClaudeApplyOutcome {
   preferencesSet: number
   /** Présent si une séance a été appliquée : date du jour concerné. */
   sessionPlanFor?: LocalDate
+  /** Une séance était sélectionnée mais aucune ligne n'est restée (exercices nouveaux décochés) : non appliquée. */
+  sessionPlanSkipped?: true
 }
 
 /** Exercice personnel reçu (`exercise`), converti en `ExerciseInput` (valeurs par défaut complétées). */

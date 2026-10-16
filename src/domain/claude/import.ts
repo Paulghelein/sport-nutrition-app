@@ -6,6 +6,14 @@ import type { ImportedMeal, ImportParseResult, ImportPreviewItem, RecipeInput } 
 import type { Aisle, CiqualFood, FoodLogEntry, MealSlot, Per100g, RecipeIngredient } from '../../types/nutrition'
 import { normalizeFoodSearch } from '../nutrition/search'
 import { addDays, isValidLocalDate } from '../shared/dates'
+import type { ExerciseInput, TemplateBlock } from '../../types/training'
+import type { KettlebellSpec } from '../../types/profile'
+import {
+  parseExerciseElement,
+  parsePlanElement,
+  parsePreferenceElement,
+  type ImportExerciseRef,
+} from './importTraining'
 
 export interface ImportContext {
   today: LocalDate
@@ -13,6 +21,19 @@ export interface ImportContext {
   /** Règles métier injectées (le domaine n'importe pas src/db) : message d'erreur ou null. */
   validateRecipe?: (r: RecipeInput) => string | null
   validateEntry?: (e: FoodLogEntry) => string | null
+  /**
+   * Bibliothèque d'exercices fusionnée (sans les supprimés). Fournie par « Coller la réponse de Claude » : active
+   * les types `exercise`, `exercisePreference` et `sessionPlan` ; absente → ils restent `unsupported`.
+   */
+  exercises?: readonly ImportExerciseRef[]
+  /** Kettlebell de l'utilisateur (`Equipment.kettlebell`) : charges des séances ramenées dans la plage, au pas réel. */
+  kettlebell?: KettlebellSpec
+  /** `templateIssues` de src/domain/training : avertit des lignes qui seront écartées à l'application. */
+  /** Raison pour laquelle un exercice créé par la réponse ne serait pas proposé (niveau du schéma, matériel) ; `null` = ok. */
+  newExerciseIssue?: (e: ExerciseInput) => string | null
+  planIssues?: (blocks: TemplateBlock[]) => { exerciseId: Id; message: string }[]
+  /** Règles métier d'un exercice (`checkExercise` de src/db/validation), injectées comme `validateRecipe`. */
+  validateExercise?: (e: ExerciseInput) => string | null
 }
 
 // ---------- Extraction du JSON ----------
@@ -458,6 +479,8 @@ function clean<T extends object>(o: T): T {
 }
 
 const UNSUPPORTED = new Set(['exercisePreference', 'sessionPlan', 'exercise'])
+const UNSUPPORTED_MESSAGE =
+  'Ce type s’applique depuis « Coller la réponse de Claude » (boutons Claude des écrans Séance, Journal, Progrès…), pas depuis Réglages.'
 
 function parseRecipe(
   raw: unknown,
@@ -561,6 +584,32 @@ export function parseImport(text: string, ctx: ImportContext): ImportParseResult
     return idx
   }
 
+  const training = ctx.exercises
+    ? {
+        exercises: ctx.exercises,
+        ...(ctx.validateExercise ? { validateExercise: ctx.validateExercise } : {}),
+        ...(ctx.kettlebell ? { kettlebell: ctx.kettlebell } : {}),
+        ...(ctx.planIssues ? { planIssues: ctx.planIssues } : {}),
+        ...(ctx.newExerciseIssue ? { newExerciseIssue: ctx.newExerciseIssue } : {}),
+      }
+    : null
+  const typeOf = (el: unknown): string | undefined => {
+    if (typeof el !== 'object' || el === null || Array.isArray(el)) return undefined
+    const t = (el as Record<string, unknown>).type
+    return typeof t === 'string' ? t : undefined
+  }
+  // Exercices valides de la réponse, résolus avant les séances qui peuvent les citer par leur nom.
+  const createdExercises = new Map<number, ExerciseInput>()
+  const exerciseItems = new Map<number, ImportPreviewItem>()
+  if (training) {
+    list.forEach((el, index) => {
+      if (typeOf(el) !== 'exercise') return
+      const item = parseExerciseElement(stripNulls(el), index, training)
+      exerciseItems.set(index, item)
+      if (item.kind === 'exercise') createdExercises.set(index, item.exercise)
+    })
+  }
+
   const items = list.map((el, index): ImportPreviewItem => {
     if (typeof el !== 'object' || el === null || Array.isArray(el)) {
       return { kind: 'invalid', index, errors: ["l'élément n'est pas un objet"] }
@@ -571,11 +620,26 @@ export function parseImport(text: string, ctx: ImportContext): ImportParseResult
     if (type === 'recipe') return parseRecipe(raw, index, byCode, getIndex, ctx.validateRecipe)
     if (type === 'meal') return parseMeal(raw, index, ctx.today, ctx.validateEntry)
     if (UNSUPPORTED.has(type)) {
-      return { kind: 'unsupported', index, type, message: 'Pris en charge avec le bouton Claude (J9)' }
+      if (training === null) return { kind: 'unsupported', index, type, message: UNSUPPORTED_MESSAGE }
+      if (type === 'exercise') return exerciseItems.get(index) ?? parseExerciseElement(raw, index, training)
+      if (type === 'exercisePreference') return parsePreferenceElement(raw, index, training)
+      return parsePlanElement(raw, index, training, createdExercises)
     }
     return { kind: 'invalid', index, errors: [`type inconnu « ${type} »`] }
   })
-  return { ok: true, items }
+  // Plusieurs séances proposées : seule la dernière valide est applicable (la dernière réponse de Claude corrige
+  // les précédentes, et une séance remplace la séance du jour : on ne peut en appliquer qu'une).
+  let lastPlan = -1
+  items.forEach((it, i) => {
+    if (it.kind === 'sessionPlan') lastPlan = i
+  })
+  const finalItems = items.map((it, i): ImportPreviewItem =>
+    it.kind === 'sessionPlan' && i !== lastPlan
+      ? { kind: 'invalid', index: it.index, errors: ['plusieurs séances dans la réponse : seule la dernière est retenue'] }
+      : it,
+  )
+  if (training) annotate(finalItems, ctx.exercises ?? [])
+  return { ok: true, items: finalItems }
 }
 
 /** Entrée de journal d'un repas importé ; macros figées. */
@@ -588,5 +652,29 @@ export function importedMealEntry(meal: ImportedMeal, ctx: { id: Id; createdAt: 
     origin: { kind: 'import', estimated: meal.estimated },
     macros: { ...meal.totals },
     createdAt: ctx.createdAt,
+  }
+}
+
+/**
+ * Avertissements croisés entre éléments d'une même réponse (modifie `warnings` en place) : exercices de même nom,
+ * et exercice du plan que la réponse masque (`hidden`).
+ */
+function annotate(items: readonly ImportPreviewItem[], known: readonly ImportExerciseRef[]): void {
+  const seen = new Set<string>()
+  const hidden = new Set<Id>()
+  for (const it of items) {
+    if (it.kind === 'exercise') {
+      const n = normalizeFoodSearch(it.exercise.name)
+      if (seen.has(n)) it.warnings.push(`« ${it.exercise.name} » apparaît plusieurs fois dans la réponse`)
+      seen.add(n)
+    } else if (it.kind === 'exercisePreference' && it.preference.preference === 'hidden') {
+      hidden.add(it.preference.exerciseId)
+    }
+  }
+  for (const it of items) {
+    if (it.kind !== 'sessionPlan') continue
+    for (const b of it.plan.blocks) {
+      if (hidden.has(b.exerciseId)) it.warnings.push(`« ${known.find((e) => e.id === b.exerciseId)?.name ?? b.exerciseId} » est masqué par la même réponse mais figure dans la séance`)
+    }
   }
 }

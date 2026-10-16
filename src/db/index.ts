@@ -93,6 +93,7 @@ export {
   updateFridgeItem,
   updateRecipe,
 } from './recipes'
+export { CLAUDE_TEMPLATE_NAME, applyClaudeSelection } from './claude'
 export { PROGRESS_FOOD_DAYS, loadProgressData } from './progress'
 export type { ProgressData } from './progress'
 export { cacheOffFood, findFoodByEan } from './foods-off'

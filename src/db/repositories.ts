@@ -304,10 +304,15 @@ function buildExerciseRow(
   return row
 }
 
-export async function createExercise(input: ExerciseInput, now: IsoDateTime = nowIso()): Promise<Exercise> {
+/** Valide et ajoute un exercice personnel ; utilisable dans une transaction englobante (J9 : `applyClaudeSelection`). */
+export async function insertUserExercise(input: ExerciseInput, now: IsoDateTime): Promise<Exercise> {
   const row = buildExerciseRow(newId(), 'user', input, now)
   await db.exercises.add(row)
   return row
+}
+
+export async function createExercise(input: ExerciseInput, now: IsoDateTime = nowIso()): Promise<Exercise> {
+  return insertUserExercise(input, now)
 }
 
 /** Exercice personnel : met à jour la ligne. Exercice de départ : écrit (ou remplace) la surcharge. */
@@ -357,22 +362,34 @@ export async function restoreExercise(id: Id): Promise<void> {
   })
 }
 
-/** `neutral` supprime la ligne ; sinon upsert en conservant un éventuel `reason`. */
+/**
+ * `neutral` supprime la ligne ; sinon upsert. `reason` fourni : remplace l'ancien ; absent : l'éventuel `reason`
+ * existant est conservé. Utilisable dans une transaction englobante.
+ */
+export async function putExercisePreference(
+  exerciseId: Id,
+  preference: ExercisePreference,
+  now: IsoDateTime,
+  reason?: string,
+): Promise<void> {
+  if (preference === 'neutral') {
+    await db.exercisePrefs.delete(exerciseId)
+    return
+  }
+  const existing = await db.exercisePrefs.get(exerciseId)
+  const row: ExercisePref = { exerciseId, preference, updatedAt: now }
+  const r = reason?.trim()
+  if (r) row.reason = r
+  else if (existing?.reason !== undefined) row.reason = existing.reason
+  await db.exercisePrefs.put(row)
+}
+
 export async function setExercisePreference(
   exerciseId: Id,
   preference: ExercisePreference,
   now: IsoDateTime = nowIso(),
 ): Promise<void> {
-  await db.transaction('rw', db.exercisePrefs, async () => {
-    if (preference === 'neutral') {
-      await db.exercisePrefs.delete(exerciseId)
-      return
-    }
-    const existing = await db.exercisePrefs.get(exerciseId)
-    const row: ExercisePref = { exerciseId, preference, updatedAt: now }
-    if (existing?.reason !== undefined) row.reason = existing.reason
-    await db.exercisePrefs.put(row)
-  })
+  await db.transaction('rw', db.exercisePrefs, () => putExercisePreference(exerciseId, preference, now))
 }
 
 // ---------- Séances et états de progression ----------

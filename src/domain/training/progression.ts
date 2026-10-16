@@ -122,7 +122,8 @@ export function nextLevelVariant(
  * Règles :
  * - ressenti de la séance (`hard` si ≥ la moitié des séries faites sont `hard`) ajouté à `recentFeelings` ;
  * - haut de fourchette atteint sur toutes les séries prévues (faites, reps ≥ max ou durée ≥ visée, charge
- *   ≥ charge prévue) → `topStreak + 1`, sinon 0 ;
+ *   ≥ charge prévue) → `topStreak + 1`, sinon 0 ; référence = max(cible de la série, haut de la fourchette de
+ *   l'exercice / durée visée de l'état) : une cible abaissée (séance de Claude) ne fait pas monter ;
  * - 3, 6, 9… séances `hard` consécutives → −1 palier (une seule baisse par série de 3) ;
  * - haut atteint et pas 2 `hard` consécutifs → +1 palier (reps chargées), ou +5 s puis +1 palier avec retour
  *   à la durée minimale (portés), ou +5 s (gainage) ; jamais plus d'un palier ;
@@ -165,10 +166,15 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
     if (set.status !== 'done') return false
     if (currentLoad !== null && set.loadKg !== undefined && set.loadKg < currentLoad - EPS) return false
     if (reps !== undefined) {
-      const top = set.targetReps?.[1] ?? reps[1]
+      // Référence = au moins le haut de la fourchette de l'exercice : une cible abaissée (séance proposée par
+      // Claude, ex. [3, 5] sur un 8-12) ne déclenche pas de hausse.
+      const top = Math.max(set.targetReps?.[1] ?? reps[1], reps[1])
       return set.actualReps !== undefined && set.actualReps >= top
     }
-    const top = set.targetDurationSec ?? currentDuration
+    // Idem pour la durée : au moins la durée visée de l'état.
+    const target = set.targetDurationSec ?? currentDuration
+    const top =
+      target !== undefined && currentDuration !== undefined ? Math.max(target, currentDuration) : target
     return top !== undefined && set.actualDurationSec !== undefined && set.actualDurationSec >= top
   }
   const topReached = params.performed.sets.length > 0 && params.performed.sets.every(reachedTop)

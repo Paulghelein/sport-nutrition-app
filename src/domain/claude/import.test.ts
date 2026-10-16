@@ -243,7 +243,7 @@ describe('parseImport : tableau mixte et robustesse', () => {
     if (!r.ok) throw new Error(r.error)
     expect(r.items.map((i) => i.kind)).toEqual(['recipe', 'invalid', 'unsupported', 'unsupported', 'unsupported', 'invalid', 'invalid', 'invalid', 'meal'])
     expect(r.items.map((i) => i.index)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8])
-    expect(r.items[2]).toMatchObject({ type: 'exercisePreference', message: 'Pris en charge avec le bouton Claude (J9)' })
+    expect(r.items[2]).toMatchObject({ type: 'exercisePreference', message: expect.stringContaining('Coller la réponse de Claude') })
     expect(r.items[5]).toMatchObject({ errors: ['type inconnu « banane »'] })
   })
   it('objet seul, null ignorés', () => {

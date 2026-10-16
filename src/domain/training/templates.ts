@@ -1,13 +1,16 @@
 // Modèles de séance (SPEC §3.5 « Enregistrer comme modèle ») : fonctions pures.
-import type { Id } from '../../types/common'
+import type { Id, Range } from '../../types/common'
 import type { EngineInput, SessionPlan } from '../../types/engine'
+import type { Equipment } from '../../types/profile'
 import type {
+  ExerciseState,
   LibraryExercise,
   Session,
   SessionBlock,
   SessionDuration,
   SessionExercise,
   SessionTemplate,
+  SetEntry,
   TemplateBlock,
 } from '../../types/training'
 import { deloadSets, deloadStatus } from './deload'
@@ -16,7 +19,8 @@ import { SESSION_FORMATS, buildWarmup, planFocus } from './generate'
 import { patternLevels } from './levels'
 import { isAvailable } from './library'
 import { isMidReplacement } from './guided'
-import { buildSessionExercise } from './sets'
+import { snapLoadDown } from './loads'
+import { buildSessionExercise, buildTargetSets, isLearningUnloaded } from './sets'
 
 export type TemplateDraft = Omit<SessionTemplate, 'id' | 'createdAt' | 'updatedAt'>
 
@@ -139,6 +143,170 @@ export function templateIssues(
   return issues
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Cibles du modèle (séance proposée par Claude, J9)
+
+export interface PlanFromTemplateOptions {
+  /**
+   * Utiliser les cibles enregistrées dans le modèle (`reps`, `durationSec`, `loadKg`) au lieu de les recalculer
+   * depuis les états. Défaut `false` (modèles de l'utilisateur : la progression continue). Voir `templateTargets`.
+   */
+  useTemplateTargets?: boolean
+}
+
+/** Pourquoi la charge retenue diffère de la charge demandée par le modèle. */
+type LoadNote = 'progression' | 'adjustable' | 'min' | 'unloaded' | 'not_kettlebell'
+
+interface TemplateTargets {
+  entry: SetEntry
+  /** Charge demandée par le modèle (valide), absente si aucune. */
+  requestedKg?: number
+  loadNote?: LoadNote
+  ignoredReps: boolean
+  ignoredDuration: boolean
+}
+
+const EPS = 1e-9
+
+/**
+ * Fourchette de répétitions valide (entiers, 1 ≤ min ≤ max), le haut plafonné au haut de la fourchette de
+ * l'exercice (`maxReps`) et le bas ramené sous ce haut. `undefined` si invalide.
+ */
+function validReps(r: Range | undefined, maxReps: number): Range | undefined {
+  if (r === undefined || !Array.isArray(r) || r.length !== 2) return undefined
+  const lo = Math.round(r[0])
+  const hi = Math.round(r[1])
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo < 1 || hi < lo) return undefined
+  const cappedHi = Math.min(hi, maxReps)
+  return [Math.min(lo, cappedHi), cappedHi]
+}
+
+/**
+ * Cibles d'un exercice d'après la ligne du modèle (`useTemplateTargets`), en partant de ce que le moteur aurait
+ * mis (`buildTargetSets`) :
+ * - `reps` valide (entiers, 1 ≤ min ≤ max) sur un exercice en répétitions → cible de répétitions, haut plafonné
+ *   au haut de la fourchette de l'exercice ;
+ *   `durationSec` > 0 sur un exercice en durée → cible de durée, plafonnée au haut de la fourchette de
+ *   l'exercice (garde-fou contre une faute de frappe). Cible incompatible (reps pour un exercice en durée…) ou
+ *   invalide : ignorée, la cible du moteur reste.
+ * - `loadKg` (> 0) sur un exercice kettlebell → min(charge demandée, charge du moteur), arrondie vers le bas à
+ *   une charge réglable (plancher : la plus petite charge réglable). Le modèle peut baisser la charge, jamais
+ *   dépasser la progression. Exercice en apprentissage sans charge : aucune charge.
+ */
+function templateTargets(
+  ex: LibraryExercise,
+  state: ExerciseState | undefined,
+  equipment: Equipment,
+  tb: TemplateBlock,
+): TemplateTargets {
+  const engine = buildTargetSets(ex, state, equipment, 1)[0] ?? {}
+  const entry: SetEntry = { ...engine }
+  const out: TemplateTargets = { entry, ignoredReps: false, ignoredDuration: false }
+
+  if (tb.reps !== undefined) {
+    const reps = ex.repRange !== undefined ? validReps(tb.reps, ex.repRange[1]) : undefined
+    if (reps !== undefined) entry.targetReps = reps
+    else out.ignoredReps = true
+  }
+  if (tb.durationSec !== undefined) {
+    const d = Math.round(tb.durationSec)
+    if (ex.durationRange !== undefined && ex.repRange === undefined && Number.isFinite(d) && d > 0) {
+      entry.targetDurationSec = Math.min(d, ex.durationRange[1])
+    } else out.ignoredDuration = true
+  }
+
+  const asked = tb.loadKg
+  if (asked !== undefined && Number.isFinite(asked) && asked > 0) {
+    out.requestedKg = asked
+    if (ex.loadType !== 'kettlebell') out.loadNote = 'not_kettlebell'
+    else if (isLearningUnloaded(ex, state)) out.loadNote = 'unloaded'
+    else {
+      const engineKg = engine.loadKg ?? snapLoadDown(equipment.kettlebell.minKg, equipment.kettlebell)
+      const kept = snapLoadDown(Math.min(asked, engineKg), equipment.kettlebell)
+      entry.loadKg = kept
+      if (asked > engineKg + EPS) out.loadNote = 'progression'
+      else if (kept > asked + EPS) out.loadNote = 'min'
+      else if (kept < asked - EPS) out.loadNote = 'adjustable'
+    }
+  }
+  return out
+}
+
+/** Nombre en français : 12,5 ; 16. */
+function kg(x: number): string {
+  return `${String(Math.round(x * 100) / 100).replace('.', ',')} kg`
+}
+
+/**
+ * Écarts entre les cibles demandées par le modèle et celles que `planFromTemplate(…, { useTemplateTargets: true })`
+ * retiendra, en messages courts à afficher dans l'aperçu (un par écart, dans l'ordre du modèle). Les exercices
+ * écartés (`templateIssues`) ne sont pas repris ici. Exemple :
+ * « Goblet squat : 20 kg demandé, 16 kg retenu (ta progression) ».
+ */
+export function templateTargetNotes(template: Pick<SessionTemplate, 'blocks'>, input: EngineInput): string[] {
+  const index = new Map(input.library.map((e) => [e.id, e]))
+  const levels = patternLevels(input.library, input.states, input.profileLevel)
+  const stateById = new Map(input.states.map((s) => [s.exerciseId, s]))
+  const stateIds = new Set(stateById.keys())
+  const notes: string[] = []
+  for (const tb of template.blocks) {
+    const ex = index.get(tb.exerciseId)
+    if (ex === undefined || issueOf(ex, input, levels, stateIds) !== undefined) continue
+    const t = templateTargets(ex, stateById.get(ex.id), input.equipment, tb)
+    if (t.ignoredReps) {
+      notes.push(
+        ex.repRange === undefined
+          ? `${ex.name} : répétitions demandées ignorées (exercice en durée)`
+          : `${ex.name} : répétitions demandées invalides, fourchette habituelle retenue`,
+      )
+    } else if (
+      tb.reps !== undefined &&
+      t.entry.targetReps !== undefined &&
+      t.entry.targetReps[1] < Math.round(tb.reps[1])
+    ) {
+      notes.push(
+        `${ex.name} : ${Math.round(tb.reps[0])}-${Math.round(tb.reps[1])} répétitions demandées, ${t.entry.targetReps[0]}-${t.entry.targetReps[1]} retenues (maximum de l’exercice)`,
+      )
+    }
+    if (t.ignoredDuration) {
+      notes.push(
+        ex.durationRange === undefined || ex.repRange !== undefined
+          ? `${ex.name} : durée demandée ignorée (exercice en répétitions)`
+          : `${ex.name} : durée demandée invalide, durée habituelle retenue`,
+      )
+    } else if (
+      tb.durationSec !== undefined &&
+      t.entry.targetDurationSec !== undefined &&
+      t.entry.targetDurationSec < Math.round(tb.durationSec)
+    ) {
+      notes.push(
+        `${ex.name} : ${Math.round(tb.durationSec)} s demandées, ${t.entry.targetDurationSec} s retenues (maximum de l’exercice)`,
+      )
+    }
+    const asked = t.requestedKg
+    if (asked === undefined || t.loadNote === undefined) continue
+    const kept = t.entry.loadKg
+    switch (t.loadNote) {
+      case 'not_kettlebell':
+        notes.push(`${ex.name} : charge demandée ignorée (exercice sans kettlebell)`)
+        break
+      case 'unloaded':
+        notes.push(`${ex.name} : charge demandée ignorée (apprentissage sans charge)`)
+        break
+      case 'progression':
+        notes.push(`${ex.name} : ${kg(asked)} demandé, ${kg(kept ?? 0)} retenu (ta progression)`)
+        break
+      case 'min':
+        notes.push(`${ex.name} : ${kg(asked)} demandé, ${kg(kept ?? 0)} retenu (minimum de ta kettlebell)`)
+        break
+      case 'adjustable':
+        notes.push(`${ex.name} : ${kg(asked)} demandé, ${kg(kept ?? 0)} retenu (charge réglable)`)
+        break
+    }
+  }
+  return notes
+}
+
 /**
  * Séance du jour tirée d'un modèle : blocs reconstruits depuis `group` / `kind` (supersets, finisher ; sans
  * `group` : un bloc simple par exercice), nombre de séries et repos du modèle,
@@ -146,10 +314,13 @@ export function templateIssues(
  * continue), échauffement généré (durée par défaut du format), deload appliqué comme pour une séance générée.
  * Exercices ignorés : voir `templateIssues`. Date, matériel, états et historique viennent de `input`
  * (`input.durationMin` est remplacé par celui du modèle).
+ * `opts.useTemplateTargets` (séance proposée par Claude) : cibles et charge du modèle retenues avec garde-fous
+ * (voir `templateTargets` ; écarts décrits par `templateTargetNotes`) ; séries, repos et deload inchangés.
  */
 export function planFromTemplate(
   template: Pick<SessionTemplate, 'blocks' | 'durationMin'>,
   input: EngineInput,
+  opts: PlanFromTemplateOptions = {},
 ): SessionPlan {
   const index = new Map(input.library.map((e) => [e.id, e]))
   const levels = patternLevels(input.library, input.states, input.profileLevel)
@@ -167,7 +338,13 @@ export function planFromTemplate(
       const n = Math.max(1, Math.floor(Number.isFinite(tb.sets) ? tb.sets : 1))
       const sets = deload ? deloadSets(n) : n
       const rest = Number.isFinite(tb.restSec) && tb.restSec >= 0 ? tb.restSec : ex.restSec
-      exercises.push(buildSessionExercise(ex, stateById.get(ex.id), input.equipment, sets, rest))
+      const state = stateById.get(ex.id)
+      const se = buildSessionExercise(ex, state, input.equipment, sets, rest)
+      if (opts.useTemplateTargets === true) {
+        const { entry } = templateTargets(ex, state, input.equipment, tb)
+        se.sets = se.sets.map(() => ({ ...entry }))
+      }
+      exercises.push(se)
     }
     if (exercises.length === 0) continue
     const kind = run[0]?.kind ?? 'single'

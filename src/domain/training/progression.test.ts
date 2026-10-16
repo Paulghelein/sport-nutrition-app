@@ -498,3 +498,30 @@ describe('corrections de revue', () => {
     expect(r.state.targetDurationSec).toBe(40)
   })
 })
+
+describe('cible abaissée (séance proposée par Claude) : pas de hausse prématurée', () => {
+  it('reps [3, 5] réussies deux séances de suite à la charge courante → pas de hausse', () => {
+    let st = makeState('goblet-squat', { loadKg: 16 })
+    for (let i = 0; i < 2; i++) {
+      const r = run('goblet-squat', st, performed({ reps: [3, 5], load: 16 }, top(3, 'ok', 5)))
+      expect(r.change).toBe('hold')
+      expect(r.state.loadKg).toBe(16)
+      expect(r.state.topStreak).toBe(0)
+      st = r.state
+    }
+  })
+
+  it('gainage : 10 s réussies sur une durée visée de 40 s → durée visée inchangée', () => {
+    const st = makeState('plank', { targetDurationSec: 40 })
+    const r = run('plank', st, performed({ dur: 10 }, [{ dur: 10 }, { dur: 10 }]))
+    expect(r.change).toBe('hold')
+    expect(r.state.targetDurationSec).toBe(40)
+    expect(r.state.topStreak).toBe(0)
+  })
+
+  it('haut de fourchette de l’exercice atteint malgré une cible abaissée → hausse normale', () => {
+    const st = makeState('goblet-squat', { loadKg: 16 })
+    const r = run('goblet-squat', st, performed({ reps: [3, 5], load: 16 }, top(3, 'ok', 12)))
+    expect(r.change).toBe('increase')
+  })
+})
