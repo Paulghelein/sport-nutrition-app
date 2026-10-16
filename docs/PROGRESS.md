@@ -11,7 +11,7 @@ R0 — Fondations UI : terminé le 2026-10-16 (validé sans retour, « RAS » su
 R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16**.
 Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
 (domain/nutrition, src/db) et F5 (domain/claude) — **fait le 2026-10-16** (eeb548d, afc94c4, c5a56c3) ; (2) écrans R2
-et R4 en parallèle — **faits le 2026-10-16** (R4 853e602, R2 e759e74), **à valider sur iPhone** ; (3) R3 écrans
+et R4 en parallèle — **faits et validés sur iPhone le 2026-10-16** (R4 853e602, R2 e759e74) ; (3) R3 écrans
 nutrition ensuite (session suivante) ; R5 en dernier.
 
 ## Décisions prises
@@ -320,7 +320,7 @@ nutrition ensuite (session suivante) ; R5 en dernier.
 
 ## À faire ensuite
 
-- **Valider R2 + R4 sur iPhone**, puis R3 (écrans nutrition : journal restylé, FoodRow + photos OFF, recette par scan,
+- R2 + R4 validés sur iPhone le 2026-10-16. Prochain : R3 (écrans nutrition : journal restylé, FoodRow + photos OFF, recette par scan,
   recette d'une vidéo ; la feuille + remplace les entrées provisoires de « Créer »).
 - À vérifier sur iPhone (R2) : lisibilité à 1 m (panneaux 64 px, repos 76 px), une main, petit écran (SE) ; bip de fin
   du temps fixe en mode silencieux ; série max avec la consigne d'arrêt ; Facile/Correct/Dur en un tap ; aperçu avec la
