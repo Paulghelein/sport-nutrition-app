@@ -9,8 +9,11 @@ adaptées au temps disponible et au volume de la semaine, et qui suit l'alimenta
 
 ## Documents de référence (à lire selon la tâche)
 
+- `docs/V2.md` — **feuille de route active** : nouvelles fonctionnalités F1–F6 et jalons R0 à R5 (remplacent J0–J9).
+- `docs/DESIGN.md` — source de vérité visuelle de la v2 (jetons, typographie, navigation, écrans, composants).
+  Maquettes validées : `docs/design/mockups/*.dc.html` ; jetons détaillés : `docs/design/design-system/tokens.json`.
 - `docs/SPEC.md` — cahier des charges complet (fonctionnalités, algorithmes, modèle de données).
-- `docs/ROADMAP.md` — jalons J0 à J9 et critères de validation.
+- `docs/ROADMAP.md` — jalons J0 à J9 de la v1 (terminés, pour mémoire).
 - `docs/PROGRESS.md` — journal d'avancement. **Le lire au début de chaque session, le mettre à jour après chaque tâche.**
 - `docs/IMPORT_FORMAT.md` — format JSON des recettes et repas importés.
 
@@ -18,6 +21,7 @@ adaptées au temps disponible et au volume de la semaine, et qui suit l'alimenta
 
 React 18 + TypeScript (strict) + Vite · Tailwind CSS · vite-plugin-pwa · Dexie.js (IndexedDB) · React Router ·
 Recharts · @zxing/browser · Zod · Vitest · Playwright · déploiement GitHub Pages via GitHub Actions.
+Ajouts v2 (DESIGN.md) : lucide-react (icônes) · @fontsource-variable/archivo et /figtree (polices auto-hébergées).
 
 ## Arborescence
 
@@ -37,7 +41,7 @@ docs/               spécifications et suivi                         -> chef
 
 ## Rôle de la session principale : l'agent chef
 
-1. Lire `docs/PROGRESS.md` puis le jalon en cours dans `docs/ROADMAP.md`.
+1. Lire `docs/PROGRESS.md` puis le jalon en cours dans `docs/V2.md` (et `docs/DESIGN.md` pour toute interface).
 2. Découper le jalon en tâches courtes (une tâche = un agent = un dossier).
 3. Écrire ou mettre à jour d'abord les types partagés dans `src/types/`.
 4. Déléguer aux sous-agents de `.claude/agents/` ; en parallèle seulement si les dossiers ne se recoupent pas.
@@ -53,7 +57,12 @@ Le chef écrit peu de code lui-même : il planifie, délègue, intègre et véri
 - La logique métier est testée unitairement (Vitest) avant d'être branchée sur l'interface.
 - Interface mobile d'abord (viewport 390×844), cibles tactiles ≥ 44 px, utilisable d'une main pendant une séance.
 - Textes de l'interface en français. Identifiants de code en anglais.
-- Aucun appel réseau sauf Open Food Facts lors d'un scan. Aucune clé d'API, aucun secret dans le dépôt.
+- Aucun appel réseau sauf Open Food Facts lors d'un scan : la fiche produit et sa photo (`image_front_small_url`),
+  récupérées au moment du scan et stockées dans Dexie (hors ligne ensuite). Aucune police ni ressource par CDN.
+  Aucune clé d'API, aucun secret dans le dépôt.
+- Aucune couleur en dur hors des jetons de `src/index.css` (`@theme`, DESIGN.md §2) : pas de `#hex`, `rgb()` ni de
+  palette Tailwind (`zinc-…`, `orange-…`) dans les composants. Les écrans v1 non encore refaits sont tolérés
+  jusqu'à leur refonte.
 - Les macros d'une entrée du journal sont figées au moment du log.
 - Tout contenu est modifiable par l'utilisateur dans l'app (SPEC §9) : jamais de donnée « en dur » non éditable.
 - Le pont avec Claude (SPEC §10) n'envoie rien sans action explicite de l'utilisateur.

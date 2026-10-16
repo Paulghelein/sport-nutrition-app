@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nutrition</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&amp;family=Figtree:wght@400..700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#a8410f}a:hover{color:#1d1c1a}
+.ico{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; background: #e8e6e1; color: #1d1c1a; font-family: Figtree, system-ui, sans-serif; padding: 56px 16px 0; display: flex; flex-direction: column; gap: 14px;">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end;">
+    <h1 style="margin: 0; font-family: Archivo, sans-serif; font-size: 34px; line-height: 38px; font-weight: 800; letter-spacing: -0.015em;">Nutrition</h1>
+    <div style="display: flex; align-items: center; gap: 2px;">
+      <button aria-label="Jour précédent" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #1d1c1a; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+      <span style="font-size: 15px; font-weight: 600;">Aujourd'hui</span>
+      <button aria-label="Jour suivant" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #8a857c; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+    </div>
+  </header>
+
+  <div role="tablist" aria-label="Sections" style="display: flex; gap: 6px;">
+    <button role="tab" aria-selected="true" style="border: 0; min-height: 36px; padding: 0 16px; border-radius: 999px; background: #1d1c1a; color: #f5f4f1; font: 600 14px Figtree, sans-serif;">Journal</button>
+    <button role="tab" aria-selected="false" style="border: 0; min-height: 36px; padding: 0 16px; border-radius: 999px; background: #f5f4f1; color: #1d1c1a; font: 600 14px Figtree, sans-serif;">Recettes</button>
+    <button role="tab" aria-selected="false" style="border: 0; min-height: 36px; padding: 0 16px; border-radius: 999px; background: #f5f4f1; color: #1d1c1a; font: 600 14px Figtree, sans-serif;">Frigo · 6</button>
+    <button role="tab" aria-selected="false" style="border: 0; min-height: 36px; padding: 0 16px; border-radius: 999px; background: #f5f4f1; color: #1d1c1a; font: 600 14px Figtree, sans-serif;">Courses</button>
+  </div>
+
+  <section aria-label="Bilan du jour" style="background: #f5f4f1; border-radius: 24px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05); display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+      <span style="font-family: Archivo, sans-serif; font-size: 28px; line-height: 32px; font-weight: 800;">1 554<span style="font-family: Figtree, sans-serif; font-size: 14px; font-weight: 500; color: #5f5b54;"> / 2 840 kcal</span></span>
+      <span style="font-size: 13px; font-weight: 600; color: #a8410f;">1 286 restantes</span>
+    </div>
+    <div style="height: 10px; border-radius: 999px; background: #dcd9d2;"><div style="width: 55%; height: 10px; border-radius: 999px; background: #ec6a2e;"></div></div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; font-weight: 600; color: #5f5b54;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #2f5fd0; margin-right: 4px;"></span>Protéines</span><span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">96<span style="font-family: Figtree, sans-serif; font-size: 12px; font-weight: 500; color: #5f5b54;"> / 140 g</span></span></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; font-weight: 600; color: #5f5b54;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #a87c0e; margin-right: 4px;"></span>Glucides</span><span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">168<span style="font-family: Figtree, sans-serif; font-size: 12px; font-weight: 500; color: #5f5b54;"> / 360 g</span></span></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 12px; font-weight: 600; color: #5f5b54;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #2e8a6e; margin-right: 4px;"></span>Lipides</span><span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">52<span style="font-family: Figtree, sans-serif; font-size: 12px; font-weight: 500; color: #5f5b54;"> / 85 g</span></span></div>
+    </div>
+  </section>
+
+  <section aria-label="Petit-déjeuner" style="background: #f5f4f1; border-radius: 24px; padding: 12px 16px 6px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 6px;">
+      <h2 style="margin: 0; font-family: Archivo, sans-serif; font-size: 18px; line-height: 24px; font-weight: 700;">Petit-déjeuner</h2>
+      <span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">636<span style="font-family: Figtree, sans-serif; font-size: 12px; font-weight: 500; color: #5f5b54;"> kcal</span></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid #d3cfc7;">
+      <div style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: #e8e6e1; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-4 0-7 6-7 10a7 7 0 0 0 14 0c0-4-3-10-7-10z"></path></svg></div>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 15px; font-weight: 600;">Œufs entiers</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">3 œufs · P 19 · G 1 · L 15</span></div>
+      <span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">214</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid #d3cfc7;">
+      <div style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: #e8e6e1; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 0 16 0z"></path><path d="M8 12c0-3 2-5 4-6M12 12c0-2 1.5-4 3-5"></path></svg></div>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 15px; font-weight: 600;">Flocons d'avoine</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">80 g · P 11 · G 47 · L 6</span></div>
+      <span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">298</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid #d3cfc7;">
+      <div style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: #fbfaf8; box-shadow: inset 0 0 0 1px #d3cfc7; color: #5f5b54; display: grid; place-items: center; position: relative;"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10l-1 16H8z"></path><path d="M7.5 9h9"></path></svg><span style="position: absolute; right: -4px; bottom: -4px; width: 16px; height: 16px; border-radius: 8px; background: #1d1c1a; color: #f5f4f1; display: grid; place-items: center;"><svg class="ico" width="10" height="10" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3;"><path d="M6 8v8M10 8v8M14 8v8M18 8v8"></path></svg></span></div>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 15px; font-weight: 600;">Skyr nature · Siggi's</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">200 g · P 22 · G 8 · L 0 · scanné</span></div>
+      <span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">124</span>
+    </div>
+  </section>
+
+  <section aria-label="Déjeuner" style="background: #f5f4f1; border-radius: 24px; padding: 12px 16px 6px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 6px;">
+      <h2 style="margin: 0; font-family: Archivo, sans-serif; font-size: 18px; line-height: 24px; font-weight: 700;">Déjeuner</h2>
+      <span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">918<span style="font-family: Figtree, sans-serif; font-size: 12px; font-weight: 500; color: #5f5b54;"> kcal</span></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid #d3cfc7;">
+      <div style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: #f6d2bd; color: #1d1c1a; display: grid; place-items: center;"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14a7 7 0 0 1-14 0z"></path><path d="M8 7c0-1.5 1-2 1-3M12 7c0-1.5 1-2 1-3M16 7c0-1.5 1-2 1-3"></path></svg></div>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 15px; font-weight: 600;">Poulet, riz et brocoli</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">1,5 portion · depuis le frigo</span></div>
+      <span style="font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700;">918</span>
+    </div>
+  </section>
+
+  <button style="display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 18px; border: 0; border-radius: 999px; background: #f5f4f1; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05); color: #1d1c1a; font: 600 15px Figtree, sans-serif;"><span>Collation, dîner</span><span style="color: #a8410f;">+ Ajouter</span></button>
+
+  <nav aria-label="Navigation principale" style="position: absolute; left: 16px; right: 16px; bottom: 24px; display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; align-items: center; height: 68px; padding: 0 8px; background: #fbfaf8; border-radius: 32px; box-shadow: 0 10px 30px rgba(29,28,26,0.16);">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #8a857c; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>Aujourd'hui<span style="width: 4px; height: 4px;"></span></a>
+    <a href="Seance.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #8a857c; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8a3 3 0 1 1 6 0"></path><path d="M8.5 9h7l2 3.5a6 6 0 1 1-11 0z"></path></svg>Entraînement<span style="width: 4px; height: 4px;"></span></a>
+    <a href="Ajouter.dc.html" aria-label="Ajouter" style="justify-self: center; width: 60px; height: 60px; margin-top: -30px; border-radius: 34px; background: #ec6a2e; color: #1d1c1a; display: grid; place-items: center; box-shadow: 0 10px 30px rgba(29,28,26,0.16); border: 4px solid #e8e6e1;"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 2.25;"><path d="M12 5v14M5 12h14"></path></svg></a>
+    <a href="Nutrition.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #1d1c1a; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2-3-7-2-7 3 0 5 4 10 7 10s7-5 7-10c0-5-5-6-7-3z"></path><path d="M12 7c0-2 1-3.5 3-4"></path></svg>Nutrition<span style="width: 4px; height: 4px; border-radius: 2px; background: #ec6a2e;"></span></a>
+    <a href="Progres.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #8a857c; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"></path><path d="M7 15v-3M12 15V8M17 15v-6"></path></svg>Progrès<span style="width: 4px; height: 4px;"></span></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

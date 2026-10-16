@@ -4,11 +4,20 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J8 — Page Progrès et J9 — Bouton Claude : **terminés le 2026-10-16 = fin de la v1, à valider sur iPhone**
-(J8 : chaque bloc sur 2 semaines de données réelles ; J9 : un repas ajouté et une séance modifiée via Claude, de bout
-en bout). Ensuite : refonte complète de l'UI (plan à valider avec l'utilisateur).
+**v2 commencée le 2026-10-16.** Feuille de route active : `docs/V2.md` (jalons R0 à R5, remplacent J0–J9),
+référence visuelle : `docs/DESIGN.md` + `docs/design/mockups/`. La v1 (J0–J9) est terminée.
+
+R0 — Fondations UI : **en cours**.
 
 ## Décisions prises
+
+- 2026-10-16 (v2) : refonte de l'UI (thème clair, Archivo + Figtree auto-hébergées, lucide-react) et
+  fonctionnalités F1–F6 selon `docs/V2.md` / `docs/DESIGN.md`. Seule nouvelle sortie réseau : la photo Open Food
+  Facts, récupérée au moment du scan. Plus aucune couleur en dur hors des jetons.
+- 2026-10-16 (R0) : cohabitation v1 / v2 pendant la refonte : les anciens jetons sombres sont renommés `v1-*`
+  (`v1-bg`, `v1-surface`, `v1-surface-hi`, `v1-line`) pour libérer les noms de DESIGN.md ; les composants v2 vivent
+  dans `src/ui/kit/` (les homonymes v1 de `src/ui/` restent tant que leurs écrans ne sont pas refaits, suppression
+  en R5). Chaque écran passe en clair au moment de sa refonte.
 
 - 2026-10-15 : stack et architecture fixées (voir CLAUDE.md, docs/SPEC.md).
 - 2026-10-15 : utilisateur homme (formule BMR homme).

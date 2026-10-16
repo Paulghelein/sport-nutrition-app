@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Aujourd'hui</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&amp;family=Figtree:wght@400..700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#a8410f}a:hover{color:#1d1c1a}
+.m{fill:#dcd9d2}.m.on{fill:#ec6a2e}
+.ico{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; background: #e8e6e1; color: #1d1c1a; font-family: Figtree, system-ui, sans-serif; padding: 56px 16px 0; display: flex; flex-direction: column; gap: 20px;">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end;">
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <span style="font-size: 13px; line-height: 18px; font-weight: 500; color: #5f5b54;">Vendredi 16 octobre</span>
+      <h1 style="margin: 0; font-family: Archivo, sans-serif; font-size: 34px; line-height: 38px; font-weight: 800; letter-spacing: -0.015em;">Aujourd'hui</h1>
+    </div>
+    <button aria-label="Réglages" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: #f5f4f1; color: #1d1c1a; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05);"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg></button>
+  </header>
+
+  <section aria-label="Ta semaine" style="background: #f5f4f1; border-radius: 24px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05); display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+      <span style="font-size: 15px; font-weight: 600;">Ta semaine</span>
+      <span style="font-size: 13px; font-weight: 500; color: #5f5b54;">Série <b style="font-family: Archivo, sans-serif; color: #1d1c1a;">4 sem.</b> · 2/5 séances</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; text-align: center;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 700; color: #5f5b54;">L</span><span style="width: 32px; height: 32px; border-radius: 10px; background: #f09a62; display: grid; place-items: center;"><span style="width: 4px; height: 4px; border-radius: 2px; background: #1d1c1a;"></span></span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 700; color: #5f5b54;">M</span><span style="width: 32px; height: 32px; border-radius: 10px; background: #dcd9d2; display: grid; place-items: center;"><span style="width: 4px; height: 4px; border-radius: 2px; background: #1d1c1a;"></span></span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 700; color: #5f5b54;">M</span><span style="width: 32px; height: 32px; border-radius: 10px; background: #ec6a2e;"></span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 700; color: #5f5b54;">J</span><span style="width: 32px; height: 32px; border-radius: 10px; background: #dcd9d2; display: grid; place-items: center;"><span style="width: 4px; height: 4px; border-radius: 2px; background: #1d1c1a;"></span></span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 800; color: #1d1c1a;">V</span><span style="width: 32px; height: 32px; border-radius: 10px; background: #dcd9d2; box-sizing: border-box; box-shadow: 0 0 0 2px #e8e6e1, 0 0 0 4px #1d1c1a;"></span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 700; color: #5f5b54;">S</span><span style="width: 32px; height: 32px; border-radius: 10px; box-sizing: border-box; border: 1px solid #d3cfc7;"></span></div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="font-size: 11px; font-weight: 700; color: #5f5b54;">D</span><span style="width: 32px; height: 32px; border-radius: 10px; box-sizing: border-box; border: 1px solid #d3cfc7;"></span></div>
+    </div>
+  </section>
+
+  <section aria-label="Séance du jour" style="background: #f5f4f1; border-radius: 24px; padding: 20px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05); display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 11px; line-height: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5f5b54;">Séance du jour</span>
+      <h2 style="margin: 0; font-family: Archivo, sans-serif; font-size: 22px; line-height: 26px; font-weight: 700;">Bas du corps et tirage</h2>
+      <span style="font-size: 13px; line-height: 18px; font-weight: 500; color: #5f5b54;">Quadriceps et dos sont en retard sur ta semaine.</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #e8e6e1; display: grid; place-items: center;"><svg width="28" height="40" viewBox="0 0 40 56" aria-hidden="true"><circle class="m" cx="20" cy="6" r="4.2"></circle><g class="m"><ellipse cx="11.5" cy="14" rx="3" ry="2.6"></ellipse><ellipse cx="28.5" cy="14" rx="3" ry="2.6"></ellipse><rect x="13" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="20.4" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="15" y="19.4" width="10" height="9.4" rx="2.5"></rect><rect x="7.4" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="29" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="6" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="30.8" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="14.6" y="46.4" width="4.2" height="8" rx="2"></rect><rect x="21.2" y="46.4" width="4.2" height="8" rx="2"></rect></g><g class="m on"><rect x="14.6" y="29.6" width="10.8" height="4" rx="2"></rect><rect x="14" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="20.6" y="34.4" width="5.4" height="11" rx="2.6"></rect></g></svg></div>
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #e8e6e1; display: grid; place-items: center;"><svg width="28" height="40" viewBox="0 0 40 56" aria-hidden="true"><circle class="m" cx="20" cy="6" r="4.2"></circle><g class="m"><ellipse cx="11.5" cy="14" rx="3" ry="2.6"></ellipse><ellipse cx="28.5" cy="14" rx="3" ry="2.6"></ellipse><rect x="13" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="20.4" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="15" y="19.4" width="10" height="9.4" rx="2.5"></rect><rect x="14.6" y="29.6" width="10.8" height="4" rx="2"></rect><rect x="14" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="20.6" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="14.6" y="46.4" width="4.2" height="8" rx="2"></rect><rect x="21.2" y="46.4" width="4.2" height="8" rx="2"></rect></g><g class="m on"><rect x="7.4" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="29" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="6" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="30.8" y="25.6" width="3.2" height="7.6" rx="1.6"></rect></g></svg></div>
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #e8e6e1; display: grid; place-items: center;"><svg width="28" height="40" viewBox="0 0 40 56" aria-hidden="true"><circle class="m" cx="20" cy="6" r="4.2"></circle><g class="m"><ellipse cx="11.5" cy="14" rx="3" ry="2.6"></ellipse><ellipse cx="28.5" cy="14" rx="3" ry="2.6"></ellipse><rect x="13" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="20.4" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="15" y="19.4" width="10" height="9.4" rx="2.5"></rect><rect x="7.4" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="29" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="6" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="30.8" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="14.6" y="29.6" width="10.8" height="4" rx="2"></rect></g><g class="m on"><rect x="14" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="20.6" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="14.6" y="46.4" width="4.2" height="8" rx="2"></rect><rect x="21.2" y="46.4" width="4.2" height="8" rx="2"></rect></g></svg></div>
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #e8e6e1; display: grid; place-items: center;"><svg width="28" height="40" viewBox="0 0 40 56" aria-hidden="true"><circle class="m" cx="20" cy="6" r="4.2"></circle><g class="m"><ellipse cx="11.5" cy="14" rx="3" ry="2.6"></ellipse><ellipse cx="28.5" cy="14" rx="3" ry="2.6"></ellipse><rect x="13" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="20.4" y="12.4" width="6.6" height="6" rx="2.5"></rect><rect x="7.4" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="29" y="16.6" width="3.6" height="8" rx="1.8"></rect><rect x="6" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="30.8" y="25.6" width="3.2" height="7.6" rx="1.6"></rect><rect x="14.6" y="29.6" width="10.8" height="4" rx="2"></rect><rect x="14" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="20.6" y="34.4" width="5.4" height="11" rx="2.6"></rect><rect x="14.6" y="46.4" width="4.2" height="8" rx="2"></rect><rect x="21.2" y="46.4" width="4.2" height="8" rx="2"></rect></g><g class="m on"><rect x="15" y="19.4" width="10" height="9.4" rx="2.5"></rect></g></svg></div>
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #e8e6e1; display: grid; place-items: center; font-family: Archivo, sans-serif; font-size: 15px; font-weight: 700; color: #5f5b54;">+1</div>
+    </div>
+    <div role="radiogroup" aria-label="Durée" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; background: #e8e6e1; border-radius: 999px; padding: 4px;">
+      <button role="radio" aria-checked="false" style="border: 0; background: transparent; min-height: 36px; border-radius: 999px; font: 600 14px Figtree, sans-serif; color: #5f5b54;">20 min</button>
+      <button role="radio" aria-checked="true" style="border: 0; background: #f5f4f1; min-height: 36px; border-radius: 999px; font: 700 14px Figtree, sans-serif; color: #1d1c1a; box-shadow: 0 1px 2px rgba(29,28,26,0.1);">30 min</button>
+      <button role="radio" aria-checked="false" style="border: 0; background: transparent; min-height: 36px; border-radius: 999px; font: 600 14px Figtree, sans-serif; color: #5f5b54;">45 min</button>
+      <button role="radio" aria-checked="false" style="border: 0; background: transparent; min-height: 36px; border-radius: 999px; font: 600 14px Figtree, sans-serif; color: #5f5b54;">60 min</button>
+    </div>
+    <a href="Seance.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; border-radius: 999px; background: #ec6a2e; color: #1d1c1a; font: 700 16px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"></path></svg>Voir la séance · 5 exercices</a>
+  </section>
+
+  <a href="Nutrition.dc.html" aria-label="Calories du jour" style="background: #f5f4f1; border-radius: 24px; padding: 16px 20px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05); display: flex; gap: 18px; align-items: center; color: #1d1c1a; text-decoration: none;">
+    <div style="position: relative; width: 96px; height: 96px; flex: none;">
+      <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden="true" style="transform: rotate(-90deg);"><circle cx="48" cy="48" r="40" fill="none" stroke="#dcd9d2" stroke-width="10"></circle><circle cx="48" cy="48" r="40" fill="none" stroke="#ec6a2e" stroke-width="10" stroke-linecap="round" stroke-dasharray="137 252"></circle></svg>
+      <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;"><span style="font-family: Archivo, sans-serif; font-size: 20px; line-height: 22px; font-weight: 800;">1 286</span><span style="font-size: 11px; font-weight: 500; color: #5f5b54;">restantes</span></div>
+    </div>
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;"><span>Protéines</span><span style="font-family: Archivo, sans-serif;">96<span style="color: #5f5b54; font-family: Figtree, sans-serif; font-weight: 500;"> / 140 g</span></span></div><div style="height: 6px; border-radius: 999px; background: #dcd9d2;"><div style="width: 69%; height: 6px; border-radius: 999px; background: #2f5fd0;"></div></div></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;"><span>Glucides</span><span style="font-family: Archivo, sans-serif;">168<span style="color: #5f5b54; font-family: Figtree, sans-serif; font-weight: 500;"> / 360 g</span></span></div><div style="height: 6px; border-radius: 999px; background: #dcd9d2;"><div style="width: 47%; height: 6px; border-radius: 999px; background: #a87c0e;"></div></div></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;"><div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;"><span>Lipides</span><span style="font-family: Archivo, sans-serif;">52<span style="color: #5f5b54; font-family: Figtree, sans-serif; font-weight: 500;"> / 85 g</span></span></div><div style="height: 6px; border-radius: 999px; background: #dcd9d2;"><div style="width: 61%; height: 6px; border-radius: 999px; background: #2e8a6e;"></div></div></div>
+    </div>
+  </a>
+
+  <nav aria-label="Navigation principale" style="position: absolute; left: 16px; right: 16px; bottom: 24px; display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; align-items: center; height: 68px; padding: 0 8px; background: #fbfaf8; border-radius: 32px; box-shadow: 0 10px 30px rgba(29,28,26,0.16);">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #1d1c1a; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>Aujourd'hui<span style="width: 4px; height: 4px; border-radius: 2px; background: #ec6a2e;"></span></a>
+    <a href="Seance.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #8a857c; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8a3 3 0 1 1 6 0"></path><path d="M8.5 9h7l2 3.5a6 6 0 1 1-11 0z"></path></svg>Entraînement<span style="width: 4px; height: 4px;"></span></a>
+    <a href="Ajouter.dc.html" aria-label="Ajouter" style="justify-self: center; width: 60px; height: 60px; margin-top: -30px; border-radius: 34px; background: #ec6a2e; color: #1d1c1a; display: grid; place-items: center; box-shadow: 0 10px 30px rgba(29,28,26,0.16); border: 4px solid #e8e6e1;"><svg class="ico" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 2.25;"><path d="M12 5v14M5 12h14"></path></svg></a>
+    <a href="Nutrition.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #8a857c; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2-3-7-2-7 3 0 5 4 10 7 10s7-5 7-10c0-5-5-6-7-3z"></path><path d="M12 7c0-2 1-3.5 3-4"></path></svg>Nutrition<span style="width: 4px; height: 4px;"></span></a>
+    <a href="Progres.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; color: #8a857c; font: 600 11px/14px Figtree, sans-serif; text-decoration: none;"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"></path><path d="M7 15v-3M12 15V8M17 15v-6"></path></svg>Progrès<span style="width: 4px; height: 4px;"></span></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

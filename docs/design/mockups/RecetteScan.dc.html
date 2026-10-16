@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Recette par scan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&amp;family=Figtree:wght@400..700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#a8410f}a:hover{color:#1d1c1a}
+.ico{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #e8e6e1; color: #1d1c1a; font-family: Figtree, system-ui, sans-serif; display: flex; flex-direction: column;">
+
+  <div style="position: relative; height: 236px; flex: none; background: #1d1c1a; color: #f5f4f1; padding: 52px 16px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="Ajouter.dc.html" aria-label="Retour" style="width: 40px; height: 40px; border-radius: 20px; background: rgba(245,244,241,0.12); color: #f5f4f1; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+      <span style="font-size: 15px; font-weight: 600;">Recette par scan</span>
+      <button aria-label="Lampe" style="width: 40px; height: 40px; border: 0; border-radius: 20px; background: rgba(245,244,241,0.12); color: #f5f4f1; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6h-4z"></path><path d="M10 9h4v12h-4z"></path></svg></button>
+    </div>
+    <div style="flex: 1; display: grid; place-items: center;">
+      <div style="position: relative; width: 240px; height: 92px; border-radius: 16px; box-shadow: inset 0 0 0 2px rgba(245,244,241,0.35); display: grid; place-items: center;">
+        <div style="position: absolute; left: 16px; right: 16px; top: 45px; height: 2px; border-radius: 1px; background: #ec6a2e;"></div>
+        <span style="position: absolute; bottom: -24px; font-size: 13px; font-weight: 500; color: #a9a49b;">Scanne le produit suivant</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 0; min-height: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <label for="recipe-name" style="font-size: 11px; line-height: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5f5b54;">Nom de la recette</label>
+        <input id="recipe-name" value="Egg muffins bacon emmental" style="border: 0; background: transparent; padding: 0; font: 700 22px/28px Archivo, sans-serif; color: #1d1c1a; width: 300px;">
+      </div>
+      <span style="font-size: 13px; font-weight: 600; color: #5f5b54;">5 ingr.</span>
+    </div>
+
+    <section aria-label="Ingrédients" style="background: #f5f4f1; border-radius: 24px; padding: 4px 14px; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05);">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0;">
+        <div style="width: 36px; height: 36px; flex: none; border-radius: 10px; background: #e8e6e1; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-4 0-7 6-7 10a7 7 0 0 0 14 0c0-4-3-10-7-10z"></path></svg></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Œufs entiers</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">6 œufs · Ciqual</span></div>
+        <span style="min-width: 64px; text-align: center; padding: 6px 10px; border-radius: 999px; background: #e8e6e1; font: 700 14px Archivo, sans-serif;">360 g</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #d3cfc7;">
+        <div style="width: 36px; height: 36px; flex: none; border-radius: 10px; background: #fbfaf8; box-shadow: inset 0 0 0 1px #d3cfc7; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v10H4z"></path><path d="M4 12h16"></path></svg></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Lardons fumés</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">scanné · paquet entier</span></div>
+        <span style="min-width: 64px; text-align: center; padding: 6px 10px; border-radius: 999px; background: #e8e6e1; font: 700 14px Archivo, sans-serif;">150 g</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #d3cfc7;">
+        <div style="width: 36px; height: 36px; flex: none; border-radius: 10px; background: #fbfaf8; box-shadow: inset 0 0 0 1px #d3cfc7; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l16-9v9z"></path><circle cx="13" cy="14" r="1.2"></circle></svg></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Emmental râpé</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">scanné · 80 g sur 200 g</span></div>
+        <span style="min-width: 64px; text-align: center; padding: 6px 10px; border-radius: 999px; background: #f6d2bd; font: 700 14px Archivo, sans-serif; box-shadow: inset 0 0 0 2px #ec6a2e;">80 g</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #d3cfc7;">
+        <div style="width: 36px; height: 36px; flex: none; border-radius: 10px; background: #e8e6e1; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"></path><path d="M5 19l8-8"></path></svg></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Épinards frais</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">Ciqual</span></div>
+        <span style="min-width: 64px; text-align: center; padding: 6px 10px; border-radius: 999px; background: #e8e6e1; font: 700 14px Archivo, sans-serif;">100 g</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #d3cfc7;">
+        <div style="width: 36px; height: 36px; flex: none; border-radius: 10px; background: #e8e6e1; color: #5f5b54; display: grid; place-items: center;"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8M9 3v4l-2 3v11h10V10l-2-3V3"></path></svg></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 15px; font-weight: 600;">Lait demi-écrémé</span><span style="font-size: 12px; font-weight: 500; color: #5f5b54;">Ciqual</span></div>
+        <span style="min-width: 64px; text-align: center; padding: 6px 10px; border-radius: 999px; background: #e8e6e1; font: 700 14px Archivo, sans-serif;">100 ml</span>
+      </div>
+    </section>
+
+    <div style="display: flex; gap: 8px;">
+      <button style="flex: 1; min-height: 44px; border: 0; border-radius: 999px; background: #f5f4f1; color: #1d1c1a; font: 600 14px Figtree, sans-serif; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05);">+ Chercher un aliment</button>
+      <button style="flex: 1; min-height: 44px; border: 0; border-radius: 999px; background: #f5f4f1; color: #1d1c1a; font: 600 14px Figtree, sans-serif; box-shadow: 0 1px 2px rgba(29,28,26,0.06), 0 6px 18px rgba(29,28,26,0.05);">Saisir un code</button>
+    </div>
+  </div>
+
+  <section aria-label="Résultat" style="flex: none; background: #fbfaf8; border-radius: 32px 32px 0 0; box-shadow: 0 10px 30px rgba(29,28,26,0.16); padding: 16px 16px 30px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 13px; font-weight: 600; color: #5f5b54;">Ça donne</span>
+        <span style="font-family: Archivo, sans-serif; font-size: 22px; line-height: 26px; font-weight: 800;">8 muffins</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button aria-label="Une portion de moins" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: #e8e6e1; color: #1d1c1a; font: 700 22px Figtree, sans-serif;">−</button>
+        <button aria-label="Une portion de plus" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: #e8e6e1; color: #1d1c1a; font: 700 22px Figtree, sans-serif;">+</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 14px; font-size: 13px; font-weight: 600; color: #5f5b54;">
+      <span>Par muffin</span>
+      <span style="font-family: Archivo, sans-serif; color: #1d1c1a;">162 kcal</span>
+      <span><span style="display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #2f5fd0; margin-right: 3px;"></span>P 12 g</span>
+      <span><span style="display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #a87c0e; margin-right: 3px;"></span>G 1 g</span>
+      <span><span style="display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #2e8a6e; margin-right: 3px;"></span>L 12 g</span>
+    </div>
+    <button style="min-height: 52px; border: 0; border-radius: 999px; background: #ec6a2e; color: #1d1c1a; font: 700 16px Figtree, sans-serif;">Créer et mettre 8 portions au frigo</button>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
