@@ -4,8 +4,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J6 — Recettes et J7 — Scan : **terminés le 2026-10-16, en attente de validation sur iPhone** (une session de meal prep
-avec frigo + liste de courses ; une recette importée depuis Claude ; 5 produits du placard scannés et logués).
+J6 — Recettes et J7 — Scan : **terminés et validés sur iPhone le 2026-10-16** (meal prep, import Claude, scans ; sans
+retour particulier).
 Moteur de J8 (src/domain/progress) écrit et testé, sans écran. J4/J5 : aucun retour iPhone transmis à cette session.
 Prochain : écran Progrès (J8).
 
@@ -140,6 +140,9 @@ Prochain : écran Progrès (J8).
   par exercice (durée toutes charges) vs records d'une période = règles du récapitulatif ; bilan : `weight_stalled`
   uniquement si `kcalSuggestion` est active (21 j, SPEC §4.1), `weight_too_fast` sur 14 jours avec ≥ 3 pesées.
   `undoSet`/`skipSet` rétablissent la charge prévue (`plannedLoadKg`, 0 = pas de charge prévue).
+- 2026-10-16 : **refonte complète de l'UI prévue après la v1** (écrans, pages, navigation, design). D'ici là : finir
+  J8 et J9 avec une UI fonctionnelle et sobre, sans polissage visuel ni refactor de src/ui ; toute la logique dans
+  src/domain, src/db et des hooks, pour que la refonte ne réécrive que les composants.
 
 ## Fait
 
@@ -181,7 +184,7 @@ Prochain : écran Progrès (J8).
 
 ## À faire ensuite
 
-- Validation J6 + J7 sur iPhone (et retours J4/J5 en attente), puis écran Progrès (J8) sur le moteur déjà écrit.
+- Écran Progrès (J8) sur le moteur déjà écrit, puis J9 (bouton Claude) = fin de la v1, puis refonte de l'UI.
 - À vérifier sur iPhone (J6/J7) : barre d'onglets collée en bas en standalone (e2e OK, standalone non émulable) ;
   lecture réelle d'un EAN, voyant caméra éteint en quittant l'écran / en arrière-plan, message « Réglages → Apps →
   Safari → Caméra » exact, lampe (probablement absente), bip ; mode cuisine d'une main (boutons collés en bas, Wake
