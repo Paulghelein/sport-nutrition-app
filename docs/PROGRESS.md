@@ -4,12 +4,9 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J8 — Page Progrès : **terminé le 2026-10-16, à valider sur iPhone** (chaque bloc sur 2 semaines de données réelles).
-J9 — Bouton Claude : moteur commité (messages de contexte, import séance / exercice / préférence, `applyClaudeSelection`,
-`planFromTemplate({ useTemplateTargets })`), relu sans point bloquant ; écrans pas commencés (reprise après validation
-de J8). À brancher : PreviewScreen (`useTemplateTargets` pour `claude-plan` + `templateTargetNotes`), écran « Coller la
-réponse » (`kettlebell`, `planIssues`, `newExerciseIssue`, `sessionPlanSkipped`), boutons d'envoi en important
-`domain/claude/context` directement (pas le barrel, qui contient Zod).
+J8 — Page Progrès et J9 — Bouton Claude : **terminés le 2026-10-16 = fin de la v1, à valider sur iPhone**
+(J8 : chaque bloc sur 2 semaines de données réelles ; J9 : un repas ajouté et une séance modifiée via Claude, de bout
+en bout). Ensuite : refonte complète de l'UI (plan à valider avec l'utilisateur).
 
 ## Décisions prises
 
@@ -165,6 +162,19 @@ réponse » (`kettlebell`, `planIssues`, `newExerciseIssue`, `sessionPlanSkipped
 - 2026-10-16 (J9) : séance de Claude = modèle unique `claude-plan` écrasé à chaque application puis ouvert dans
   l'aperçu ; cibles de Claude reprises, charge jamais au-dessus de la progression.
 
+- 2026-10-16 (J9) : envoi = aperçu du message dans une feuille, puis dans le même tap `clipboard.writeText` et
+  `window.open(coachUrl)` ; si Safari bloque l'ouverture, lien « Ouvrir Claude » ; si la copie échoue, texte
+  sélectionnable + « Copier ». Lecture du presse-papiers seulement dans le geste « Coller », sinon zone de collage.
+- 2026-10-16 (J9) : URL du Projet Coach limitée à https://claude.ai (et sous-domaines), vérifiée à la saisie, à l'import
+  de sauvegarde (une sauvegarde avec une autre URL est refusée : aucun cas réel avant J9) et à l'ouverture.
+- 2026-10-16 (J9) : import Claude borné (12 lignes, 30 séries, plage et pas de la kettlebell, textes et ids bornés) ;
+  lignes écartées signalées à l'aperçu (niveau, matériel, masqué, exercice non coché) ; exercice homonyme d'un
+  existant non coché par défaut (`duplicateOf`) ; une seule séance cochée à la fois.
+- 2026-10-16 (J9) : `reachedTop` compare au moins au haut de la fourchette de l'exercice : une cible abaissée par Claude
+  ne déclenche jamais de hausse de charge ou de durée.
+- 2026-10-16 (J9) : `src/db/claude.ts` hors du barrel `src/db` et `resolvePlanBlocks` dans `domain/claude/plan.ts`
+  (sans dépendance) : sinon le générateur de séances entrait dans le démarrage (+30 kB).
+
 ## Fait
 
 - J0 Socle (2026-10-15) : projet Vite + React + TS strict, Tailwind, PWA « Forge » (manifest FR, standalone,
@@ -199,6 +209,10 @@ réponse » (`kettlebell`, `planIssues`, `newExerciseIssue`, `sessionPlanSkipped
   frigo, liste de courses, import JSON, portion de recette dans le journal.
 - J7 Scan (2026-10-16) : scan caméra, saisie manuelle, Open Food Facts + cache, création d'aliment pré-remplie,
   EAN sur les aliments, mention ODbL.
+- J9 Bouton Claude (2026-10-16) : messages de contexte (journal, séance avant/après, recette, progrès, bilan), « Coller
+  la réponse » (repas, recettes, séance, exercice, préférence), séance de Claude dans l'aperçu (cibles reprises,
+  charges plafonnées, notes), Réglages (URL Coach, instructions à copier, « Faire évoluer l'app »).
+  Total : 1301 tests Vitest, 78 e2e. Entrée + chunks préchargés 473 KiB (484 kB) / 148 KiB gzip.
 - J8 Page Progrès (2026-10-16) : bilan du lundi fermable, rappel de sauvegarde, poids + couloir cible, régularité,
   force et records par exercice, niveau par schéma, volume 7 j, nutrition de la semaine, mensurations. Remarques
   traitées : `weightSeries` sans O(n²), seuil de série, `plannedLoadKg` des corrections (règle partagée `setLoads`).
@@ -209,11 +223,17 @@ réponse » (`kettlebell`, `planIssues`, `newExerciseIssue`, `sessionPlanSkipped
 
 ## À faire ensuite
 
-- Valider J8 sur iPhone, puis J9 (bouton Claude) = fin de la v1, puis refonte de l'UI.
+- Valider J8 et J9 sur iPhone (fin de la v1), puis refonte complète de l'UI.
 - À vérifier sur iPhone (J6/J7) : barre d'onglets collée en bas en standalone (e2e OK, standalone non émulable) ;
   lecture réelle d'un EAN, voyant caméra éteint en quittant l'écran / en arrière-plan, message « Réglages → Apps →
   Safari → Caméra » exact, lampe (probablement absente), bip ; mode cuisine d'une main (boutons collés en bas, Wake
   Lock) ; cases de courses 64 px ; formulaire de recette long ; « Depuis le frigo » présélectionné.
+- À vérifier sur iPhone (J9) : « Copier et ouvrir Claude » en un tap (Safari et standalone) ; URL d'un Projet ouverte
+  dans l'app Claude ou Safari ; bulle « Coller » d'iOS et refus ; feuille d'envoi avec le clavier ouvert ; place des
+  6 boutons « Demander à Claude ».
+- Remarques reportées (J9) : cartes d'aperçu dupliquées entre ImportScreen et ClaudeResponseScreen (refonte) ;
+  ImportScreen de Réglages appelle encore `commitImport` (recettes/repas seulement) ; Zod toujours dans le démarrage
+  via les schémas de `src/db` (remarque J1) ; `scan.spec.ts:205` a échoué une fois (non reproduit en 10 essais).
 - Remarques reportées (J8, pour la refonte ou plus tard) : libellés coupés (« Au- / dessus », « Poussée
   horizontale »), « 0 » au-dessus des semaines vides, tooltip du poids à vérifier au tactile, `Stat` et
   `formatNumber` dupliqués, ticks de l'axe de force ; test « pesée future » sensible au fuseau (UTC-11).
