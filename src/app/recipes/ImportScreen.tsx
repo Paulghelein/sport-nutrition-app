@@ -331,6 +331,8 @@ export default function ImportScreen() {
                   </li>
                 )
               }
+              // Éléments J9 : jamais produits ici (pas de `exercises` dans le contexte d'import).
+              if (item.kind !== 'invalid') return null
               return (
                 <li key={item.index} className="rounded-2xl border border-red-400/40 bg-red-500/10 p-3">
                   <p className="text-base font-semibold text-red-200">Élément {item.index + 1} invalide</p>

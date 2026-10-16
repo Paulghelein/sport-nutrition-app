@@ -332,6 +332,7 @@ export const settingsSchema = z.strictObject({
     deloadEveryWeeks: num,
   }),
   ciqualVersion: str.optional(),
+  reviewDismissedWeek: localDate.optional(),
   updatedAt: isoDateTime,
 }) satisfies z.ZodType<Settings>
 

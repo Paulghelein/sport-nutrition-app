@@ -1,5 +1,6 @@
 // Réglages de l'app et du moteur (SPEC §3.5, §5, §10).
 import type { IsoDateTime, Range, SingletonId } from './common'
+import type { WeekStart } from './progress'
 import type { MuscleGroup } from './training'
 
 export interface EngineSettings {
@@ -20,5 +21,7 @@ export interface Settings {
   engine: EngineSettings
   /** Version de la table Ciqual chargée dans Dexie (`CiqualDataset.version`) ; absente = pas encore chargée. */
   ciqualVersion?: string
+  /** Lundi de la dernière semaine dont la carte du bilan a été fermée (J8, `shouldShowReview`) ; absent = jamais. */
+  reviewDismissedWeek?: WeekStart
   updatedAt: IsoDateTime
 }

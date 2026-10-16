@@ -1,6 +1,7 @@
 // Recettes, frigo, liste de courses, import JSON (J6, SPEC §4.3, IMPORT_FORMAT.md).
 import type { Id, LocalDate } from './common'
 import type { Aisle, Food, FoodLogEntry, FridgeItem, Macros, MealSlot, Per100g, Recipe, ShoppingItem } from './nutrition'
+import type { ImportedExercise, ImportedExercisePreference, ImportedSessionPlan } from './claude'
 
 // ---------- Bibliothèque (seed + surcharges, comme les exercices) ----------
 
@@ -133,11 +134,15 @@ export interface ImportedMeal {
  * Élément de l'aperçu, dans l'ordre du tableau source (`index`). Valeurs françaises déjà converties
  * (`petit-dej` → `breakfast`, `fruits-legumes` → `produce`…). `warnings` : remarques non bloquantes
  * (ingrédient sans données, relié à Ciqual par le nom, date future…).
- * Les types `exercisePreference`, `sessionPlan`, `exercise` sont reconnus mais traités en J9 (`unsupported`).
+ * Les types J9 (`sessionPlan`, `exercise`, `exercisePreference`) ne sont analysés que si `ImportContext.exercises`
+ * est fourni (écran « Coller la réponse de Claude ») ; sinon `unsupported`.
  */
 export type ImportPreviewItem =
   | { kind: 'recipe'; index: number; recipe: RecipeInput; warnings: string[] }
   | { kind: 'meal'; index: number; meal: ImportedMeal; warnings: string[] }
+  | { kind: 'sessionPlan'; index: number; plan: ImportedSessionPlan; warnings: string[] }
+  | { kind: 'exercise'; index: number; exercise: ImportedExercise; warnings: string[] }
+  | { kind: 'exercisePreference'; index: number; preference: ImportedExercisePreference; warnings: string[] }
   | { kind: 'unsupported'; index: number; type: string; message: string }
   | { kind: 'invalid'; index: number; errors: string[] }
 
@@ -151,6 +156,10 @@ export type ImportParseResult = { ok: true; items: ImportPreviewItem[] } | { ok:
 export interface ImportSelection {
   recipes: RecipeInput[]
   meals: ImportedMeal[]
+  /** J9 (optionnels : l'import de Réglages n'en produit pas). `index` = position dans la réponse source. */
+  exercises?: { index: number; exercise: ImportedExercise }[]
+  preferences?: ImportedExercisePreference[]
+  sessionPlan?: ImportedSessionPlan
 }
 
 export interface ImportOutcome {

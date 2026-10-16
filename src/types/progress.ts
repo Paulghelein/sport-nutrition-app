@@ -145,3 +145,26 @@ export interface WeeklyReview {
   nutrition: NutritionWeek
   suggestion: ReviewSuggestion
 }
+
+// ---------- Écran Progrès (J8) ----------
+
+/**
+ * Carte du lundi fermée : `Settings.reviewDismissedWeek` = lundi de la semaine évaluée dont la carte a été fermée
+ * (entrée de `shouldShowReview`). Absent = jamais fermée.
+ */
+export type ReviewDismissedWeek = WeekStart
+
+/** Délai après lequel l'export de sauvegarde est rappelé (SPEC §5 : rappel hebdomadaire). */
+export const BACKUP_REMINDER_DAYS = 7
+
+/**
+ * Rappel de sauvegarde (fonction pure depuis `Settings.lastExportAt` et l'instant courant) :
+ * - `never` : aucun export encore fait ;
+ * - `due` : dernier export il y a au moins `BACKUP_REMINDER_DAYS` jours ;
+ * - `ok` : export récent (pas de rappel).
+ */
+export interface BackupReminder {
+  status: 'never' | 'due' | 'ok'
+  /** Jours entiers depuis le dernier export ; `null` si jamais. */
+  daysSince: number | null
+}
