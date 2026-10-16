@@ -2,7 +2,7 @@
 // transaction (tout ou rien). Les validations sont celles des fonctions unitaires (createExercise, commitImport…).
 import { CLAUDE_TEMPLATE_ID } from '../types'
 import type { ClaudeApplyOutcome, FoodLogEntry, Id, ImportSelection, IsoDateTime, LocalDate } from '../types'
-import { resolvePlanBlocks } from '../domain/claude/importTraining'
+import { resolvePlanBlocks } from '../domain/claude/plan'
 import { toLocalDate } from '../domain/shared/dates'
 import { db } from './database'
 import { newId, nowIso } from './helpers'

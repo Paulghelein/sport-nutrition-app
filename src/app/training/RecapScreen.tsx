@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { buildSessionAfterMessage } from '../../domain/claude/context'
 import { listExerciseStates, resolveSuggestion } from '../../db'
 import { acceptSuggestion } from '../../domain/training'
 import { formatDateFr } from '../../domain/shared'
 import type { LibraryExercise, Equipment, Session } from '../../types'
 import { Button, Card, ErrorNote, Section, errorMessage, linkButtonClass } from '../../ui'
+import { AskClaudeButton } from '../claude/AskClaudeButton'
+import { sessionAfterData } from '../claude/inputs'
 import { GUIDED_PATH } from '../routes'
 import { SaveTemplate } from './SaveTemplate'
 import { SummaryView } from './SummaryView'
@@ -148,6 +151,16 @@ export default function RecapScreen() {
       <SummaryView summary={summary} names={data.names} plannedMin={session.durationMin} />
       {session.status === 'done' ? (
         <Suggestions session={session} library={data.library} equipment={data.equipment} />
+      ) : null}
+      {session.status === 'done' ? (
+        <div className="mt-6">
+          <AskClaudeButton
+            kind="session_after"
+            build={(base) =>
+              buildSessionAfterMessage({ ...base, ...sessionAfterData(session, summary, data.library) })
+            }
+          />
+        </div>
       ) : null}
       <div className="mt-8 flex flex-col gap-3">
         <SaveTemplate

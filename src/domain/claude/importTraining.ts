@@ -3,11 +3,19 @@
 // quand `ImportContext.exercises` est fourni.
 import type { Id, Range } from '../../types/common'
 import type { EquipmentId, KettlebellSpec, TrainingLevel } from '../../types/profile'
-import type { ExercisePreference, LoadType, MovementPattern, MuscleGroup, SessionDuration, TemplateBlock } from '../../types/training'
+import type {
+  ExercisePreference,
+  LoadType,
+  MovementPattern,
+  MuscleGroup,
+  SessionDuration,
+  TemplateBlock,
+} from '../../types/training'
 import type { ExerciseInput } from '../../types/training'
 import type { ImportedPlanBlock, ImportedSessionPlan } from '../../types/claude'
 import type { ImportPreviewItem } from '../../types/recipes'
 import { normalizeFoodSearch } from '../nutrition/search'
+import { resolvePlanBlocks } from './plan'
 import { SESSION_FORMATS } from '../training/generate'
 import { defaultLoadStep } from '../training/library'
 
@@ -40,60 +48,150 @@ const norm = (s: string): string => normalizeFoodSearch(s)
 // ---------- Valeurs ----------
 
 const PATTERNS: Record<string, MovementPattern> = {
-  hinge: 'hinge', charniere: 'hinge', hanche: 'hinge', souleve: 'hinge', soulevedeterre: 'hinge',
-  squat: 'squat', flexion: 'squat', flexiondejambes: 'squat', accroupissement: 'squat',
-  lunge: 'lunge', fente: 'lunge', fentes: 'lunge',
-  pushh: 'push_h', pushhorizontal: 'push_h', poussee: 'push_h', pousseehorizontale: 'push_h', pompe: 'push_h', pompes: 'push_h',
-  pushv: 'push_v', pushvertical: 'push_v', pousseeverticale: 'push_v', 
-  pull: 'pull', tirage: 'pull', traction: 'pull',
-  core: 'core', gainage: 'core', abdos: 'core', abdominaux: 'core', sangle: 'core',
-  carry: 'carry', porte: 'carry', portes: 'carry', marche: 'carry',
-  arms: 'arms', bras: 'arms', biceps: 'arms', triceps: 'arms',
-  calves: 'calves', mollet: 'calves', mollets: 'calves',
+  hinge: 'hinge',
+  charniere: 'hinge',
+  hanche: 'hinge',
+  souleve: 'hinge',
+  soulevedeterre: 'hinge',
+  squat: 'squat',
+  flexion: 'squat',
+  flexiondejambes: 'squat',
+  accroupissement: 'squat',
+  lunge: 'lunge',
+  fente: 'lunge',
+  fentes: 'lunge',
+  pushh: 'push_h',
+  pushhorizontal: 'push_h',
+  poussee: 'push_h',
+  pousseehorizontale: 'push_h',
+  pompe: 'push_h',
+  pompes: 'push_h',
+  pushv: 'push_v',
+  pushvertical: 'push_v',
+  pousseeverticale: 'push_v',
+  pull: 'pull',
+  tirage: 'pull',
+  traction: 'pull',
+  core: 'core',
+  gainage: 'core',
+  abdos: 'core',
+  abdominaux: 'core',
+  sangle: 'core',
+  carry: 'carry',
+  porte: 'carry',
+  portes: 'carry',
+  marche: 'carry',
+  arms: 'arms',
+  bras: 'arms',
+  biceps: 'arms',
+  triceps: 'arms',
+  calves: 'calves',
+  mollet: 'calves',
+  mollets: 'calves',
 }
 
 const MUSCLES: Record<string, MuscleGroup> = {
-  chest: 'chest', pectoraux: 'chest', pecs: 'chest', pectoral: 'chest',
-  back: 'back', dos: 'back', dorsaux: 'back', grandsdorsaux: 'back',
-  shoulders: 'shoulders', epaules: 'shoulders', epaule: 'shoulders', deltoides: 'shoulders',
+  chest: 'chest',
+  pectoraux: 'chest',
+  pecs: 'chest',
+  pectoral: 'chest',
+  back: 'back',
+  dos: 'back',
+  dorsaux: 'back',
+  grandsdorsaux: 'back',
+  shoulders: 'shoulders',
+  epaules: 'shoulders',
+  epaule: 'shoulders',
+  deltoides: 'shoulders',
   biceps: 'biceps',
   triceps: 'triceps',
-  forearms: 'forearms', avantbras: 'forearms',
-  traps: 'traps', trapezes: 'traps', trapeze: 'traps',
-  abs: 'abs', abdos: 'abs', abdominaux: 'abs',
-  lowerback: 'lower_back', lombaires: 'lower_back', lombaire: 'lower_back', basdudos: 'lower_back',
-  glutes: 'glutes', fessiers: 'glutes', fessier: 'glutes',
-  quads: 'quads', quadriceps: 'quads', cuisses: 'quads',
-  hamstrings: 'hamstrings', ischios: 'hamstrings', ischiojambiers: 'hamstrings', ischio: 'hamstrings',
-  calves: 'calves', mollets: 'calves', mollet: 'calves',
+  forearms: 'forearms',
+  avantbras: 'forearms',
+  traps: 'traps',
+  trapezes: 'traps',
+  trapeze: 'traps',
+  abs: 'abs',
+  abdos: 'abs',
+  abdominaux: 'abs',
+  lowerback: 'lower_back',
+  lombaires: 'lower_back',
+  lombaire: 'lower_back',
+  basdudos: 'lower_back',
+  glutes: 'glutes',
+  fessiers: 'glutes',
+  fessier: 'glutes',
+  quads: 'quads',
+  quadriceps: 'quads',
+  cuisses: 'quads',
+  hamstrings: 'hamstrings',
+  ischios: 'hamstrings',
+  ischiojambiers: 'hamstrings',
+  ischio: 'hamstrings',
+  calves: 'calves',
+  mollets: 'calves',
+  mollet: 'calves',
 }
 
 const LOAD_TYPES: Record<string, LoadType> = {
-  kettlebell: 'kettlebell', kb: 'kettlebell', charge: 'kettlebell',
-  bodyweight: 'bodyweight', poidsducorps: 'bodyweight', pdc: 'bodyweight',
-  timed: 'timed', chronometre: 'timed', chronometree: 'timed', duree: 'timed', tenu: 'timed', tenue: 'timed',
+  kettlebell: 'kettlebell',
+  kb: 'kettlebell',
+  charge: 'kettlebell',
+  bodyweight: 'bodyweight',
+  poidsducorps: 'bodyweight',
+  pdc: 'bodyweight',
+  timed: 'timed',
+  chronometre: 'timed',
+  chronometree: 'timed',
+  duree: 'timed',
+  tenu: 'timed',
+  tenue: 'timed',
 }
 
 const EQUIPMENT: Record<string, EquipmentId> = {
-  kettlebell: 'kettlebell', kb: 'kettlebell',
-  mat: 'mat', tapis: 'mat',
-  pullupbar: 'pullup_bar', barredetraction: 'pullup_bar', barre: 'pullup_bar',
-  bands: 'bands', elastiques: 'bands', elastique: 'bands',
-  bench: 'bench', banc: 'bench', chaise: 'bench',
+  kettlebell: 'kettlebell',
+  kb: 'kettlebell',
+  mat: 'mat',
+  tapis: 'mat',
+  pullupbar: 'pullup_bar',
+  barredetraction: 'pullup_bar',
+  barre: 'pullup_bar',
+  bands: 'bands',
+  elastiques: 'bands',
+  elastique: 'bands',
+  bench: 'bench',
+  banc: 'bench',
+  chaise: 'bench',
   table: 'table',
 }
 
 const LEVELS: Record<string, TrainingLevel> = {
-  '1': 1, debutant: 1, beginner: 1,
-  '2': 2, intermediaire: 2, intermediate: 2,
-  '3': 3, avance: 3, advanced: 3,
+  '1': 1,
+  debutant: 1,
+  beginner: 1,
+  '2': 2,
+  intermediaire: 2,
+  intermediate: 2,
+  '3': 3,
+  avance: 3,
+  advanced: 3,
 }
 
 const PREFERENCES: Record<string, ExercisePreference> = {
-  liked: 'liked', like: 'liked', aime: 'liked', aimee: 'liked',
-  neutral: 'neutral', neutre: 'neutral',
-  disliked: 'disliked', dislike: 'disliked', pasaime: 'disliked', pasaimee: 'disliked', nonaime: 'disliked',
-  hidden: 'hidden', masque: 'hidden', masquee: 'hidden', cache: 'hidden',
+  liked: 'liked',
+  like: 'liked',
+  aime: 'liked',
+  aimee: 'liked',
+  neutral: 'neutral',
+  neutre: 'neutral',
+  disliked: 'disliked',
+  dislike: 'disliked',
+  pasaime: 'disliked',
+  pasaimee: 'disliked',
+  nonaime: 'disliked',
+  hidden: 'hidden',
+  masque: 'hidden',
+  masquee: 'hidden',
+  cache: 'hidden',
 }
 
 const COMPOUND_PATTERNS: readonly MovementPattern[] = ['hinge', 'squat', 'lunge', 'push_h', 'push_v', 'pull']
@@ -118,7 +216,8 @@ export const SUPERSET_MAX = 3
 
 type Raw = Record<string, unknown>
 
-const absent = (v: unknown): boolean => v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
+const absent = (v: unknown): boolean =>
+  v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
 
 function toNum(v: unknown): number | undefined {
   if (typeof v === 'number') return Number.isFinite(v) ? v : undefined
@@ -170,7 +269,11 @@ function asRaw(v: unknown): Raw {
 
 // ---------- exercise ----------
 
-export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingImportContext): ImportPreviewItem {
+export function parseExerciseElement(
+  raw: unknown,
+  index: number,
+  ctx: TrainingImportContext,
+): ImportPreviewItem {
   const o = asRaw(raw)
   const errors: string[] = []
   const warnings: string[] = []
@@ -196,8 +299,10 @@ export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingI
   // Muscles
   const primary: MuscleGroup[] = []
   const secondary: MuscleGroup[] = []
-  const muscles = typeof o.muscles === 'object' && o.muscles !== null && !Array.isArray(o.muscles) ? asRaw(o.muscles) : null
-  if (muscles === null) errors.push(absent(o.muscles) ? 'muscles manquants' : 'muscles invalides (primary / secondary)')
+  const muscles =
+    typeof o.muscles === 'object' && o.muscles !== null && !Array.isArray(o.muscles) ? asRaw(o.muscles) : null
+  if (muscles === null)
+    errors.push(absent(o.muscles) ? 'muscles manquants' : 'muscles invalides (primary / secondary)')
   else {
     const read = (v: unknown, label: string, out: MuscleGroup[]): void => {
       if (absent(v)) return
@@ -210,7 +315,8 @@ export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingI
     }
     read(muscles.primary, 'principal', primary)
     read(muscles.secondary, 'secondaire', secondary)
-    if (primary.length === 0 && absent(muscles.primary)) errors.push('au moins un muscle principal est requis')
+    if (primary.length === 0 && absent(muscles.primary))
+      errors.push('au moins un muscle principal est requis')
     for (const g of primary) {
       const k = secondary.indexOf(g)
       if (k !== -1) {
@@ -229,8 +335,11 @@ export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingI
   }
   let repRange = absent(o.repRange) ? undefined : toRange(o.repRange)
   let durationRange = absent(o.durationRange) ? undefined : toRange(o.durationRange)
-  const illegible = (!absent(o.repRange) && repRange === undefined) || (!absent(o.durationRange) && durationRange === undefined)
-  if (!absent(o.repRange) && repRange === undefined) errors.push('répétitions visées illisibles (repRange : [min, max])')
+  const illegible =
+    (!absent(o.repRange) && repRange === undefined) ||
+    (!absent(o.durationRange) && durationRange === undefined)
+  if (!absent(o.repRange) && repRange === undefined)
+    errors.push('répétitions visées illisibles (repRange : [min, max])')
   if (!absent(o.durationRange) && durationRange === undefined) {
     errors.push('durée visée illisible (durationRange : [min, max] en secondes)')
   }
@@ -244,9 +353,12 @@ export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingI
     errors.push('indique des répétitions (repRange) ou une durée (durationRange), pas les deux')
   }
   if (loadType !== undefined && !illegible) {
-    if (loadType === 'timed' && durationRange === undefined) errors.push('un exercice chronométré a besoin de durationRange')
-    else if (loadType === 'bodyweight' && repRange === undefined) errors.push('un exercice au poids du corps a besoin de repRange')
-    else if (repRange === undefined && durationRange === undefined) errors.push('cible manquante (repRange ou durationRange)')
+    if (loadType === 'timed' && durationRange === undefined)
+      errors.push('un exercice chronométré a besoin de durationRange')
+    else if (loadType === 'bodyweight' && repRange === undefined)
+      errors.push('un exercice au poids du corps a besoin de repRange')
+    else if (repRange === undefined && durationRange === undefined)
+      errors.push('cible manquante (repRange ou durationRange)')
   }
   if (repRange !== undefined && intRangeError(repRange, 1, MAX_REPS)) {
     errors.push(`repRange doit être deux entiers entre 1 et ${MAX_REPS} (min ≤ max)`)
@@ -297,12 +409,16 @@ export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingI
   }
 
   // Technique
-  const t = typeof o.technique === 'object' && o.technique !== null && !Array.isArray(o.technique) ? asRaw(o.technique) : null
+  const t =
+    typeof o.technique === 'object' && o.technique !== null && !Array.isArray(o.technique)
+      ? asRaw(o.technique)
+      : null
   if (!absent(o.technique) && t === null) errors.push('technique invalide (setup, steps, cues, mistakes)')
   const steps = strList(t?.steps)
   const cues = strList(t?.cues)
   const mistakes = strList(t?.mistakes)
-  if (steps === undefined || cues === undefined || mistakes === undefined) errors.push('technique : steps, cues et mistakes sont des listes de textes')
+  if (steps === undefined || cues === undefined || mistakes === undefined)
+    errors.push('technique : steps, cues et mistakes sont des listes de textes')
   const setupRaw = t?.setup
   if (!absent(setupRaw) && typeof setupRaw !== 'string') errors.push('technique : setup doit être un texte')
 
@@ -345,10 +461,13 @@ export function parseExerciseElement(raw: unknown, index: number, ctx: TrainingI
   const bad = ctx.validateExercise?.(exercise) ?? null
   if (bad !== null) return { kind: 'invalid', index, errors: [bad] }
   const same = ctx.exercises.find((e) => norm(e.name) === norm(name))
-  if (same) warnings.push(`« ${same.name} » existe déjà : le plan utilisera l’existant (ne coche pas cet exercice pour éviter un doublon)`)
+  if (same)
+    warnings.push(
+      `« ${same.name} » existe déjà : le plan utilisera l’existant (ne coche pas cet exercice pour éviter un doublon)`,
+    )
   const issue = ctx.newExerciseIssue?.(exercise) ?? null
   if (issue !== null) warnings.push(`« ${name} » ne serait pas proposé dans une séance : ${issue}`)
-  return { kind: 'exercise', index, exercise, warnings }
+  return { kind: 'exercise', index, exercise, warnings, ...(same ? { duplicateOf: same.id } : {}) }
 }
 
 // ---------- exercisePreference ----------
@@ -370,26 +489,36 @@ export function findExercise(
   return byLowerId ? { exercise: byLowerId, byName: false } : null
 }
 
-export function parsePreferenceElement(raw: unknown, index: number, ctx: TrainingImportContext): ImportPreviewItem {
+export function parsePreferenceElement(
+  raw: unknown,
+  index: number,
+  ctx: TrainingImportContext,
+): ImportPreviewItem {
   const o = asRaw(raw)
   const errors: string[] = []
   const warnings: string[] = []
   let exerciseId: Id | undefined
   if (absent(o.exerciseId)) errors.push('exerciseId manquant')
-  else if (typeof o.exerciseId !== 'string' || o.exerciseId.length > MAX_ID_LENGTH) errors.push('exerciseId invalide')
+  else if (typeof o.exerciseId !== 'string' || o.exerciseId.length > MAX_ID_LENGTH)
+    errors.push('exerciseId invalide')
   else {
     const found = findExercise(o.exerciseId, ctx.exercises)
-    if (!found) errors.push(`exercice inconnu « ${o.exerciseId} » : l’app ne le connaît pas (utilise un exerciseId fourni)`)
+    if (!found)
+      errors.push(
+        `exercice inconnu « ${o.exerciseId} » : l’app ne le connaît pas (utilise un exerciseId fourni)`,
+      )
     else {
       exerciseId = found.exercise.id
-      if (found.byName) warnings.push(`« ${o.exerciseId} » reconnu comme « ${found.exercise.name} » (${found.exercise.id})`)
+      if (found.byName)
+        warnings.push(`« ${o.exerciseId} » reconnu comme « ${found.exercise.name} » (${found.exercise.id})`)
     }
   }
   let preference: ExercisePreference | undefined
   if (absent(o.preference)) errors.push('preference manquante (liked, neutral, disliked ou hidden)')
   else {
     preference = typeof o.preference === 'string' ? PREFERENCES[key(o.preference)] : undefined
-    if (preference === undefined) errors.push(`preference inconnue « ${String(o.preference)} » (liked, neutral, disliked ou hidden)`)
+    if (preference === undefined)
+      errors.push(`preference inconnue « ${String(o.preference)} » (liked, neutral, disliked ou hidden)`)
   }
   let reason = typeof o.reason === 'string' && o.reason.trim() !== '' ? o.reason.trim() : undefined
   if (reason !== undefined && reason.length > MAX_REASON_LENGTH) {
@@ -397,8 +526,14 @@ export function parsePreferenceElement(raw: unknown, index: number, ctx: Trainin
     warnings.push(`raison tronquée à ${String(MAX_REASON_LENGTH)} caractères`)
   }
   if (!absent(o.reason) && typeof o.reason !== 'string') errors.push('reason doit être un texte')
-  if (errors.length > 0 || exerciseId === undefined || preference === undefined) return { kind: 'invalid', index, errors }
-  return { kind: 'exercisePreference', index, preference: clean({ exerciseId, preference, reason }), warnings }
+  if (errors.length > 0 || exerciseId === undefined || preference === undefined)
+    return { kind: 'invalid', index, errors }
+  return {
+    kind: 'exercisePreference',
+    index,
+    preference: clean({ exerciseId, preference, reason }),
+    warnings,
+  }
 }
 
 // ---------- sessionPlan ----------
@@ -431,7 +566,8 @@ export function parsePlanElement(
   let durationMin: SessionDuration = 30
   const dn = toNum(o.durationMin)
   if (absent(o.durationMin)) errors.push('durée de la séance manquante (durationMin : 20, 30, 45 ou 60)')
-  else if (dn === undefined || dn <= 0 || dn > 240) errors.push(`durée invalide « ${String(o.durationMin)} » (20, 30, 45 ou 60)`)
+  else if (dn === undefined || dn <= 0 || dn > 240)
+    errors.push(`durée invalide « ${String(o.durationMin)} » (20, 30, 45 ou 60)`)
   else {
     durationMin = nearestDuration(dn)
     if (durationMin !== dn) warnings.push(`durée ${String(dn)} min arrondie à ${durationMin} min`)
@@ -443,7 +579,11 @@ export function parsePlanElement(
   }
 
   if (o.blocks.length > PLAN_MAX_LINES) {
-    return { kind: 'invalid', index, errors: [`trop de lignes (${String(o.blocks.length)}) : ${String(PLAN_MAX_LINES)} au maximum`] }
+    return {
+      kind: 'invalid',
+      index,
+      errors: [`trop de lignes (${String(o.blocks.length)}) : ${String(PLAN_MAX_LINES)} au maximum`],
+    }
   }
 
   const byName = new Map<string, number>()
@@ -479,14 +619,17 @@ export function parsePlanElement(
     if (found) {
       exerciseId = found.exercise.id
       target = found.exercise
-      if (found.byName) warnings.push(`« ${ref} » reconnu comme « ${found.exercise.name} » (${found.exercise.id})`)
+      if (found.byName)
+        warnings.push(`« ${ref} » reconnu comme « ${found.exercise.name} » (${found.exercise.id})`)
     } else {
       const ni = byName.get(norm(ref))
       const ex = ni === undefined ? undefined : created.get(ni)
       if (ni === undefined || ex === undefined) {
         if (!unknown.includes(ref)) {
           if (unknown.length < MAX_UNKNOWN_IDS) unknown.push(ref)
-          warnings.push(`exercice inconnu « ${ref} » : ligne écartée (utilise un exerciseId fourni ou ajoute un objet exercise)`)
+          warnings.push(
+            `exercice inconnu « ${ref} » : ligne écartée (utilise un exerciseId fourni ou ajoute un objet exercise)`,
+          )
         }
         return
       }
@@ -555,7 +698,10 @@ export function parsePlanElement(
           const snapped = kb.minKg + Math.floor((clamped - kb.minKg) / step + 1e-9) * step
           loadKg = Math.min(Math.round(snapped * 100) / 100, kb.maxKg)
         }
-        if (loadKg !== l) warnings.push(`${ref} : charge ${String(l)} kg ramenée à ${String(loadKg)} kg (plage et pas de ta kettlebell)`)
+        if (loadKg !== l)
+          warnings.push(
+            `${ref} : charge ${String(l)} kg ramenée à ${String(loadKg)} kg (plage et pas de ta kettlebell)`,
+          )
       }
     }
 
@@ -572,8 +718,13 @@ export function parsePlanElement(
 
     let group: string | null = null
     if (!absent(r.group)) {
-      if ((typeof r.group !== 'number' && typeof r.group !== 'string') || String(r.group).length > MAX_GROUP_LENGTH) {
-        errors.push(`${label} (${ref}) : group doit être un nombre ou un texte de ${String(MAX_GROUP_LENGTH)} caractères au plus`)
+      if (
+        (typeof r.group !== 'number' && typeof r.group !== 'string') ||
+        String(r.group).length > MAX_GROUP_LENGTH
+      ) {
+        errors.push(
+          `${label} (${ref}) : group doit être un nombre ou un texte de ${String(MAX_GROUP_LENGTH)} caractères au plus`,
+        )
         return
       }
       group = String(r.group)
@@ -595,13 +746,21 @@ export function parsePlanElement(
     return {
       kind: 'invalid',
       index,
-      errors: [unknown.length > 0 ? `aucun exercice reconnu (inconnus : ${unknown.join(', ')})` : 'la séance ne contient aucune ligne'],
+      errors: [
+        unknown.length > 0
+          ? `aucun exercice reconnu (inconnus : ${unknown.join(', ')})`
+          : 'la séance ne contient aucune ligne',
+      ],
     }
   }
 
   const totalSets = lines.reduce((a, l) => a + l.block.sets, 0)
   if (totalSets > PLAN_MAX_TOTAL_SETS) {
-    return { kind: 'invalid', index, errors: [`trop de séries au total (${String(totalSets)}) : ${String(PLAN_MAX_TOTAL_SETS)} au maximum`] }
+    return {
+      kind: 'invalid',
+      index,
+      errors: [`trop de séries au total (${String(totalSets)}) : ${String(PLAN_MAX_TOTAL_SETS)} au maximum`],
+    }
   }
   const fmt = SESSION_FORMATS[durationMin]
   if (lines.length > fmt.exercises[1] + 1 || totalSets > fmt.exercises[1] * fmt.sets[1] + 3) {
@@ -633,17 +792,28 @@ export function parsePlanElement(
     runLength.set(g, (runLength.get(g) ?? 0) + 1)
     blocks.push({ ...l.block, group: g })
   })
-  if (split) warnings.push(`un groupe de plus de ${String(SUPERSET_MAX)} exercices a été découpé en supersets de ${String(SUPERSET_MAX)}`)
+  if (split)
+    warnings.push(
+      `un groupe de plus de ${String(SUPERSET_MAX)} exercices a été découpé en supersets de ${String(SUPERSET_MAX)}`,
+    )
   const plan: ImportedSessionPlan = {
     durationMin,
-    blocks: blocks.map((b) => ({ ...b, kind: (runLength.get(b.group ?? 0) ?? 1) > 1 ? ('superset' as const) : ('single' as const) })),
+    blocks: blocks.map((b) => ({
+      ...b,
+      kind: (runLength.get(b.group ?? 0) ?? 1) > 1 ? ('superset' as const) : ('single' as const),
+    })),
     unknownExerciseIds: unknown,
   }
   if (ctx.planIssues) {
     const names = new Map(ctx.exercises.map((e) => [e.id, e.name]))
-    const template = resolvePlanBlocks({ ...plan, blocks: plan.blocks.filter((b) => b.newExerciseIndex === undefined) }, new Map())
+    const template = resolvePlanBlocks(
+      { ...plan, blocks: plan.blocks.filter((b) => b.newExerciseIndex === undefined) },
+      new Map(),
+    )
     for (const issue of ctx.planIssues(template)) {
-      warnings.push(`« ${names.get(issue.exerciseId) ?? issue.exerciseId} » sera écartée de la séance : ${issue.message}`)
+      warnings.push(
+        `« ${names.get(issue.exerciseId) ?? issue.exerciseId} » sera écartée de la séance : ${issue.message}`,
+      )
     }
   }
   if (ctx.newExerciseIssue) {
@@ -659,28 +829,5 @@ export function parsePlanElement(
   return { kind: 'sessionPlan', index, plan, warnings }
 }
 
-/**
- * Lignes d'une séance prêtes pour `planFromTemplate` : les `newExerciseIndex` sont remplacés par l'id de l'exercice
- * créé (`createdIds` : index source → id) ; les lignes dont l'exercice n'a pas été créé sont écartées. Les `group`
- * ne sont pas renumérotés (des trous restent valides), mais `kind` est recalculé : un superset réduit à une ligne
- * redevient `single`. Peut renvoyer `[]` (toutes les lignes visaient des exercices non créés) : l'appelant ne doit
- * alors rien appliquer.
- */
-export function resolvePlanBlocks(plan: ImportedSessionPlan, createdIds: ReadonlyMap<number, Id>): TemplateBlock[] {
-  const kept: TemplateBlock[] = []
-  for (const b of plan.blocks) {
-    const { newExerciseIndex, ...rest } = b
-    if (newExerciseIndex === undefined) {
-      kept.push(rest)
-      continue
-    }
-    const id = createdIds.get(newExerciseIndex)
-    if (id !== undefined) kept.push({ ...rest, exerciseId: id })
-  }
-  const count = new Map<number, number>()
-  for (const b of kept) count.set(b.group ?? -1, (count.get(b.group ?? -1) ?? 0) + 1)
-  return kept.map((b) => {
-    if (b.group === undefined || b.kind === 'finisher') return b
-    return { ...b, kind: (count.get(b.group) ?? 1) > 1 ? ('superset' as const) : ('single' as const) }
-  })
-}
+// Réexporté pour les appelants existants ; la définition vit dans ./plan (sans dépendance, importable par src/db).
+export { resolvePlanBlocks }

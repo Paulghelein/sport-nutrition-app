@@ -141,7 +141,14 @@ export type ImportPreviewItem =
   | { kind: 'recipe'; index: number; recipe: RecipeInput; warnings: string[] }
   | { kind: 'meal'; index: number; meal: ImportedMeal; warnings: string[] }
   | { kind: 'sessionPlan'; index: number; plan: ImportedSessionPlan; warnings: string[] }
-  | { kind: 'exercise'; index: number; exercise: ImportedExercise; warnings: string[] }
+  | {
+      kind: 'exercise'
+      index: number
+      exercise: ImportedExercise
+      warnings: string[]
+      /** Id d'un exercice de la bibliothèque portant déjà ce nom : non coché par défaut (le plan utilise l'existant). */
+      duplicateOf?: Id
+    }
   | { kind: 'exercisePreference'; index: number; preference: ImportedExercisePreference; warnings: string[] }
   | { kind: 'unsupported'; index: number; type: string; message: string }
   | { kind: 'invalid'; index: number; errors: string[] }

@@ -78,7 +78,12 @@ describe('exercise', () => {
     expect(one({ ...EXO, repRange: [0, 5] })).toMatchObject({ kind: 'invalid' })
     const dup = one({ ...EXO, name: 'goblet SQUAT' })
     expect(dup).toMatchObject({ kind: 'exercise' })
-    if (dup.kind === 'exercise') expect(dup.warnings.join(' ')).toContain('existe déjà')
+    if (dup.kind === 'exercise') {
+      expect(dup.warnings.join(' ')).toContain('existe déjà')
+      expect(dup.duplicateOf).toBe('goblet-squat')
+    }
+    const fresh = one(EXO)
+    if (fresh.kind === 'exercise') expect('duplicateOf' in fresh).toBe(false)
     const custom = run([EXO], { ...ctx, validateExercise: () => 'refusé' })[0]
     expect(custom).toMatchObject({ kind: 'invalid', errors: ['refusé'] })
   })

@@ -1,4 +1,7 @@
+import { buildProgressMessage } from '../../domain/claude/context'
 import { ErrorNote } from '../../ui'
+import { AskClaudeButton } from '../claude/AskClaudeButton'
+import { progressData } from '../claude/inputs'
 import { BackupBanner } from './BackupBanner'
 import { MeasurementsSection } from './MeasurementsSection'
 import { NutritionSection } from './NutritionSection'
@@ -39,6 +42,12 @@ export default function ProgressScreen() {
             daysElapsed={model.nutritionDaysElapsed}
           />
           <MeasurementsSection measurements={model.measurements} />
+          <div className="mt-8">
+            <AskClaudeButton
+              kind="progress"
+              build={(base) => buildProgressMessage({ ...base, ...progressData(model) })}
+            />
+          </div>
         </>
       ) : null}
     </>

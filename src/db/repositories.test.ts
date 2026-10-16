@@ -158,20 +158,20 @@ describe('réglages', () => {
   it('renvoie le défaut sans écrire, puis applique un patch', async () => {
     expect(await getSettings()).toEqual(defaultSettings(EPOCH))
     expect(await db.settings.count()).toBe(0)
-    const next = await updateSettings({ coachUrl: 'https://x.test' }, LATER)
-    expect(next).toEqual({ ...defaultSettings(LATER), coachUrl: 'https://x.test' })
+    const next = await updateSettings({ coachUrl: 'https://claude.ai/x' }, LATER)
+    expect(next).toEqual({ ...defaultSettings(LATER), coachUrl: 'https://claude.ai/x' })
     await updateSettings({ lastExportAt: LATER }, LATER)
-    expect(await getSettings()).toMatchObject({ coachUrl: 'https://x.test', lastExportAt: LATER })
+    expect(await getSettings()).toMatchObject({ coachUrl: 'https://claude.ai/x', lastExportAt: LATER })
   })
 
   it('updateEngineSettings fusionne sur la valeur en base et valide', async () => {
-    await updateSettings({ coachUrl: 'https://x.test' }, LATER)
+    await updateSettings({ coachUrl: 'https://claude.ai/x' }, LATER)
     await Promise.all([
       updateEngineSettings((e) => ({ ...e, deloadEveryWeeks: 8 }), LATER),
       updateEngineSettings((e) => ({ ...e, volumeTargets: { ...e.volumeTargets, chest: [6, 10] } }), LATER),
     ])
     expect(await getSettings()).toMatchObject({
-      coachUrl: 'https://x.test',
+      coachUrl: 'https://claude.ai/x',
       engine: { deloadEveryWeeks: 8, volumeTargets: { chest: [6, 10] } },
     })
     await expect(
@@ -547,6 +547,9 @@ describe('validateurs purs', () => {
     expect(checkMeasurement({ date: today, armCm: 30 })).toBeNull()
     expect(checkMeasurement({ date: today })).not.toBeNull()
     expect(checkCoachUrl(null)).toBeNull()
+    expect(checkCoachUrl('https://claude.ai/project/a')).toBeNull()
+    expect(checkCoachUrl('https://autre.example/')).toMatch(/claude\.ai/)
+    expect(checkCoachUrl('https://claude.ai.evil.com/')).not.toBeNull()
     expect(checkSettings({ coachUrl: 'ftp://x' })).not.toBeNull()
   })
 })

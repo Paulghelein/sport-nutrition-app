@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { dismissReview } from '../../db'
+import { buildReviewMessage } from '../../domain/claude/context'
 import { formatDateFr, addDays } from '../../domain/shared/dates'
 import { Button, Card, ErrorNote, Section, formatSignedKg } from '../../ui'
 import type { WeeklyReview } from '../../types'
+import { AskClaudeButton } from '../claude/AskClaudeButton'
+import { reviewData } from '../claude/inputs'
 import { formatNumber, personalRecordText } from './progressModel'
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -68,7 +71,13 @@ export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (
           {review.suggestion.message}
         </p>
         {error ? <ErrorNote>Impossible de fermer le bilan. Réessaie.</ErrorNote> : null}
-        <Button className="mt-4" variant="secondary" onClick={() => void close()} disabled={busy}>
+        <div className="mt-4">
+          <AskClaudeButton
+            kind="review"
+            build={(base) => buildReviewMessage({ ...base, ...reviewData(review, nameOf) })}
+          />
+        </div>
+        <Button className="mt-3" variant="secondary" onClick={() => void close()} disabled={busy}>
           Fermer
         </Button>
       </Card>

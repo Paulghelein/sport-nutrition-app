@@ -1,6 +1,7 @@
 // Règles métier uniques, partagées par la saisie (UI, repositories) et l'import de sauvegarde.
 // Fonctions pures : elles renvoient un message français affichable tel quel, ou `null` si tout est valide.
 // `today` est toujours fourni par l'appelant.
+import { isAllowedCoachUrl } from '../domain/claude/coachUrl'
 import { ageOn, isValidLocalDate } from '../domain/shared/dates'
 import { FAT_SHARE_RANGE, PROTEIN_PER_KG_RANGE, SURPLUS_RANGE } from '../domain/nutrition/targets'
 import type {
@@ -138,15 +139,19 @@ export function checkWeekStart(d: string): string | null {
   return t.getUTCDay() === 1 ? null : 'La semaine doit commencer un lundi.'
 }
 
-/** URL du Projet Claude : `null` ou URL https valide (refus de `javascript:` et autres schémas). */
+/** URL du Projet Claude : `null` ou `https://claude.ai/…` (règle de `isAllowedCoachUrl`). */
 export function checkCoachUrl(url: string | null): string | null {
-  if (url === null) return null
+  if (url === null || isAllowedCoachUrl(url)) return null
+  return 'L’adresse du coach doit être une URL commençant par https://claude.ai/.'
+}
+
+/** Lien externe générique (vidéo d'un exercice) : URL https valide, refus de `javascript:` et autres schémas. */
+function isHttpsUrl(url: string): boolean {
   try {
-    if (new URL(url).protocol === 'https:') return null
+    return new URL(url).protocol === 'https:'
   } catch {
-    // tombe dans le message ci-dessous
+    return false
   }
-  return 'L’adresse du coach doit être une URL valide commençant par https://.'
 }
 
 export function checkSettings(s: Pick<Settings, 'coachUrl'>): string | null {
@@ -210,7 +215,7 @@ export function checkExercise(input: ExerciseInput): string | null {
   if (input.videoUrl !== undefined && input.videoUrl.trim().length > MAX_VIDEO_URL_LENGTH) {
     return `Le lien vidéo ne peut pas dépasser ${MAX_VIDEO_URL_LENGTH} caractères.`
   }
-  if (input.videoUrl !== undefined && checkCoachUrl(input.videoUrl) !== null) {
+  if (input.videoUrl !== undefined && !isHttpsUrl(input.videoUrl)) {
     return 'Le lien vidéo doit être une URL valide commençant par https://.'
   }
   const { steps, cues, mistakes } = input.technique

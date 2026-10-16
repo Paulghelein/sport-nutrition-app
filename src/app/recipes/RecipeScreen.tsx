@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { buildRecipeMessage } from '../../domain/claude/context'
 import { deleteRecipe, restoreRecipe, setRecipeFavorite } from '../../db'
 import {
   DEFAULT_FRIDGE_DAYS,
@@ -13,6 +14,7 @@ import { formatDateFr } from '../../domain/shared/dates'
 import type { LibraryRecipe, RecipeNutrition } from '../../types'
 import { Button, Card, ConfirmSheet, ErrorNote, errorMessage, linkButtonClass } from '../../ui'
 import { SLOT_LABEL, fmtG, fmtInt } from '../nutrition/format'
+import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { BackLink } from '../nutrition/parts'
 import { AddToShoppingSheet } from './AddToShoppingSheet'
 import { fmtGrams, fmtMinutes, fmtPortions, portionsWord } from './format'
@@ -202,6 +204,7 @@ export default function RecipeScreen() {
             Ajouter aux courses
           </Button>
         </div>
+        <AskClaudeButton kind="recipe" build={(base) => buildRecipeMessage({ ...base, recipe, nutrition })} />
         <Notice notice={notice} />
       </div>
 

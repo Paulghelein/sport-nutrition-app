@@ -12,6 +12,8 @@ const BackupSection = lazy(() =>
 
 const EngineSection = lazy(() => import('../settings/EngineSection'))
 const NutritionGoalsSection = lazy(() => import('../settings/NutritionGoalsSection'))
+// Instructions du Projet Coach (texte long) : chunk à la demande.
+const ClaudeSection = lazy(() => import('../settings/ClaudeSection'))
 
 /**
  * Ancre `#sauvegarde` : <main> défile et App le remet en haut à chaque changement de route, et les sections
@@ -51,6 +53,11 @@ export function SettingsScreen() {
       <ErrorBoundary>
         <Suspense fallback={<div className="mt-8 h-40" aria-busy="true" />}>
           <EngineSection />
+        </Suspense>
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <Suspense fallback={<div className="mt-8 h-40" aria-busy="true" />}>
+          <ClaudeSection />
         </Suspense>
       </ErrorBoundary>
       <div id="sauvegarde" className="scroll-mt-4">

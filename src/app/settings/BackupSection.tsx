@@ -1,15 +1,18 @@
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import {
-  backupFileName,
-  exportBackup,
-  getSettings,
-  importBackup,
-  markExported,
-  parseBackup,
-} from '../../db'
+import { backupFileName, exportBackup, getSettings, importBackup, markExported, parseBackup } from '../../db'
 import type { TableCounts } from '../../db'
-import { Button, Card, ConfirmSheet, ErrorNote, Section, SuccessNote, errorMessage, formatDateTimeFr, useLiveQuery } from '../../ui'
+import {
+  Button,
+  Card,
+  ConfirmSheet,
+  ErrorNote,
+  Section,
+  SuccessNote,
+  errorMessage,
+  formatDateTimeFr,
+  useLiveQuery,
+} from '../../ui'
 import { TABLE_NAMES } from '../../types'
 import type { BackupFile, ImportMode, TableName } from '../../types'
 
@@ -44,7 +47,9 @@ function downloadFile(file: File): void {
 }
 
 const canShareFile = (file: File): boolean =>
-  typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })
+  typeof navigator.share === 'function' &&
+  typeof navigator.canShare === 'function' &&
+  navigator.canShare({ files: [file] })
 
 interface Prepared {
   file: File
@@ -54,7 +59,9 @@ interface Prepared {
 }
 
 const sizeLabel = (bytes: number): string =>
-  bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} Ko` : `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`
+  bytes < 1024 * 1024
+    ? `${Math.max(1, Math.round(bytes / 1024))} Ko`
+    : `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`
 
 interface Pending {
   fileName: string
@@ -195,8 +202,8 @@ export function BackupSection() {
       <Card>
         <h3 className="text-base font-semibold">Exporter mes données</h3>
         <p className="mt-1 text-sm text-zinc-400">
-          Crée un fichier avec tout le contenu de l’app. Enregistre-le dans Fichiers ou iCloud : c’est ta seule copie
-          de secours.
+          Crée un fichier avec tout le contenu de l’app. Enregistre-le dans Fichiers ou iCloud : c’est ta
+          seule copie de secours.
         </p>
         <p className="mt-2 text-sm text-zinc-300">
           {settings?.lastExportAt
@@ -206,7 +213,10 @@ export function BackupSection() {
         <div className="mt-3 flex flex-col gap-3">
           {exportError ? <ErrorNote>{exportError}</ErrorNote> : null}
           {exportNotice ? (
-            <p role="status" className="rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-sm text-zinc-200">
+            <p
+              role="status"
+              className="rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-sm text-zinc-200"
+            >
               {exportNotice}
             </p>
           ) : null}
@@ -217,7 +227,9 @@ export function BackupSection() {
               <p className="text-sm font-semibold break-all">{prepared.file.name}</p>
               <p className="mt-1 text-sm text-zinc-400">{prepared.summary}</p>
               <div className="mt-3 flex flex-col gap-2">
-                {canShareFile(prepared.file) ? <Button onClick={share}>Enregistrer ou partager</Button> : null}
+                {canShareFile(prepared.file) ? (
+                  <Button onClick={share}>Enregistrer ou partager</Button>
+                ) : null}
                 <Button variant={canShareFile(prepared.file) ? 'secondary' : 'primary'} onClick={download}>
                   Télécharger le fichier
                 </Button>
@@ -226,7 +238,14 @@ export function BackupSection() {
                     C’est enregistré
                   </Button>
                 ) : null}
-                <Button variant="ghost" onClick={() => { sharing.current = false; setPrepared(null); resetExportMessages() }}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    sharing.current = false
+                    setPrepared(null)
+                    resetExportMessages()
+                  }}
+                >
                   Annuler
                 </Button>
               </div>
@@ -242,8 +261,8 @@ export function BackupSection() {
       <Card className="mt-3">
         <h3 className="text-base font-semibold">Importer une sauvegarde</h3>
         <p className="mt-1 text-sm text-zinc-400">
-          Choisis un fichier <span className="whitespace-nowrap">forge-sauvegarde-….json</span>. Rien n’est modifié
-          avant ta confirmation.
+          Choisis un fichier <span className="whitespace-nowrap">forge-sauvegarde-….json</span>. Rien n’est
+          modifié avant ta confirmation.
         </p>
         <div className="mt-3 flex flex-col gap-3">
           <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-hi px-4 text-base font-semibold active:bg-zinc-700 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-orange-400">
@@ -273,7 +292,9 @@ export function BackupSection() {
           {pending ? (
             <div className="rounded-xl border border-line bg-surface-hi p-3">
               <p className="text-sm font-semibold break-all">{pending.fileName}</p>
-              <p className="mt-1 text-sm text-zinc-400">Exporté le {formatDateTimeFr(pending.backup.exportedAt)}</p>
+              <p className="mt-1 text-sm text-zinc-400">
+                Exporté le {formatDateTimeFr(pending.backup.exportedAt)}
+              </p>
               {nonEmpty.length > 0 ? (
                 <ul className="mt-2 grid list-none grid-cols-1 gap-1 p-0">
                   {nonEmpty.map((name) => (

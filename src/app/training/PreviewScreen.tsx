@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { buildSessionBeforeMessage } from '../../domain/claude/context'
+import type { ClaudeBaseInput } from '../../domain/claude/context'
+import { CLAUDE_TEMPLATE_ID } from '../../types/claude'
 import { getActiveSession, listTemplates, startSession } from '../../db'
 import {
   addCandidates,
@@ -12,8 +15,10 @@ import {
   removeExercise,
   replaceExercise,
   replacementCandidates,
+  patternLevels,
   sessionFromPlan,
   templateIssues,
+  templateTargetNotes,
 } from '../../domain/training'
 import type { TemplateIssue } from '../../domain/training'
 import type { EngineInput, LibraryExercise, SessionBlock, SessionExercise, SessionPlan } from '../../types'
@@ -28,6 +33,9 @@ import {
   muscleLabel,
   useLiveQuery,
 } from '../../ui'
+import { AskClaudeButton } from '../claude/AskClaudeButton'
+import { PLAN_ISSUE_TEXT } from '../claude/importContext'
+import { sessionBeforeData } from '../claude/inputs'
 import { GUIDED_PATH } from '../routes'
 import { DurationPicker } from './DurationPicker'
 import { parseDuration, saveDuration } from './durations'
@@ -176,14 +184,6 @@ function BlockCard({ block, index, count, nextIsFinisher, byId, onMove, onReplac
   )
 }
 
-const issueText: Record<TemplateIssue['reason'], string> = {
-  missing: 'n’existe plus',
-  equipment: 'matériel manquant',
-  hidden: 'masqué',
-  level: 'niveau pas encore atteint',
-  no_target: 'sans objectif',
-}
-
 type Picker = { kind: 'replace'; block: number; exercise: number } | { kind: 'add' } | null
 
 interface ContentProps {
@@ -192,10 +192,12 @@ interface ContentProps {
   editKey: string
   templateId: string | undefined
   issues: TemplateIssue[]
+  /** Écarts entre les cibles de Claude et celles retenues (séance proposée par Claude seulement). */
+  notes: string[]
   defaultName: string
 }
 
-function PreviewContent({ data, plan, editKey, templateId, issues, defaultName }: ContentProps) {
+function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaultName }: ContentProps) {
   const navigate = useNavigate()
   const active = useLiveQuery(() => getActiveSession(), [])
   const [edited, setEdited] = useState<SessionBlock[] | null>(() => loadPreviewEdit(editKey))
@@ -258,6 +260,13 @@ function PreviewContent({ data, plan, editKey, templateId, issues, defaultName }
     }
   }
 
+  const buildAsk = useMemo(() => {
+    if (blocks.length === 0) return null
+    const levels = patternLevels(data.library, data.states, data.profileLevel)
+    const extra = sessionBeforeData(plan, blocks, estimated, data.library, levels)
+    return (base: ClaudeBaseInput) => buildSessionBeforeMessage({ ...base, ...extra })
+  }, [blocks, data.library, data.states, data.profileLevel, estimated, plan])
+
   const empty = blocks.length === 0
   return (
     <div>
@@ -300,8 +309,19 @@ function PreviewContent({ data, plan, editKey, templateId, issues, defaultName }
           <ul className="m-0 mt-1 list-disc pl-5">
             {issues.map((i) => (
               <li key={i.exerciseId}>
-                {byId.get(i.exerciseId)?.name ?? i.exerciseId} : {issueText[i.reason]}
+                {byId.get(i.exerciseId)?.name ?? i.exerciseId} : {PLAN_ISSUE_TEXT[i.reason]}
               </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {notes.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2.5 text-base text-amber-200">
+          <p className="m-0 font-semibold">Cibles de Claude ajustées :</p>
+          <ul className="m-0 mt-1 list-disc pl-5">
+            {notes.map((n, i) => (
+              <li key={i}>{n}</li>
             ))}
           </ul>
         </div>
@@ -383,6 +403,12 @@ function PreviewContent({ data, plan, editKey, templateId, issues, defaultName }
       )}
 
       {!empty ? (
+        <div className="mt-4">
+          <AskClaudeButton kind="session_before" build={buildAsk} />
+        </div>
+      ) : null}
+
+      {!empty ? (
         <div className="sticky bottom-0 mt-6 rounded-2xl border border-line bg-bg/95 p-3 backdrop-blur">
           {error ? (
             <div className="mb-2">
@@ -436,11 +462,15 @@ export default function PreviewScreen() {
         const template = templates.data.find((t) => t.id === templateId)
         if (!template) return { missing: true as const, plan: undefined }
         const input: EngineInput = { ...data, durationMin: template.durationMin }
+        // Séance proposée par Claude : ses cibles sont reprises (plafonnées à la progression), écarts signalés.
+        const fromClaude = template.id === CLAUDE_TEMPLATE_ID
         return {
           missing: false as const,
-          plan: planFromTemplate(template, input),
+          plan: planFromTemplate(template, input, fromClaude ? { useTemplateTargets: true } : {}),
           issues: templateIssues(template, input),
-          key: `modele:${template.id}:${data.date}`,
+          notes: fromClaude ? templateTargetNotes(template, input) : [],
+          // La séance de Claude est écrasée à chaque application : une modification de l'aperçu précédent ne doit pas survivre.
+          key: `modele:${template.id}:${fromClaude ? template.updatedAt + ':' : ''}${data.date}`,
           name: template.name,
         }
       }
@@ -448,6 +478,7 @@ export default function PreviewScreen() {
         missing: false as const,
         plan: generateSession({ ...data, durationMin: duration }),
         issues: [] as TemplateIssue[],
+        notes: [] as string[],
         key: `duree:${duration}:${data.date}`,
         name: `Séance ${duration} min`,
       }
@@ -463,7 +494,9 @@ export default function PreviewScreen() {
       <BackLink to={fromTemplate ? '/seance/modeles' : '/seance'}>
         {fromTemplate ? 'Modèles' : 'Séance'}
       </BackLink>
-      <h1 className="mt-2 text-3xl font-bold">Aperçu</h1>
+      <h1 className="mt-2 text-3xl font-bold">
+        {templateId === CLAUDE_TEMPLATE_ID ? 'Séance proposée par Claude' : 'Aperçu'}
+      </h1>
       {!fromTemplate ? (
         <div className="mt-4">
           <DurationPicker
@@ -496,6 +529,7 @@ export default function PreviewScreen() {
           editKey={result.key}
           templateId={templateId}
           issues={result.issues}
+          notes={result.notes}
           defaultName={result.name}
         />
       ) : null}

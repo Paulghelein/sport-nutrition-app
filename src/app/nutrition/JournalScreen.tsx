@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { buildJournalMessage } from '../../domain/claude/context'
 import {
   acceptKcalSuggestion,
   addLogEntries,
@@ -20,6 +21,7 @@ import {
 import { addDays, formatDateFr, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { FoodLogEntry, KcalSuggestion, LocalDate, MealTotals, NutritionTargets } from '../../types'
 import { Button, Card, ErrorNote, errorMessage, linkButtonClass, useLiveQuery } from '../../ui'
+import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { fmtPortions, portionsWord } from '../recipes/format'
 import { DaySummary } from './DaySummary'
 import { EntrySheet } from './EntrySheet'
@@ -307,6 +309,16 @@ export default function JournalScreen() {
               onCopy={() => void copy(meal.slot)}
             />
           ))}
+        </div>
+      ) : null}
+
+      {log ? (
+        <div className="mt-4">
+          <AskClaudeButton
+            kind="journal"
+            // Objectifs du jour affiché (affichés à l'écran) ; repli sur ceux d'aujourd'hui si le jour consulté n'a pas de poids de référence.
+            build={(base) => buildJournalMessage({ ...base, targets: targets ?? base.targets, day: log })}
+          />
         </div>
       ) : null}
 
