@@ -83,6 +83,8 @@ J4 — Séance guidée et J5 — Journal alimentaire : **terminés le 2026-10-15
 - 2026-10-15 (J4/J5) : `<main>` est le seul élément qui défile (`min-h-0`, `relative`) ; barre d'onglets dans le flux
   (plus `fixed`). Cause du décalage J3 : les radios `sr-only` (absolute) allongeaient le document et iOS le faisait
   défiler au focus. Test e2e de non-régression (position et taille de la barre identiques sur toutes les routes).
+  2026-10-16 : retour iPhone « barre trop haute » → conteneur de l'app en `fixed inset-0` (en standalone iOS,
+  `height: 100%` peut s'arrêter avant le bas de l'écran).
 - 2026-10-15 (J4/J5) : `registerType: 'prompt'` + `UpdatePrompt` (API service worker native, `SKIP_WAITING`,
   vérification au retour au premier plan) ; absent du mode guidé. Sheet empilable (pile, `inert`, Échap/Tab en haut).
 - 2026-10-15 (J4/J5) : Dexie v2 = une seule version pour les deux jalons : table `ciqual` (référence, hors sauvegarde,
