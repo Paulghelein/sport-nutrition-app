@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { checkFoodInput, createFood, updateFood } from '../../db'
+import { normalizeEan } from '../../domain/nutrition'
 import type { Food, FoodInput } from '../../types'
 import {
   Button,
@@ -25,14 +26,23 @@ interface Draft {
   fat: string
   fiber: string
   portion: string
+  ean: string
 }
 
 const num = (n: number | undefined): string => (n === undefined ? '' : toInputNumber(n))
 
-function toDraft(food: Food | undefined, name: string): Draft {
+/** Valeurs de départ d'une création (venant du scan : EAN, nom et marque du produit). */
+interface Prefill {
+  name: string
+  brand: string
+  ean: string
+}
+
+function toDraft(food: Food | undefined, pre: Prefill): Draft {
   return {
-    name: food?.name ?? name,
-    brand: food?.brand ?? '',
+    name: food?.name ?? pre.name,
+    brand: food?.brand ?? pre.brand,
+    ean: food?.ean ?? pre.ean,
     kcal: num(food?.per100g.kcal),
     protein: num(food?.per100g.protein),
     carbs: num(food?.per100g.carbs),
@@ -44,7 +54,7 @@ function toDraft(food: Food | undefined, name: string): Draft {
 
 type Parsed = { ok: true; input: FoodInput } | { ok: false; error: string }
 
-function parseDraft(d: Draft, aisle: Food['aisle']): Parsed {
+function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean): Parsed {
   const required = (text: string): number => (text.trim() === '' ? Number.NaN : parseDecimal(text))
   const kcal = required(d.kcal)
   const protein = required(d.protein)
@@ -61,7 +71,16 @@ function parseDraft(d: Draft, aisle: Food['aisle']): Parsed {
   if (Number.isNaN(fiber) || Number.isNaN(portion)) {
     return { ok: false, error: 'Les fibres et la portion doivent être des nombres (ou rester vides).' }
   }
+  const rawEan = d.ean.trim()
+  const ean = rawEan === '' ? '' : normalizeEan(rawEan)
+  if (ean === null) {
+    return {
+      ok: false,
+      error: 'Code-barres invalide : 8, 12 ou 13 chiffres, clé de contrôle comprise (ou laisse vide).',
+    }
+  }
   const input: FoodInput = { name: d.name, per100g: { kcal, protein, carbs, fat } }
+  if (ean !== '' || hadEan) input.ean = ean
   if (d.brand.trim() !== '') input.brand = d.brand
   if (fiber !== undefined) input.per100g.fiber = fiber
   if (portion !== undefined) input.defaultPortionG = portion
@@ -70,17 +89,28 @@ function parseDraft(d: Draft, aisle: Food['aisle']): Parsed {
   return message === null ? { ok: true, input } : { ok: false, error: message }
 }
 
-function FoodForm({ food, initialName }: { food: Food | undefined; initialName: string }) {
+function FoodForm({
+  food,
+  prefill,
+  origin,
+}: {
+  food: Food | undefined
+  prefill: Prefill
+  origin: string | null
+}) {
   const goBack = useGoBack()
+  const navigate = useNavigate()
   const { search, addPath } = useAddContext()
-  const [draft, setDraft] = useState(() => toDraft(food, initialName))
+  const [draft, setDraft] = useState(() => toDraft(food, prefill))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const set = (key: keyof Draft) => (value: string) => setDraft((d) => ({ ...d, [key]: value }))
   const fromAdd = search !== ''
+  const fromScan = !food && prefill.ean !== ''
+  const scanPath = `/nutrition/scanner${search}`
 
   const save = async () => {
-    const parsed = parseDraft(draft, food?.aisle)
+    const parsed = parseDraft(draft, food?.aisle, food?.ean !== undefined)
     if (!parsed.ok) {
       setError(parsed.error)
       return
@@ -95,7 +125,12 @@ function FoodForm({ food, initialName }: { food: Food | undefined; initialName: 
         const created = await createFood(parsed.input)
         // Venu de l'écran Ajouter : on y revient (sans doublon d'historique) avec le nouvel aliment cherché ;
         // les ajouts déjà faits sont conservés (sessionStorage de l'écran Ajouter).
-        if (fromAdd) {
+        if (fromScan) {
+          // Retour au scan : l'aliment créé passe directement à la quantité, puis au journal.
+          navigate(`${scanPath}${search ? '&' : '?'}ajout=${encodeURIComponent(created.id)}`, {
+            replace: true,
+          })
+        } else if (fromAdd) {
           setSearchSeed(created.name)
           goBack(`${addPath}&q=${encodeURIComponent(created.name)}`)
         } else {
@@ -108,12 +143,19 @@ function FoodForm({ food, initialName }: { food: Food | undefined; initialName: 
     }
   }
 
-  const cancelTo = food ? `/nutrition/aliments/${food.id}${search}` : addPath
+  const cancelTo = food ? `/nutrition/aliments/${food.id}${search}` : fromScan ? scanPath : addPath
 
   return (
     <>
       <BackLink to={cancelTo}>Retour</BackLink>
       <h1 className="mt-1 text-2xl font-bold">{food ? 'Modifier l’aliment' : 'Créer un aliment'}</h1>
+      {fromScan ? (
+        <p className="mt-2 text-base text-zinc-300">
+          {origin === 'incomplete'
+            ? 'Open Food Facts connaît ce produit mais sans toutes les valeurs. Complète-les depuis l’emballage.'
+            : 'Ce produit n’est pas dans Open Food Facts. Recopie les valeurs depuis l’emballage (pour 100 g).'}
+        </p>
+      ) : null}
       {food?.source === 'ciqual' ? (
         <p className="mt-2 text-base text-zinc-300">
           Tes changements créent une version à toi de cet aliment ; tu pourras rétablir l’original.
@@ -132,6 +174,15 @@ function FoodForm({ food, initialName }: { food: Food | undefined; initialName: 
           value={draft.brand}
           onChange={set('brand')}
           autoComplete="off"
+        />
+        <TextField
+          label="Code-barres (facultatif)"
+          value={draft.ean}
+          onChange={set('ean')}
+          inputMode="numeric"
+          pattern="[0-9 ]*"
+          autoComplete="off"
+          hint="Permet de retrouver cet aliment en le scannant."
         />
         <p className="-mb-2 text-base font-semibold text-zinc-200">Valeurs pour 100 g</p>
         <DecimalField label="Calories" value={draft.kcal} onChange={set('kcal')} unit="kcal" />
@@ -165,7 +216,18 @@ export default function FoodFormScreen() {
   const [params] = useSearchParams()
   const { addPath } = useAddContext()
   const { data, loading } = useFood(id)
-  if (id === undefined) return <FoodForm food={undefined} initialName={params.get('nom') ?? ''} />
+  if (id === undefined)
+    return (
+      <FoodForm
+        food={undefined}
+        prefill={{
+          name: params.get('nom') ?? '',
+          brand: params.get('marque') ?? '',
+          ean: params.get('ean') ?? '',
+        }}
+        origin={params.get('origine')}
+      />
+    )
   if (!data && loading) return <div aria-busy="true" className="min-h-40" />
   if (!data) {
     return (
@@ -175,5 +237,5 @@ export default function FoodFormScreen() {
       </>
     )
   }
-  return <FoodForm key={data.id} food={data} initialName="" />
+  return <FoodForm key={data.id} food={data} prefill={{ name: '', brand: '', ean: '' }} origin={null} />
 }

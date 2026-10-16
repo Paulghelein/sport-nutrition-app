@@ -85,6 +85,10 @@ export default function FoodScreen() {
         {sourceLabel}
         {modified ? ' · modifié' : ''}
       </p>
+      {food.ean ? <p className="mt-1 text-base text-zinc-400">Code-barres : {food.ean}</p> : null}
+      {food.source === 'off' ? (
+        <p className="mt-1 text-sm text-zinc-400">Données Open Food Facts (ODbL)</p>
+      ) : null}
 
       <Card className="mt-5">
         <h2 className="text-lg font-bold">Pour 100 g</h2>

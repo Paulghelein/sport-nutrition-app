@@ -82,6 +82,11 @@ function applyFoodInput(base: Food, input: FoodInput, now: IsoDateTime): Food {
   delete row.aisle
   const brand = input.brand?.trim()
   if (brand) row.brand = brand
+  // `ean` absent = inchangé (un formulaire sans champ code-barres ne l'efface pas) ; chaîne vide = effacé.
+  if (input.ean !== undefined) {
+    delete row.ean
+    if (input.ean.trim()) row.ean = input.ean.trim()
+  }
   if (input.defaultPortionG !== undefined) row.defaultPortionG = input.defaultPortionG
   if (input.aisle !== undefined) row.aisle = input.aisle
   if (!foodSchema.safeParse(row).success)
@@ -94,6 +99,7 @@ function sameFoodContent(a: Food, b: Food): boolean {
     JSON.stringify([
       f.name,
       f.brand ?? null,
+      f.ean ?? null,
       f.defaultPortionG ?? null,
       f.aisle ?? null,
       [f.per100g.kcal, f.per100g.protein, f.per100g.carbs, f.per100g.fat, f.per100g.fiber ?? null],

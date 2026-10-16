@@ -1,7 +1,7 @@
 // Scan de code-barres et Open Food Facts (J7, SPEC §4.4).
 import type { Per100g } from './nutrition'
 
-/** Code-barres normalisé (chiffres seuls) : EAN-13, EAN-8 ou UPC-A (12 chiffres), clé de contrôle vérifiée. */
+/** Code-barres normalisé (chiffres seuls, clé de contrôle vérifiée) : EAN-8 ou EAN-13 ; un UPC-A (12) est converti en EAN-13 (`0` + code) pour unifier le cache. */
 export type Ean = string
 
 /**
