@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, linkButtonClass } from '../../ui'
 import type { SessionDuration } from '../../types'
+import { PREVIEW_PATH } from '../routes'
 import { DurationPicker } from './DurationPicker'
 import { loadDuration, saveDuration } from './durations'
-
-export const PREVIEW_PATH = '/seance/apercu'
 
 /** Carte de l'écran Séance : choix du temps puis lien vers l'aperçu (durée dans l'URL). */
 export function SessionLauncher() {

@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { collectErrors, completeOnboarding } from './helpers.ts'
+import { collectErrors, completeOnboarding, openSettings, openTraining } from './helpers.ts'
 
 /**
  * Exercices de départ lus dans src/content/exercises/*.ts (ligne `id:` / `name:` à 4 espaces).
@@ -29,13 +29,14 @@ const nav = (page: Page) => page.getByRole('navigation', { name: 'Navigation pri
 async function openLibrary(page: Page) {
   await page.goto('./')
   await completeOnboarding(page)
+  await openTraining(page)
   await page.getByRole('link', { name: /Bibliothèque d’exercices/ }).click()
-  await expect(page).toHaveURL(/\/seance\/exercices$/)
+  await expect(page).toHaveURL(/\/entrainement\/exercices$/)
   await expect(page.getByRole('heading', { name: 'Exercices', level: 1 })).toBeVisible()
 }
 
 /** Ligne de la liste, repérée par l’id de l’exercice (les noms se préfixent : « Pompes », « Pompes archer »). */
-const row = (page: Page, id: string) => page.locator(`a[href$="/seance/exercices/${id}"]`)
+const row = (page: Page, id: string) => page.locator(`a[href$="/entrainement/exercices/${id}"]`)
 
 test('liste : recherche sans accent, filtre par schéma, panneau Filtres', async ({ page }) => {
   const errors = collectErrors(page)
@@ -94,7 +95,7 @@ test('chaque exercice de départ a une fiche lisible sur iPhone', async ({ page 
 
   const problems: string[] = []
   for (const ex of seeds) {
-    await page.goto(`./seance/exercices/${ex.id}`)
+    await page.goto(`./entrainement/exercices/${ex.id}`)
     const title = page.getByRole('heading', { level: 1, name: ex.name, exact: true })
     try {
       await expect(title).toBeVisible({ timeout: 5000 })
@@ -167,7 +168,7 @@ test('modifier un exercice de départ puis rétablir l’original', async ({ pag
   await page.getByLabel('Répétitions min').fill('7')
   await page.getByLabel('Répétitions max').fill('9')
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
-  await expect(page).toHaveURL(/\/seance\/exercices\/push-up$/)
+  await expect(page).toHaveURL(/\/entrainement\/exercices\/push-up$/)
   await expect(page.getByText('7 à 9 répétitions')).toBeVisible()
   await expect(page.getByText('· Modifié')).toBeVisible()
 
@@ -216,7 +217,7 @@ test('créer un exercice perso (erreur de validation d’abord) puis le supprime
   const dialog = page.getByRole('dialog', { name: 'Supprimer cet exercice ?' })
   await expect(dialog).toContainText('disparaîtra de la bibliothèque')
   await dialog.getByRole('button', { name: 'Supprimer' }).click()
-  await expect(page).toHaveURL(/\/seance\/exercices$/)
+  await expect(page).toHaveURL(/\/entrainement\/exercices$/)
   await expect(page.getByRole('link', { name: /^Curl test e2e/ })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /Exercices supprimés \(0\)/ })).toBeVisible()
   expect(errors).toEqual([])
@@ -230,7 +231,7 @@ test('supprimer un exercice de départ puis le restaurer', async ({ page }) => {
   const dialog = page.getByRole('dialog', { name: 'Supprimer cet exercice ?' })
   await expect(dialog).toContainText('Exercices supprimés')
   await dialog.getByRole('button', { name: 'Supprimer' }).click()
-  await expect(page).toHaveURL(/\/seance\/exercices$/)
+  await expect(page).toHaveURL(/\/entrainement\/exercices$/)
   await expect(row(page, 'archer-push-up')).toHaveCount(0)
 
   await page.getByRole('link', { name: 'Exercices supprimés (1)' }).click()
@@ -255,7 +256,7 @@ test('la sauvegarde contient les surcharges et les restaure à l’import', asyn
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
   await expect(page.getByText('7 à 9 répétitions')).toBeVisible()
 
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByRole('button', { name: 'Préparer la sauvegarde' }).click()
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Télécharger le fichier' }).click()
@@ -266,7 +267,7 @@ test('la sauvegarde contient les surcharges et les restaure à l’import', asyn
   expect(parsed.tables.exercises?.some((e) => e.id === 'push-up' && e.source === 'seed')).toBe(true)
 
   // Rétablir l'original, puis réimporter (Remplacer) : la surcharge revient.
-  await page.goto('./seance/exercices/push-up')
+  await page.goto('./entrainement/exercices/push-up')
   await page.getByRole('button', { name: 'Rétablir l’original' }).click()
   await page
     .getByRole('dialog', { name: 'Rétablir l’original ?' })
@@ -274,7 +275,7 @@ test('la sauvegarde contient les surcharges et les restaure à l’import', asyn
     .click()
   await expect(page.getByText('6 à 15 répétitions')).toBeVisible()
 
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByLabel('Choisir un fichier').setInputFiles({
     name: download.suggestedFilename(),
     mimeType: 'application/json',
@@ -287,7 +288,7 @@ test('la sauvegarde contient les surcharges et les restaure à l’import', asyn
     .click()
   await expect(page.getByText(/Sauvegarde importée/)).toBeVisible()
 
-  await nav(page).getByRole('link', { name: 'Séance' }).click()
+  await nav(page).getByRole('link', { name: 'Entraînement' }).click()
   await page.getByRole('link', { name: /Bibliothèque d’exercices/ }).click()
   await row(page, 'push-up').click()
   await expect(page.getByText('7 à 9 répétitions')).toBeVisible()
@@ -300,7 +301,9 @@ async function startNewExercise(page: Page, name: string) {
   await page.getByRole('group', { name: 'Muscles principaux' }).getByText('Biceps', { exact: true }).click()
 }
 
-test('exercice kettlebell : cible Durée affichée sur la fiche, puis retour aux Répétitions', async ({ page }) => {
+test('exercice kettlebell : cible Durée affichée sur la fiche, puis retour aux Répétitions', async ({
+  page,
+}) => {
   const errors = collectErrors(page)
   await openLibrary(page)
   await startNewExercise(page, 'Portage test e2e')
@@ -316,7 +319,10 @@ test('exercice kettlebell : cible Durée affichée sur la fiche, puis retour aux
   await expect(page.getByText(/répétitions/)).toHaveCount(0)
 
   await page.getByRole('link', { name: 'Modifier' }).click()
-  await page.getByRole('group', { name: 'Cible de chaque série' }).getByText('Répétitions', { exact: true }).click()
+  await page
+    .getByRole('group', { name: 'Cible de chaque série' })
+    .getByText('Répétitions', { exact: true })
+    .click()
   await page.getByLabel('Répétitions min').fill('8')
   await page.getByLabel('Répétitions max').fill('12')
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
@@ -366,7 +372,7 @@ test('enregistrer un exercice de départ sans rien changer ne crée pas de surch
   await row(page, 'push-up').click()
   await page.getByRole('link', { name: 'Modifier' }).click()
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
-  await expect(page).toHaveURL(/\/seance\/exercices\/push-up$/)
+  await expect(page).toHaveURL(/\/entrainement\/exercices\/push-up$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Pompes', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Rétablir l’original' })).toHaveCount(0)
   await expect(page.getByText('· Modifié')).toHaveCount(0)

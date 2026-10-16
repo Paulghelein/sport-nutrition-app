@@ -9,7 +9,6 @@ import {
   addExercise,
   buildWarmup,
   estimateMinutes,
-  generateSession,
   moveBlock,
   planFromTemplate,
   removeExercise,
@@ -42,6 +41,7 @@ import { parseDuration, saveDuration } from './durations'
 import { ExercisePickerSheet } from './ExercisePickerSheet'
 import { formatSeconds } from './format'
 import { BackLink } from './parts'
+import { planForDuration, previewKey } from './previewPlan'
 import { clearPreviewEdit, loadPreviewEdit, savePreviewEdit } from './previewDraft'
 import { SaveTemplate } from './SaveTemplate'
 import { useEngineInput } from './useEngineInput'
@@ -95,7 +95,7 @@ function ExerciseLine({ se, ex, showRest, onReplace, onRemove }: LineProps) {
   return (
     <div className="py-2.5">
       <Link
-        to={`/seance/exercices/${se.exerciseId}`}
+        to={`/entrainement/exercices/${se.exerciseId}`}
         className="inline-flex min-h-11 items-center text-lg font-semibold text-zinc-100 underline decoration-zinc-600 underline-offset-4"
       >
         {name}
@@ -338,7 +338,7 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
             <Link to="/reglages" className={linkButtonClass('primary')}>
               Ouvrir les Réglages
             </Link>
-            <Link to="/seance/exercices" className={linkButtonClass('secondary')}>
+            <Link to="/entrainement/exercices" className={linkButtonClass('secondary')}>
               Bibliothèque d’exercices
             </Link>
           </div>
@@ -476,10 +476,10 @@ export default function PreviewScreen() {
       }
       return {
         missing: false as const,
-        plan: generateSession({ ...data, durationMin: duration }),
+        plan: planForDuration(data, duration),
         issues: [] as TemplateIssue[],
         notes: [] as string[],
-        key: `duree:${duration}:${data.date}`,
+        key: previewKey(duration, data.date),
         name: `Séance ${duration} min`,
       }
     } catch (e) {
@@ -491,8 +491,8 @@ export default function PreviewScreen() {
   const fromTemplate = templateId !== undefined
   return (
     <section>
-      <BackLink to={fromTemplate ? '/seance/modeles' : '/seance'}>
-        {fromTemplate ? 'Modèles' : 'Séance'}
+      <BackLink to={fromTemplate ? '/entrainement/modeles' : '/entrainement'}>
+        {fromTemplate ? 'Modèles' : 'Entraînement'}
       </BackLink>
       <h1 className="mt-2 text-3xl font-bold">
         {templateId === CLAUDE_TEMPLATE_ID ? 'Séance proposée par Claude' : 'Aperçu'}

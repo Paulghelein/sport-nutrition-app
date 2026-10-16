@@ -84,6 +84,11 @@ export function buildExercisesById(seeds: readonly Exercise[], rows: readonly Ex
   return map
 }
 
+/** Seuil de la série : `min(3, séances minimum du profil)`, pour qu'un profil à 2 séances/sem. ait aussi une série. */
+export function profileWeekTarget(profile: { weeklySessionsMin: number }): number {
+  return Math.min(REGULARITY_WEEK_TARGET, profile.weeklySessionsMin)
+}
+
 export const DELETED_EXERCISE_NAME = 'Exercice supprimé'
 
 // ---------- Force ----------
@@ -308,7 +313,7 @@ export function buildProgressModel({ data, equipment, seeds, now }: ProgressInpu
   const library = mergeLibrary(seeds, data.exerciseRows, data.prefs)
   const nameOf = (id: string): string => byId.get(id)?.name ?? DELETED_EXERCISE_NAME
 
-  const weekTarget = Math.min(REGULARITY_WEEK_TARGET, profile.weeklySessionsMin)
+  const weekTarget = profileWeekTarget(profile)
   const reg = regularity(data.sessions, today, { weekTarget })
 
   const goalsAt = (p: typeof profile, on: LocalDate) => {

@@ -150,7 +150,7 @@ test('Progrès : carte du lundi, rappel de sauvegarde, données, mensurations', 
   // Mensurations : ajout, modification, suppression
   const rows = page.getByRole('button', { name: /^Modifier la mensuration/ })
   await expect(rows).toHaveCount(0)
-  await page.getByRole('button', { name: 'Ajouter', exact: true }).click()
+  await page.locator('main').getByRole('button', { name: 'Ajouter', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'Ajouter une mensuration' })
   await sheet.getByRole('button', { name: 'Enregistrer' }).click()
   await expect(sheet.getByRole('alert')).toContainText('au moins une mensuration')

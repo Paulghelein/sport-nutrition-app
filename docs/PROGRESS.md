@@ -7,8 +7,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 **v2 commencée le 2026-10-16.** Feuille de route active : `docs/V2.md` (jalons R0 à R5, remplacent J0–J9),
 référence visuelle : `docs/DESIGN.md` + `docs/design/mockups/`. La v1 (J0–J9) est terminée.
 
-R0 — Fondations UI : **terminé le 2026-10-16, à valider sur iPhone** (page `/dev/ui`, accessible depuis Réglages →
-« Composants de l'interface (dev) » ; police correcte en mode avion). Ensuite : R1 Navigation + Aujourd'hui.
+R0 — Fondations UI : terminé le 2026-10-16 (validé sans retour, « RAS » supposé : gabarit de retour non rempli).
+R1 — Navigation + Aujourd'hui : **terminé le 2026-10-16, à valider sur iPhone**. Ensuite : R2 Entraînement.
 
 ## Décisions prises
 
@@ -26,6 +26,31 @@ R0 — Fondations UI : **terminé le 2026-10-16, à valider sur iPhone** (page `
 - 2026-10-16 (R0) : MuscleMap — vue choisie par le nombre de muscles primaires visibles, égalité → vue du premier
   muscle primaire ; `glutes` allume `hips` de face et `glutes` de dos ; pas de niveau « secondaire » (illisible à
   40 px). Garde-fou `tests/noHardcodedColors.test.ts` : liste `V2_SCREENS` à étendre à chaque écran refait.
+- 2026-10-16 (R1) : routes v2 centralisées dans `src/app/routes.ts` ; `/seance/*` redirigé vers `/entrainement/*`
+  (chemin, query et hash conservés, `replace`, fonction pure `legacyRedirect`), mode séance = `/entrainement/seance`,
+  route inconnue et fin d'onboarding → `/`. Réglages n'est plus un onglet (icône en haut à droite d'Aujourd'hui,
+  `/reglages` allume l'onglet Aujourd'hui). Mise en page à onglets dans `src/app/shell/` ; mode cuisine sans barre.
+- 2026-10-16 (R1) : barre du kit `fixed` flottante ; `<main>` reste le seul élément qui défile et réserve
+  `--bar-clearance` en padding bas ; les zones collantes restent en `bottom-0`/`bottom-2` (le sticky se mesure depuis
+  la boîte de contenu de `<main>`, padding exclu : un `bottom` incluant la barre la comptait deux fois et faisait
+  monter le bouton « Terminer » sur la liste, défaut présent dès la v1, aussi en mode cuisine). Fond de
+  `<main>` = canvas sur les écrans v2, `v1-bg` ailleurs (cohabitation : barre claire sur écrans v1 sombres jusqu'à leur refonte).
+- 2026-10-16 (R1) : feuille Ajouter = `AddHost` (shell) ; repas ciblé `slotForNow()` à chaque ouverture. Actions vers
+  l'existant : `?ouvrir=recette|libre` sur l'écran Ajouter, `?claude=1` sur le journal (ouvre l'aperçu d'envoi ; la
+  copie reste derrière le tap), pesée = WeightSheet v1 ouverte après fermeture de la feuille du kit (piles `inert`
+  séparées, jamais superposées), Mensurations = `/progres#mensurations`. « Créer » affiche en attendant R3 « Nouvelle
+  recette » et « Nouvel aliment » (pas de bouton mort pour F4/F5) ; section « Autres » en pastilles (réponse de
+  Claude, import, mensurations) pour que toutes les saisies existantes soient joignables depuis +.
+- 2026-10-16 (R1) : F1 `sessionHeadline` : titre par familles de schémas (bas du corps, poussée, tirage + gainage,
+  bras, mollets), raison = grands groupes travaillés, sous le bas de leur cible ET dans `plan.focus` (le moteur en
+  retire les groupes fatigués), 2 au plus ; deload et « rien de fait en 7 jours » prioritaires. `MUSCLE_LABELS_FR`
+  vit dans `domain/training/volume.ts` (training ne dépend pas de progress).
+- 2026-10-16 (R1) : F2 `dayActivities` : records = règle de `summarizeSession` (première séance d'un exercice ≠
+  record), historique complet exigé ; nutrition jugée sur kcal ET protéines, objectifs du jour = `targetWeight` +
+  `nutritionTargets` (profil actuel appliqué aux jours passés, même limite que Progrès) ; pas de point avant la
+  première pesée. WeekStrip non interactif en R1 (résumé du jour en R4).
+- 2026-10-16 (R1) : carte « Séance du jour » = même plan que l'aperçu (`planForDuration`, même graine, édition de
+  l'aperçu reprise) ; moteur et contenu en `lazy` (démarrage +3 kB gzip seulement).
 
 - 2026-10-15 : stack et architecture fixées (voir CLAUDE.md, docs/SPEC.md).
 - 2026-10-15 : utilisateur homme (formule BMR homme).
@@ -194,6 +219,12 @@ R0 — Fondations UI : **terminé le 2026-10-16, à valider sur iPhone** (page `
 
 ## Fait
 
+- R1 Navigation + Aujourd'hui (2026-10-16) : routes v2 et redirections `/seance/*`, barre d'onglets flottante,
+  feuille Ajouter branchée sur toutes les saisies existantes, écran Aujourd'hui (Ta semaine / Séance du jour /
+  calories), WeekStrip, `sessionHeadline` (F1) et `dayActivities` (F2). Corrigé au passage : StickyStack qui montait
+  sur la liste (défaut v1), rejet non attrapé de l'AudioContext du scan. Total : 1435 tests Vitest, 93 e2e.
+  Démarrage +3 kB gzip (moteur et contenu de la carte séance en lazy).
+
 - J0 Socle (2026-10-15) : projet Vite + React + TS strict, Tailwind, PWA « Forge » (manifest FR, standalone,
   précache complet, autoUpdate), 4 onglets vides avec safe areas, dépendances de la stack installées, arborescence
   avec `index.ts` minimal, tests (Vitest : smoke + fake-indexeddb ; Playwright : onglets sur iPhone 13, hors ligne),
@@ -239,6 +270,16 @@ R0 — Fondations UI : **terminé le 2026-10-16, à valider sur iPhone** (page `
   en chunks à la demande).
 
 ## À faire ensuite
+
+- Valider R1 sur iPhone, puis R2 (Entraînement).
+- Remarques reportées (R1) : WeekCard charge tout `loadProgressData` pour 7 jours (requête limitée en R4) ;
+  `dayActivities` en O(R × H) pour les records (passage chronologique unique en R4 si lent) ; pesée depuis + : si
+  la feuille est fermée pendant la lecture des pesées, la feuille de pesée s'ouvre quand même (rare) ; pas de toast
+  de confirmation après une pesée depuis + ; l'invite de mise à jour `fixed` recouvre la zone collante tant qu'elle
+  est affichée ; carte séance : l'édition de l'aperçu est relue au montage seulement ; chaînes '/entrainement…' en
+  dur dans les écrans d'entraînement (constantes à reprendre en R2) ; « Nouvel exercice » non proposé dans +
+  (création contextuelle depuis la bibliothèque) ; e2e `scan.spec.ts:144` et `:205` instables sous charge (4 workers),
+  verts isolément (3/3).
 
 - Valider R0 sur iPhone, puis R1 (navigation + Aujourd'hui).
 - Remarques reportées (R0) : lien « Composants de l'interface (dev) » et page `/dev/ui` présents en production

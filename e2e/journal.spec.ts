@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { collectErrors, completeOnboarding } from './helpers.ts'
+import { collectErrors, completeOnboarding, openSettings } from './helpers.ts'
 
 const consumed = (page: Page) => page.getByTestId('kcal-consumed')
 /** Texte sans espaces de milliers (Intl insère des espaces insécables). */
@@ -114,10 +114,7 @@ test('journal : recherche, saisie libre, favori, copie d’hier, objectifs', asy
   await expect(consumed(page)).toHaveText('486')
 
   // Objectifs : surplus 20 % -> l'objectif de l'anneau augmente
-  await page
-    .getByRole('navigation', { name: 'Navigation principale' })
-    .getByRole('link', { name: 'Réglages' })
-    .click()
+  await openSettings(page)
   await page.getByLabel('Surplus calorique').fill('20')
   await expect(page.getByTestId('goals-preview')).toBeVisible()
   await page

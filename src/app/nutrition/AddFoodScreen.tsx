@@ -80,7 +80,7 @@ function QuickRow({ item, onAdd }: { item: QuickItem; onAdd: (item: QuickItem) =
 }
 
 export default function AddFoodScreen() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const today = toLocalDate(new Date())
   const askedDate = params.get('date')
@@ -96,8 +96,28 @@ export default function AddFoodScreen() {
   const [query, setQuery] = useState(() => params.get('q') ?? peekSearchSeed())
   const [tab, setTab] = useState<'recents' | 'favorites' | null>(null)
   const [picked, setPicked] = useState<Food | null>(null)
+  // `?ouvrir=recette|libre` (feuille Ajouter) : ouvre la feuille demandée (même si l'écran est déjà affiché), puis
+  // nettoie l'adresse (replace) pour que le retour arrière ne la rouvre pas.
   const [freeOpen, setFreeOpen] = useState(false)
   const [recipeOpen, setRecipeOpen] = useState(false)
+  const wantedSheet = params.get('ouvrir')
+  const [seenSheet, setSeenSheet] = useState<string | null>(null)
+  if (wantedSheet !== seenSheet) {
+    setSeenSheet(wantedSheet)
+    if (wantedSheet === 'recette') setRecipeOpen(true)
+    if (wantedSheet === 'libre') setFreeOpen(true)
+  }
+  useEffect(() => {
+    if (wantedSheet === null) return
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('ouvrir')
+        return next
+      },
+      { replace: true },
+    )
+  }, [wantedSheet, setParams])
   // Ajouts de cette session (repas + jour), conservés si on va voir une fiche aliment puis qu'on revient.
   const addedKey = `added:${slot}:${date}`
   const [storedAdded, setStoredAdded] = useState<string[]>(() => {

@@ -32,7 +32,11 @@ export interface ToastState {
   undo?: () => Promise<void> | void
 }
 
-/** Zone collante en bas de la zone qui défile (jamais `fixed`) : empile le message au-dessus du bouton d'action. */
+/**
+ * Zone collante en bas de la zone qui défile (jamais `fixed`). `sticky` se mesure depuis le bord du CONTENU de <main>
+ * (remplissage exclu) : le remplissage du bas réserve déjà la place de la barre, donc pas de décalage de barre ici.
+ * Empile le message au-dessus du bouton d'action.
+ */
 export function StickyStack({ children }: { children: ReactNode }) {
   return <div className="sticky bottom-2 z-10 mt-4 flex flex-col">{children}</div>
 }

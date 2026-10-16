@@ -8,7 +8,13 @@ const all = import.meta.glob<string>('/src/**/*.{ts,tsx,css,svg}', {
 })
 const html = import.meta.glob<string>('/index.html', { query: '?raw', import: 'default', eager: true })
 
-const V2_DIRS = ['/src/ui/kit/', '/src/app/dev/', '/src/content/visuals/']
+const V2_DIRS = [
+  '/src/ui/kit/',
+  '/src/app/dev/',
+  '/src/app/today/',
+  '/src/app/shell/',
+  '/src/content/visuals/',
+]
 const isV2 = (path: string) => V2_DIRS.some((d) => path.startsWith(d))
 const entries = (pred: (path: string) => boolean): [string, string][] =>
   Object.entries(all).filter(([path]) => pred(path))
@@ -74,7 +80,7 @@ describe('garde-fou : aucune couleur en dur dans le code v2', () => {
 describe('garde-fou : jetons v2 absents des écrans v1', () => {
   // Les noms de jetons v2 (surface, line, canvas, ink…) ont remplacé ceux de la v1 (renommés v1-*) : dans un écran
   // v1 ils changeraient silencieusement le rendu. À étendre à chaque jalon : ajouter ici chaque écran refait en v2.
-  const V2_SCREENS = ['/src/ui/kit/', '/src/app/dev/']
+  const V2_SCREENS = ['/src/ui/kit/', '/src/app/dev/', '/src/app/today/', '/src/app/shell/']
   const inV2Screen = (path: string) => V2_SCREENS.some((d) => path.startsWith(d))
   const V2_TOKEN = new RegExp(
     '(?<![\\w-])(?:[\\w[\\]-]+:)*(?:bg|text|border|divide|ring|fill|stroke)-(?:surface|line|canvas|ink)(?:-(?:raised|sunken|muted|faint))?(?![\\w-])',

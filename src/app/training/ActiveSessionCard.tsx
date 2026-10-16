@@ -36,10 +36,10 @@ export function SessionLinks() {
     'flex min-h-14 flex-1 items-center justify-center rounded-xl border border-v1-line bg-v1-surface px-3 text-base font-semibold text-zinc-100 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400'
   return (
     <div className="mt-4 flex gap-3">
-      <Link to="/seance/historique" className={cls}>
+      <Link to="/entrainement/historique" className={cls}>
         Historique
       </Link>
-      <Link to="/seance/modeles" className={cls}>
+      <Link to="/entrainement/modeles" className={cls}>
         Modèles
       </Link>
     </div>

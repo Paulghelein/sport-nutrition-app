@@ -15,7 +15,7 @@ export default function HistoryScreen() {
 
   return (
     <section>
-      <BackLink to="/seance">Séance</BackLink>
+      <BackLink to="/entrainement">Entraînement</BackLink>
       <h1 className="mt-2 text-3xl font-bold">Historique</h1>
       {error ? (
         <div className="mt-4">
@@ -28,7 +28,7 @@ export default function HistoryScreen() {
           <p className="m-0 text-base text-zinc-300">
             Aucune séance terminée pour l’instant. Ta première apparaîtra ici.
           </p>
-          <Link to="/seance" className={`${linkButtonClass('primary')} mt-4`}>
+          <Link to="/entrainement" className={`${linkButtonClass('primary')} mt-4`}>
             Préparer une séance
           </Link>
         </div>
@@ -41,7 +41,7 @@ export default function HistoryScreen() {
             return (
               <li key={it.id}>
                 <Link
-                  to={`/seance/historique/${it.id}`}
+                  to={`/entrainement/historique/${it.id}`}
                   className="flex min-h-20 flex-col justify-center rounded-2xl border border-v1-line bg-v1-surface p-4 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 >
                   <span className="flex items-center justify-between gap-2">

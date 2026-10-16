@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { BrowserContext, Page } from '@playwright/test'
-import { collectErrors, completeOnboarding, localDate } from './helpers.ts'
+import { collectErrors, completeOnboarding, localDate, openSettings } from './helpers.ts'
 
 /** Évite d'interrompre un chunk lazy en cours de chargement. */
 const settle = (page: Page) => page.waitForLoadState('networkidle')
@@ -188,7 +188,7 @@ test('séance de Claude avec un nouvel exercice : aperçu plafonné, note, Comme
   await expect(page.getByRole('status')).toContainText('1 exercice créé')
 
   await page.getByRole('link', { name: 'Voir la séance' }).click()
-  await expect(page).toHaveURL(/\/seance\/apercu\?modele=claude-plan/)
+  await expect(page).toHaveURL(/\/entrainement\/apercu\?modele=claude-plan/)
   await expect(page.getByRole('heading', { name: 'Séance proposée par Claude' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Hip thrust au sol KB' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Pompes inclinées' })).toBeVisible()
@@ -208,7 +208,7 @@ test('séance de Claude avec un nouvel exercice : aperçu plafonné, note, Comme
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Commencer la séance' }).click()
-  await expect(page).toHaveURL(/\/seance\/en-cours/)
+  await expect(page).toHaveURL(/\/entrainement\/seance/)
   expect(errors).toEqual([])
 })
 
@@ -228,7 +228,10 @@ test('élément invalide : non cochable, non appliqué ; rien à appliquer si to
 }) => {
   const errors = await start(page, context)
   await openResponseScreen(page)
-  await pasteAndAnalyse(page, JSON.stringify([{ type: 'meal', name: 'Sans date', totals: { kcal: 'beaucoup' } }]))
+  await pasteAndAnalyse(
+    page,
+    JSON.stringify([{ type: 'meal', name: 'Sans date', totals: { kcal: 'beaucoup' } }]),
+  )
   await expect(page.getByText('Élément 1 invalide')).toBeVisible()
   await expect(page.getByRole('checkbox')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Appliquer' })).toBeDisabled()
@@ -279,17 +282,14 @@ test('préférence : appliquée et visible sur la fiche de l’exercice', async 
   await expect(page.getByText('Je n’aime pas')).toBeVisible()
   await page.getByRole('button', { name: 'Appliquer' }).click()
   await expect(page.getByRole('status')).toContainText('1 préférence enregistrée')
-  await page.goto('./seance/exercices/goblet-squat')
+  await page.goto('./entrainement/exercices/goblet-squat')
   await expect(page.getByRole('radio', { name: 'Je n’aime pas' })).toBeChecked()
   expect(errors).toEqual([])
 })
 
 test('réglages : URL du coach enregistrée et utilisée, copie des instructions', async ({ page, context }) => {
   const errors = await start(page, context)
-  await page
-    .getByRole('navigation', { name: 'Navigation principale' })
-    .getByRole('link', { name: 'Réglages' })
-    .click()
+  await openSettings(page)
   const field = page.getByLabel('Adresse du Projet Coach')
   await field.fill('http://exemple.com')
   await page.getByRole('button', { name: 'Enregistrer l’adresse' }).click()
@@ -422,7 +422,7 @@ test('boutons de la fiche recette, du récapitulatif, du bilan et de la page Pro
     ],
     profile: [{ ...profile, createdAt: new Date(2026, 0, 1).toISOString() }],
   })
-  await page.goto('./seance/recap/e2e-claude-s1')
+  await page.goto('./entrainement/recap/e2e-claude-s1')
   await expect(page.getByRole('heading', { name: 'Séance terminée' })).toBeVisible()
   await page.getByRole('button', { name: 'Demander à Claude' }).click()
   const after = await messageOf(page)

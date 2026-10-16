@@ -225,7 +225,7 @@ export default function ClaudeResponseScreen() {
   return (
     <section>
       <Link
-        to="/seance"
+        to="/entrainement"
         onClick={(e) => {
           // Retour à l'écran d'où l'on vient (journal, séance…) ; sans historique (lien direct), on va à Séance.
           if ((window.history.state as { idx?: number } | null)?.idx) {
@@ -252,7 +252,10 @@ export default function ClaudeResponseScreen() {
             ))}
           </SuccessNote>
           {s.outcome.sessionPlanFor !== undefined ? (
-            <Link to={`/seance/apercu?modele=${CLAUDE_TEMPLATE_ID}`} className={linkButtonClass('primary')}>
+            <Link
+              to={`/entrainement/apercu?modele=${CLAUDE_TEMPLATE_ID}`}
+              className={linkButtonClass('primary')}
+            >
               Voir la séance
             </Link>
           ) : null}

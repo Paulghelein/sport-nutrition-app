@@ -151,6 +151,20 @@ export default function JournalScreen() {
   const [accepting, setAccepting] = useState(false)
   const busy = useRef(false)
   const dismissToast = useCallback(() => setToast(null), [])
+  // `?claude=1` (feuille Ajouter › Décrire à Claude) : ouvre l'aperçu d'envoi, puis nettoie l'adresse (replace).
+  const openClaude = params.get('claude') === '1'
+  const claudeOpened = useCallback(
+    () =>
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('claude')
+          return next
+        },
+        { replace: true },
+      ),
+    [setParams],
+  )
 
   const { data, error: loadError } = useLiveQuery(async () => {
     const [entries, yesterday, profile, weighIns] = await Promise.all([
@@ -316,6 +330,8 @@ export default function JournalScreen() {
         <div className="mt-4">
           <AskClaudeButton
             kind="journal"
+            defaultOpen={openClaude}
+            onDefaultOpened={claudeOpened}
             // Objectifs du jour affiché (affichés à l'écran) ; repli sur ceux d'aujourd'hui si le jour consulté n'a pas de poids de référence.
             build={(base) => buildJournalMessage({ ...base, targets: targets ?? base.targets, day: log })}
           />

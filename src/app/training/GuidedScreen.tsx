@@ -255,12 +255,12 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
         now: new Date().toISOString(),
       })
       const done = await completeSession(completion)
-      navigate(`/seance/recap/${done.id}`, { replace: true })
+      navigate(`/entrainement/recap/${done.id}`, { replace: true })
     } catch (e) {
       // Déjà terminée ailleurs (autre onglet, double appui) : on relit la base plutôt que de deviner d'après le message.
       const stored = await getSession(session.id).catch(() => undefined)
       if (stored?.status === 'done') {
-        navigate(`/seance/recap/${session.id}`, { replace: true })
+        navigate(`/entrainement/recap/${session.id}`, { replace: true })
         return
       }
       const message =
@@ -279,7 +279,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
     setBusy(true)
     try {
       await abandonSession(session.id)
-      navigate('/seance', { replace: true })
+      navigate('/entrainement', { replace: true })
     } catch (e) {
       setSheet(null)
       setBusy(false)
@@ -293,7 +293,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
     await chain.current
     try {
       await saveSessionProgress(sessionRef.current)
-      navigate('/seance')
+      navigate('/entrainement')
     } catch (e) {
       setBusy(false)
       setSaveError(errorMessage(e, 'Impossible d’enregistrer la séance sur ce téléphone.'))
@@ -458,7 +458,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
           title="Quitter sans enregistrer ?"
           message="Les dernières séries n’ont pas pu être enregistrées sur ce téléphone. Si tu quittes maintenant, elles seront perdues."
           confirmLabel="Quitter quand même"
-          onConfirm={() => navigate('/seance')}
+          onConfirm={() => navigate('/entrainement')}
           onCancel={() => setSheet(null)}
         />
       ) : null}
@@ -571,12 +571,12 @@ export default function GuidedScreen() {
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}
       >
         <h1 className="m-0 text-3xl font-bold">Aucune séance en cours</h1>
-        <p className="m-0 text-base text-zinc-300">Prépare une séance depuis l’écran Séance.</p>
+        <p className="m-0 text-base text-zinc-300">Prépare une séance depuis l’écran Entraînement.</p>
         <Link
-          to="/seance"
+          to="/entrainement"
           className="flex min-h-14 items-center justify-center rounded-xl bg-orange-400 px-4 text-lg font-semibold text-zinc-950 no-underline"
         >
-          Aller à Séance
+          Aller à Entraînement
         </Link>
       </div>
     )

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { collectErrors, completeOnboarding, localDate } from './helpers.ts'
+import { collectErrors, completeOnboarding, localDate, openSettings } from './helpers.ts'
 
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Navigation principale' })
 
@@ -37,7 +37,7 @@ async function addWeighIn(page: Page, kg: string, date: string) {
 }
 
 async function setHeight(page: Page, cm: string) {
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByLabel('Taille').fill(cm)
   await page.getByRole('button', { name: 'Enregistrer le profil' }).click()
   await expect(page.getByText('Profil enregistré.')).toBeVisible()
@@ -54,7 +54,7 @@ test('export puis import Remplacer : retour exact à l’état exporté', async 
   await completeOnboarding(page)
   await addWeighIn(page, '71,4', localDate(-2))
 
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await expect(page.getByText('Aucun export pour l’instant.')).toBeVisible()
   const exported = await exportFile(page)
   expect(exported.name).toMatch(/^forge-sauvegarde-.*\.json$/)
@@ -68,7 +68,11 @@ test('export puis import Remplacer : retour exact à l’état exporté', async 
   await setHeight(page, '190')
 
   // Import en mode Remplacer
-  await chooseFile(page, { name: exported.name, mimeType: 'application/json', buffer: Buffer.from(exported.content) })
+  await chooseFile(page, {
+    name: exported.name,
+    mimeType: 'application/json',
+    buffer: Buffer.from(exported.content),
+  })
   await expect(page.getByText(exported.name)).toBeVisible()
   await page.getByRole('button', { name: 'Remplacer toutes mes données' }).click()
   const confirm = page.getByRole('dialog', { name: 'Tout remplacer ?' })
@@ -87,7 +91,7 @@ test('export puis import Remplacer : retour exact à l’état exporté', async 
   await expect(rows.nth(1)).toContainText('71,4')
 
   // Un nouvel export est identique sur les données (hors date d'export / réglages)
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   const again = await exportFile(page)
   const strip = (s: string) => {
     const o = JSON.parse(s) as Record<string, unknown>
@@ -107,7 +111,7 @@ test('import Fusionner : garde les données actuelles et ajoute celles du fichie
   await page.goto('./')
   await completeOnboarding(page)
   await addWeighIn(page, '71,4', localDate(-2))
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   const exported = await exportFile(page)
 
   // Après l'export : une pesée supplémentaire, et la pesée du jour supprimée côté app
@@ -116,12 +120,22 @@ test('import Fusionner : garde les données actuelles et ajoute celles du fichie
   const rows = page.getByRole('button', { name: /^Modifier la pesée/ })
   await expect(rows).toHaveCount(3)
   await rows.first().click()
-  await page.getByRole('dialog', { name: 'Modifier la pesée' }).getByRole('button', { name: 'Supprimer' }).click()
-  await page.getByRole('dialog', { name: 'Supprimer cette pesée ?' }).getByRole('button', { name: 'Supprimer' }).click()
+  await page
+    .getByRole('dialog', { name: 'Modifier la pesée' })
+    .getByRole('button', { name: 'Supprimer' })
+    .click()
+  await page
+    .getByRole('dialog', { name: 'Supprimer cette pesée ?' })
+    .getByRole('button', { name: 'Supprimer' })
+    .click()
   await expect(rows).toHaveCount(2)
 
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
-  await chooseFile(page, { name: exported.name, mimeType: 'application/json', buffer: Buffer.from(exported.content) })
+  await openSettings(page)
+  await chooseFile(page, {
+    name: exported.name,
+    mimeType: 'application/json',
+    buffer: Buffer.from(exported.content),
+  })
   await page.getByRole('button', { name: 'Fusionner avec mes données' }).click()
   await expect(page.getByText(/Sauvegarde importée \(données fusionnées\)/)).toBeVisible()
 
@@ -138,7 +152,7 @@ test('import d’un fichier invalide : message d’erreur, rien de modifié', as
   await forceDownloadPath(page)
   await page.goto('./')
   await completeOnboarding(page)
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
 
   for (const [name, content] of [
     ['casse.json', '{ pas du json'],
@@ -158,11 +172,13 @@ test('import d’un fichier invalide : message d’erreur, rien de modifié', as
   expect(errors).toEqual([])
 })
 
-test('export : un téléchargement ne note pas l’export tant que l’utilisateur ne confirme pas', async ({ page }) => {
+test('export : un téléchargement ne note pas l’export tant que l’utilisateur ne confirme pas', async ({
+  page,
+}) => {
   await forceDownloadPath(page)
   await page.goto('./')
   await completeOnboarding(page)
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByRole('button', { name: 'Préparer la sauvegarde' }).click()
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Télécharger le fichier' }).click()
@@ -175,11 +191,14 @@ test('export : un téléchargement ne note pas l’export tant que l’utilisate
 test('export : share() qui ne se résout jamais ne bloque pas l’interface', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true })
-    Object.defineProperty(navigator, 'share', { value: () => new Promise(() => undefined), configurable: true })
+    Object.defineProperty(navigator, 'share', {
+      value: () => new Promise(() => undefined),
+      configurable: true,
+    })
   })
   await page.goto('./')
   await completeOnboarding(page)
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByRole('button', { name: 'Préparer la sauvegarde' }).click()
   const share = page.getByRole('button', { name: 'Enregistrer ou partager' })
   await share.click()
@@ -202,7 +221,7 @@ test('export : share() résolu note l’export, annulé (AbortError) reste silen
   })
   await page.goto('./')
   await completeOnboarding(page)
-  await nav(page).getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByRole('button', { name: 'Préparer la sauvegarde' }).click()
   await page.getByRole('button', { name: 'Enregistrer ou partager' }).click()
   await expect(page.getByRole('alert')).toHaveCount(0)

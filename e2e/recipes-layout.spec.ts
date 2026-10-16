@@ -46,14 +46,20 @@ async function overflow(page: Page): Promise<string[]> {
   })
 }
 
-async function check(page: Page, name: string, problems: string[]) {
+async function check(page: Page, name: string, problems: string[], bar = true) {
   for (const o of await overflow(page)) problems.push(`[${name}] débordement : ${o}`)
   for (const s of await smallTargets(page)) problems.push(`[${name}] cible < ${MIN} px : ${s}`)
   const nav = page.getByRole('navigation', { name: 'Navigation principale' })
+  if (!bar) {
+    // Mode cuisine : plein écran, la barre flottante est masquée.
+    if ((await nav.count()) > 0) problems.push(`[${name}] barre d’onglets présente en mode cuisine`)
+    return
+  }
+  // Barre flottante (fixed) : visible et entièrement dans l'écran, au-dessus du bord bas.
   const box = await nav.boundingBox()
   const vh = page.viewportSize()?.height ?? 844
-  if (!box || Math.abs(box.y + box.height - vh) > 1)
-    problems.push(`[${name}] barre d’onglets absente ou décollée du bas`)
+  if (!box || box.y + box.height > vh + 1 || box.y + box.height < vh - 60)
+    problems.push(`[${name}] barre d’onglets absente ou mal placée`)
 }
 
 test('recettes : pas de débordement, cibles >= 44 px, barre d’onglets en place (390x844)', async ({
@@ -96,9 +102,9 @@ test('recettes : pas de débordement, cibles >= 44 px, barre d’onglets en plac
 
   await page.getByRole('link', { name: 'Cuisiner' }).click()
   await expect(page.getByLabel('Portions à cuisiner : 4')).toBeVisible()
-  await check(page, 'cuisine ingrédients', problems)
+  await check(page, 'cuisine ingrédients', problems, false)
   await page.getByRole('button', { name: 'Voir les étapes' }).click()
-  await check(page, 'cuisine étapes', problems)
+  await check(page, 'cuisine étapes', problems, false)
 
   await page.goto('./nutrition/frigo')
   await expect(page.getByTestId('fridge-left')).toBeVisible()

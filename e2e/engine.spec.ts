@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { collectErrors, completeOnboarding } from './helpers.ts'
+import { collectErrors, completeOnboarding, openSettings, openTraining } from './helpers.ts'
 
 /** Heure figée : la graine de la génération (la date) rend les séances identiques d'un lancement à l'autre. */
 async function start(page: Page) {
   await page.clock.setFixedTime(new Date('2026-10-15T09:00:00'))
   await page.goto('./')
   await completeOnboarding(page)
+  await openTraining(page)
 }
 
 /** Les radios sont masqués visuellement (sr-only) : on clique leur étiquette, puis on vérifie l'état du radio. */
@@ -22,17 +23,17 @@ test('aperçu de séance : 30 puis 60 min, finisher à 60, durée retenue au ret
 
   await pick(page, '30 min')
   await page.getByRole('link', { name: 'Voir la séance' }).click()
-  await expect(page).toHaveURL(/\/seance\/apercu\?duree=30$/)
+  await expect(page).toHaveURL(/\/entrainement\/apercu\?duree=30$/)
   await expect(page.getByRole('heading', { name: 'Aperçu', level: 1 })).toBeVisible()
   await expect(page.getByText(/^≈ \d+ min$/)).toBeVisible()
-  await expect(page.locator('a[href*="/seance/exercices/"]').nth(2)).toBeVisible()
+  await expect(page.locator('a[href*="/entrainement/exercices/"]').nth(2)).toBeVisible()
   await expect(page.getByText('Finisher', { exact: true })).toHaveCount(0)
 
   await pick(page, '60 min')
   await expect(page).toHaveURL(/duree=60$/)
   await expect(page.getByText('Finisher', { exact: true })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Séance', exact: true }).first().click()
+  await page.getByRole('link', { name: 'Entraînement', exact: true }).first().click()
   await expect(page.getByRole('radio', { name: '60 min' })).toBeChecked()
 
   expect(errors).toEqual([])
@@ -49,7 +50,7 @@ test('volume de la semaine visible sur l’écran Séance', async ({ page }) => 
 test('réglages du moteur : cible conservée, validation, rétablissement, fréquence', async ({ page }) => {
   const errors = collectErrors(page)
   await start(page)
-  await page.getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
 
   const section = page.locator('section', {
     has: page.getByRole('heading', { name: 'Moteur d’entraînement' }),

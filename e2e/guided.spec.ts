@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { collectErrors, completeOnboarding } from './helpers.ts'
+import { collectErrors, completeOnboarding, openTraining } from './helpers.ts'
 
 async function pick(page: Page, name: string) {
   const radio = page.getByRole('radio', { name })
@@ -13,6 +13,7 @@ async function boot(page: Page) {
   await page.clock.install()
   await page.goto('./')
   await completeOnboarding(page)
+  await openTraining(page)
 }
 
 async function openPreview(page: Page, duration: string) {
@@ -24,7 +25,7 @@ async function openPreview(page: Page, duration: string) {
 async function startGuided(page: Page, duration = '20 min') {
   await openPreview(page, duration)
   await page.getByRole('button', { name: 'Commencer la séance' }).click()
-  await expect(page).toHaveURL(/\/seance\/en-cours$/)
+  await expect(page).toHaveURL(/\/entrainement\/seance$/)
   await expect(page.getByRole('heading', { name: 'Échauffement' })).toBeVisible()
   await page.getByRole('button', { name: 'C’est parti' }).click()
 }
@@ -63,12 +64,12 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
 
   // Aperçu : remplacer le premier exercice (avec « Comment faire ? » empilé), puis démarrer.
   await openPreview(page, '20 min')
-  const firstName = await page.locator('a[href*="/seance/exercices/"]').first().innerText()
+  const firstName = await page.locator('a[href*="/entrainement/exercices/"]').first().innerText()
   const picker = page.getByRole('dialog', { name: /Remplacer l’exercice/ })
   const replaceButtons = page.getByRole('button', { name: /^Remplacer / })
   let replacedName = firstName
   for (let i = 0; i < (await replaceButtons.count()); i++) {
-    const name = await page.locator('a[href*="/seance/exercices/"]').nth(i).innerText()
+    const name = await page.locator('a[href*="/entrainement/exercices/"]').nth(i).innerText()
     await replaceButtons.nth(i).click()
     const choices = picker.locator('li button')
     await expect(picker).toBeVisible()
@@ -85,14 +86,14 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
     await page.getByRole('button', { name: 'Fermer' }).click()
     await choices.first().click()
     await expect(picker).toHaveCount(0)
-    replacedName = await page.locator('a[href*="/seance/exercices/"]').nth(i).innerText()
+    replacedName = await page.locator('a[href*="/entrainement/exercices/"]').nth(i).innerText()
     expect(replacedName).not.toBe(name)
     break
   }
   expect(replacedName).not.toBe(firstName === replacedName ? '' : firstName)
 
   // Édition gardée au retour depuis une fiche.
-  const links = page.locator('a[href*="/seance/exercices/"]')
+  const links = page.locator('a[href*="/entrainement/exercices/"]')
   const names = await links.allInnerTexts()
   await links.first().click()
   await page.goBack()
@@ -138,7 +139,7 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
   await page.getByRole('button', { name: 'Terminer la séance' }).click()
 
   // Récapitulatif.
-  await expect(page).toHaveURL(/\/seance\/recap\//)
+  await expect(page).toHaveURL(/\/entrainement\/recap\//)
   await expect(page.getByRole('heading', { name: 'Séance terminée' })).toBeVisible()
   await expect(page.getByText('Séries faites')).toBeVisible()
   await page.screenshot({ path: 'test-results/guided-recap.png', fullPage: true })
@@ -152,12 +153,12 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
   await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await expect(page.getByText(/Modèle « Mon modèle test » enregistré/)).toBeVisible()
   await page.getByRole('button', { name: 'Terminé' }).click()
-  await expect(page).toHaveURL(/\/seance$/)
+  await expect(page).toHaveURL(/\/entrainement$/)
 
   // Historique : corriger une série.
   await page.getByRole('link', { name: 'Historique' }).click()
   await expect(page.getByText('Terminée', { exact: true })).toBeVisible()
-  await page.locator('a[href*="/seance/historique/"]').first().click()
+  await page.locator('a[href*="/entrainement/historique/"]').first().click()
   await page.getByRole('button', { name: 'Corriger les séries' }).click()
   await expect(page.getByText(/ne modifie pas ta progression/)).toBeVisible()
   const reps = page.getByLabel('Répétitions').first()
@@ -167,12 +168,12 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
   await page.screenshot({ path: 'test-results/guided-history-detail.png', fullPage: true })
 
   // Modèle : relancer.
-  await page.goto('./seance/modeles')
+  await page.goto('./entrainement/modeles')
   await expect(page.getByRole('heading', { name: 'Mon modèle test' })).toBeVisible()
   await page.getByRole('link', { name: 'Démarrer Mon modèle test' }).click()
   await expect(page).toHaveURL(/apercu\?modele=/)
   await page.getByRole('button', { name: 'Commencer la séance' }).click()
-  await expect(page).toHaveURL(/\/seance\/en-cours$/)
+  await expect(page).toHaveURL(/\/entrainement\/seance$/)
 
   expect(errors).toEqual([])
 })
@@ -216,7 +217,7 @@ test('reprise après rechargement : même série, minuteur de repos cohérent', 
   // Pause puis reprise depuis l'écran Séance.
   await page.getByRole('button', { name: 'Quitter' }).click()
   await page.getByRole('button', { name: 'Mettre en pause' }).click()
-  await expect(page).toHaveURL(/\/seance$/)
+  await expect(page).toHaveURL(/\/entrainement$/)
   await page.getByRole('link', { name: 'Reprendre', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1, name: next })).toBeVisible()
 
@@ -224,7 +225,7 @@ test('reprise après rechargement : même série, minuteur de repos cohérent', 
   await page.getByRole('button', { name: 'Quitter' }).click()
   await page.getByRole('button', { name: 'Abandonner la séance' }).click()
   await page.getByRole('button', { name: 'Abandonner', exact: true }).click()
-  await expect(page).toHaveURL(/\/seance$/)
+  await expect(page).toHaveURL(/\/entrainement$/)
   await expect(page.getByRole('link', { name: 'Reprendre', exact: true })).toHaveCount(0)
   expect(errors).toEqual([])
 })
@@ -369,7 +370,7 @@ test('double tap sur « Terminer la séance » : une seule séance done, progres
   await runToEnd(page)
   const finish = page.getByRole('button', { name: 'Terminer la séance' })
   await finish.dblclick({ delay: 0 })
-  await expect(page).toHaveURL(/\/seance\/recap\//)
+  await expect(page).toHaveURL(/\/entrainement\/recap\//)
   await expect(page.getByRole('heading', { name: 'Séance terminée' })).toBeVisible()
   const sessions = await readStore<RawSession>(page, 'sessions')
   expect(sessions.filter((s) => s.status === 'done')).toHaveLength(1)
@@ -416,10 +417,10 @@ test('deuxième séance du même exercice : la charge proposée évolue après d
   if (!s1) throw new Error('séance 1 absente')
 
   await page.clock.fastForward(24 * 3600 * 1000)
-  await page.goto('./seance/modeles')
+  await page.goto('./entrainement/modeles')
   await page.getByRole('link', { name: 'Démarrer Même séance' }).click()
   await page.getByRole('button', { name: 'Commencer la séance' }).click()
-  await expect(page).toHaveURL(/\/seance\/en-cours$/)
+  await expect(page).toHaveURL(/\/entrainement\/seance$/)
   await page.getByRole('button', { name: 'C’est parti' }).click()
   const s2 = (await readStore<RawSession>(page, 'sessions')).find((s) => s.status === 'in_progress')
   if (!s2) throw new Error('séance 2 absente')
@@ -476,7 +477,7 @@ test('abandon : la séance n’entre pas dans le volume de la semaine', async ({
   await page.getByRole('button', { name: 'Quitter' }).click()
   await page.getByRole('button', { name: 'Abandonner la séance' }).click()
   await page.getByRole('button', { name: 'Abandonner', exact: true }).click()
-  await expect(page).toHaveURL(/\/seance$/)
+  await expect(page).toHaveURL(/\/entrainement$/)
   const sessions = await readStore<RawSession>(page, 'sessions')
   expect(sessions.map((s) => s.status)).toEqual(['abandoned'])
   await expect(page.getByRole('progressbar').first()).toBeVisible()
@@ -490,7 +491,7 @@ test('carte « Reprendre » sur l’écran Séance pendant une séance en cours'
   await boot(page)
   await startGuided(page)
   await doSet(page)
-  await page.goto('./seance')
+  await page.goto('./entrainement')
   await expect(page.getByText(/Séance en cours/)).toBeVisible()
   await expect(page.getByRole('link', { name: 'Reprendre', exact: true })).toBeVisible()
   await page.screenshot({ path: 'test-results/guided-resume-card.png' })

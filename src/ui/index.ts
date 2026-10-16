@@ -1,4 +1,3 @@
-export { TabBar } from './TabBar'
 export { useLiveQuery } from './useLiveQuery'
 export type { LiveQueryState } from './useLiveQuery'
 export { Button } from './Button'

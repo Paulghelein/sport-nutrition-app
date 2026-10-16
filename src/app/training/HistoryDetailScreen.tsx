@@ -181,7 +181,7 @@ export default function HistoryDetailScreen() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const back = <BackLink to="/seance/historique">Historique</BackLink>
+  const back = <BackLink to="/entrainement/historique">Historique</BackLink>
   if (error) {
     return (
       <section>
@@ -197,7 +197,7 @@ export default function HistoryDetailScreen() {
       <section>
         {back}
         <h1 className="mt-2 text-3xl font-bold">Séance introuvable</h1>
-        <Link to="/seance/historique" className={`${linkButtonClass('primary')} mt-4`}>
+        <Link to="/entrainement/historique" className={`${linkButtonClass('primary')} mt-4`}>
           Retour à l’historique
         </Link>
       </section>
@@ -210,7 +210,7 @@ export default function HistoryDetailScreen() {
     setBusy(true)
     try {
       await deleteSession(session.id)
-      navigate('/seance/historique', { replace: true })
+      navigate('/entrainement/historique', { replace: true })
     } catch (e) {
       setConfirm(false)
       setBusy(false)

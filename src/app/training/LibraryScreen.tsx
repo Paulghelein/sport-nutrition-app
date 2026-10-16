@@ -63,7 +63,7 @@ function ExerciseRow({ ex, missing }: { ex: LibraryExercise; missing: boolean })
   return (
     <li>
       <Link
-        to={`/seance/exercices/${ex.id}`}
+        to={`/entrainement/exercices/${ex.id}`}
         className="flex min-h-14 items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface px-4 py-2.5 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -153,11 +153,11 @@ export default function LibraryScreen() {
 
   return (
     <section>
-      <BackLink to="/seance">Séance</BackLink>
+      <BackLink to="/entrainement">Entraînement</BackLink>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">Exercices</h1>
         <Link
-          to="/seance/exercices/nouveau"
+          to="/entrainement/exercices/nouveau"
           aria-label="Créer un exercice"
           className="flex size-11 shrink-0 items-center justify-center rounded-full bg-orange-400 text-zinc-950 no-underline active:bg-orange-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
         >
@@ -354,7 +354,7 @@ export default function LibraryScreen() {
             ))
           )}
           <Link
-            to="/seance/exercices/supprimes"
+            to="/entrainement/exercices/supprimes"
             className="mt-8 flex min-h-12 items-center justify-center rounded-xl text-base font-medium text-zinc-300 underline"
           >
             Exercices supprimés ({deletedCount})

@@ -11,7 +11,7 @@ const WeeklyVolume = lazy(() => import('../training/WeeklyVolume'))
 export function SessionScreen() {
   return (
     <section>
-      <h1 className="text-3xl font-bold">Séance</h1>
+      <h1 className="text-3xl font-bold">Entraînement</h1>
       <ActiveSessionCard />
       <SessionLauncher />
       <SessionLinks />

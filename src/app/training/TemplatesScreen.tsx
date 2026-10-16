@@ -94,7 +94,7 @@ export default function TemplatesScreen() {
 
   return (
     <section>
-      <BackLink to="/seance">Séance</BackLink>
+      <BackLink to="/entrainement">Entraînement</BackLink>
       <h1 className="mt-2 text-3xl font-bold">Modèles de séance</h1>
       {templates.error ? (
         <div className="mt-4">
@@ -130,7 +130,7 @@ export default function TemplatesScreen() {
               </p>
               <div className="mt-3 flex flex-col gap-2">
                 <Link
-                  to={`/seance/apercu?modele=${encodeURIComponent(t.id)}`}
+                  to={`/entrainement/apercu?modele=${encodeURIComponent(t.id)}`}
                   className={linkButtonClass('primary')}
                   aria-label={`Démarrer ${t.name}`}
                 >

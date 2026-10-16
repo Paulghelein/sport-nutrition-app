@@ -10,11 +10,14 @@ import { ReviewCard } from './ReviewCard'
 import { StrengthSection } from './StrengthSection'
 import { VolumeSection } from './VolumeSection'
 import { WeightSection } from './WeightSection'
+import { useScrollToHash } from '../useScrollToHash'
 import { useProgress } from './useProgress'
 
 /** Écran Progrès (SPEC §8). Chargé en lazy : `export default`. Les composants n'affichent que `useProgress()`. */
 export default function ProgressScreen() {
   const { model, error } = useProgress()
+  // `#mensurations` : lien « Mensurations » de la feuille Ajouter.
+  useScrollToHash(model !== undefined)
 
   return (
     <>
@@ -41,7 +44,9 @@ export default function ProgressScreen() {
             hasTargets={model.hasNutritionTargets}
             daysElapsed={model.nutritionDaysElapsed}
           />
-          <MeasurementsSection measurements={model.measurements} />
+          <div id="mensurations">
+            <MeasurementsSection measurements={model.measurements} />
+          </div>
           <div className="mt-8">
             <AskClaudeButton
               kind="progress"

@@ -123,8 +123,8 @@ export default function RecapScreen() {
     return (
       <section>
         <h1 className="text-3xl font-bold">Séance introuvable</h1>
-        <Link to="/seance" className={`${linkButtonClass('primary')} mt-4`}>
-          Retour à Séance
+        <Link to="/entrainement" className={`${linkButtonClass('primary')} mt-4`}>
+          Retour à Entraînement
         </Link>
       </section>
     )
@@ -168,7 +168,7 @@ export default function RecapScreen() {
           durationMin={session.durationMin}
           defaultName={`Séance du ${formatDateFr(session.date)}`}
         />
-        <Button onClick={() => navigate('/seance', { replace: true })}>Terminé</Button>
+        <Button onClick={() => navigate('/entrainement', { replace: true })}>Terminé</Button>
       </div>
     </section>
   )

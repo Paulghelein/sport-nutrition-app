@@ -1,20 +1,11 @@
-import {
-  CookingPot,
-  FilePlus,
-  Hash,
-  MessageSquareText,
-  Play,
-  ScanBarcode,
-  Scale,
-  Search,
-  Video,
-} from 'lucide-react'
+import { CookingPot, Hash, MessageSquareText, Play, ScanBarcode, Scale, Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { MealSlot } from '../../types'
 import { Button } from './Button'
 import { Segmented } from './Segmented'
 import { Sheet } from './Sheet'
+import { DEFAULT_CREATE_ENTRIES } from './logEntries'
 
 export type LogAction =
   | 'scan'
@@ -25,6 +16,11 @@ export type LogAction =
   | 'weigh-in'
   | 'recipe-from-scan'
   | 'recipe-from-video'
+  | 'recipe-new'
+  | 'food-new'
+  | 'claude-response'
+  | 'import-recipe'
+  | 'measurements'
 
 export interface LogMealOption {
   id: MealSlot
@@ -32,6 +28,13 @@ export interface LogMealOption {
   label: string
   /** Complément complet pour la phrase « au déjeuner », « à la collation ». */
   phrase: string
+}
+
+/** Une entrée des sections « Créer » et « Autres ». */
+export interface LogEntry {
+  action: LogAction
+  label: string
+  Icon: LucideIcon
 }
 
 export interface LogSheetProps {
@@ -42,6 +45,10 @@ export interface LogSheetProps {
   onMealChange: (meal: MealSlot) => void
   /** Une tuile ou un lien « Créer » a été touché. */
   onAction: (action: LogAction) => void
+  /** Entrées de la section « Créer » (par défaut : recette par scan et recette d'une vidéo). Vide : section masquée. */
+  createEntries?: readonly LogEntry[]
+  /** Entrées de la section « Autres » (pastilles de 44 px qui passent à la ligne). Vide ou absent : section masquée. */
+  otherEntries?: readonly LogEntry[]
   /** Bouton sombre « Démarrer une séance ». */
   onStartSession: () => void
   onClose: () => void
@@ -56,17 +63,21 @@ const TILES: { action: LogAction; label: string; Icon: LucideIcon }[] = [
   { action: 'weigh-in', label: 'Pesée', Icon: Scale },
 ]
 
-const CREATE: { action: LogAction; label: string; Icon: LucideIcon }[] = [
-  { action: 'recipe-from-scan', label: 'Recette par scan', Icon: FilePlus },
-  { action: 'recipe-from-video', label: 'Recette d’une vidéo', Icon: Video },
-]
-
 /**
  * Feuille « Ajouter » (bouton +) : toute la saisie passe par ici. Composant présentationnel : il ne sait rien du
  * routage ni de la base, l'appelant branche `onAction`. Le repas ciblé est affiché dans le sous-titre et modifiable
  * (toucher le mot ouvre le choix du repas).
  */
-export function LogSheet({ meal, meals, onMealChange, onAction, onStartSession, onClose }: LogSheetProps) {
+export function LogSheet({
+  meal,
+  meals,
+  onMealChange,
+  onAction,
+  createEntries = DEFAULT_CREATE_ENTRIES,
+  otherEntries = [],
+  onStartSession,
+  onClose,
+}: LogSheetProps) {
   const [picking, setPicking] = useState(false)
   const current = meals.find((m) => m.id === meal)
   const mealPhrase = current?.phrase ?? ''
@@ -117,22 +128,44 @@ export function LogSheet({ meal, meals, onMealChange, onAction, onStartSession, 
         ))}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h3 className="text-label uppercase text-ink-muted">Créer</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {CREATE.map(({ action, label, Icon }) => (
-            <button
-              key={action}
-              type="button"
-              onClick={() => onAction(action)}
-              className="focus-ring flex min-h-14 items-center gap-2.5 rounded-ds-md bg-surface px-3.5 text-left text-[14px] font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
-            >
-              <Icon size={24} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
-              {label}
-            </button>
-          ))}
+      {createEntries.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-label uppercase text-ink-muted">Créer</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {createEntries.map(({ action, label, Icon }) => (
+              <button
+                key={action}
+                type="button"
+                onClick={() => onAction(action)}
+                className="focus-ring flex min-h-14 items-center gap-2.5 rounded-ds-md bg-surface px-3.5 text-left text-[14px] font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
+              >
+                <Icon size={24} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {otherEntries.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-label uppercase text-ink-muted">Autres</h3>
+          <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+            {otherEntries.map(({ action, label, Icon }) => (
+              <li key={action}>
+                <button
+                  type="button"
+                  onClick={() => onAction(action)}
+                  className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-ds-pill bg-surface px-3.5 text-[14px] font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
+                >
+                  <Icon size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-ink-muted" />
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Button
         variant="dark"

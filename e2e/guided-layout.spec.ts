@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { collectErrors, completeOnboarding } from './helpers.ts'
+import { collectErrors, completeOnboarding, openTraining } from './helpers.ts'
 
 const SHOTS = process.env['QA_SHOTS'] ?? 'test-results'
 
@@ -52,6 +52,7 @@ test('J4 : mise en page 390x844 (cibles, défilement horizontal, bouton principa
   await page.clock.install()
   await page.goto('./')
   await completeOnboarding(page)
+  await openTraining(page)
   const report: Record<string, Audit> = {}
   const vh = page.viewportSize()?.height ?? 844
 
@@ -98,12 +99,12 @@ test('J4 : mise en page 390x844 (cibles, défilement horizontal, bouton principa
   await expect(page.getByText('Terminée', { exact: true })).toBeVisible()
   report['historique'] = await audit(page, [])
   await page.screenshot({ path: `${SHOTS}/qa-j4-historique.png`, fullPage: true })
-  await page.locator('a[href*="/seance/historique/"]').first().click()
+  await page.locator('a[href*="/entrainement/historique/"]').first().click()
   await page.getByRole('button', { name: 'Corriger les séries' }).click()
   report['historique-détail'] = await audit(page, [])
   await page.screenshot({ path: `${SHOTS}/qa-j4-historique-detail.png`, fullPage: true })
 
-  await page.goto('./seance/modeles')
+  await page.goto('./entrainement/modeles')
   report['modèles'] = await audit(page, [])
   await page.screenshot({ path: `${SHOTS}/qa-j4-modeles.png`, fullPage: true })
 

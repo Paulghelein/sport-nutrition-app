@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import type { ExercisePreference, TrainingLevel } from '../../types'
 import { levelLabel, preferenceLabel } from '../../ui'
 
-export const LIBRARY_PATH = '/seance/exercices'
+export const LIBRARY_PATH = '/entrainement/exercices'
 
 /** Bouton retour en haut des écrans enfants (cible 44 px). */
 export function BackLink({ to, children }: { to: string; children: ReactNode }) {

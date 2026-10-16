@@ -63,16 +63,25 @@ export interface ExerciseThumbProps {
   /** Côté du carré en px (52 dans l'aperçu de séance, 48 sur Aujourd'hui, 96 en séance). */
   size?: number
   tone?: 'light' | 'dark'
+  /** Fond en mode clair : `surface` (liste sur canvas) ou `canvas` (miniature posée sur une carte `surface`). */
+  background?: 'surface' | 'canvas'
   className?: string
 }
 
 /** Miniature d'exercice : carré radius ds-sm, fond surface (ou on-inverse/6 en sombre), carte musculaire centrée. */
-export function ExerciseThumb({ primary, view, size = 52, tone = 'light', className }: ExerciseThumbProps) {
+export function ExerciseThumb({
+  primary,
+  view,
+  size = 52,
+  tone = 'light',
+  background = 'surface',
+  className,
+}: ExerciseThumbProps) {
   return (
     <div
       className={cx(
         'grid shrink-0 place-items-center rounded-ds-sm',
-        tone === 'dark' ? 'bg-on-inverse/6' : 'bg-surface',
+        tone === 'dark' ? 'bg-on-inverse/6' : background === 'canvas' ? 'bg-canvas' : 'bg-surface',
         className,
       )}
       style={{ width: size, height: size }}

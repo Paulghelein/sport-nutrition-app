@@ -26,7 +26,7 @@ function useBeep(): () => void {
     const unlock = () => {
       try {
         ctx.current ??= new window.AudioContext()
-        void ctx.current.resume()
+        void ctx.current.resume().catch(() => undefined)
       } catch {
         // pas de son : l'animation du cadre suffit
       }

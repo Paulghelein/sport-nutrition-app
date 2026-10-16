@@ -135,7 +135,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
     // Rien n'a changé : retour à la fiche sans créer de surcharge vide.
     if (current && sameInput(input, toExerciseInput(current))) {
       clearExerciseDraft(draftKey)
-      navigate(`/seance/exercices/${current.id}`, { replace: true })
+      navigate(`/entrainement/exercices/${current.id}`, { replace: true })
       return
     }
     setBusy(true)
@@ -143,7 +143,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
     try {
       const saved = current ? await updateExercise(current, input) : await createExercise(input)
       clearExerciseDraft(draftKey)
-      navigate(`/seance/exercices/${saved.id}`, { replace: true })
+      navigate(`/entrainement/exercices/${saved.id}`, { replace: true })
     } catch (e) {
       setError(errorMessage(e, 'Impossible d’enregistrer l’exercice. Réessaie.'))
       setBusy(false)
@@ -168,7 +168,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
       }}
       noValidate
     >
-      <BackLink to={current ? `/seance/exercices/${current.id}` : LIBRARY_PATH}>
+      <BackLink to={current ? `/entrainement/exercices/${current.id}` : LIBRARY_PATH}>
         {current ? 'Fiche' : 'Bibliothèque'}
       </BackLink>
       <h1 className="mt-1 text-3xl font-bold">{title}</h1>

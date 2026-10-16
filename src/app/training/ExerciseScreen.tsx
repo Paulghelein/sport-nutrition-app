@@ -74,7 +74,7 @@ function Variants({ title, items }: { title: string; items: LibraryExercise[] })
         {items.map((v) => (
           <li key={v.id}>
             <Link
-              to={`/seance/exercices/${v.id}`}
+              to={`/entrainement/exercices/${v.id}`}
               className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2 text-base font-medium text-zinc-100 no-underline active:bg-v1-surface-hi"
             >
               <span>{v.name}</span>
@@ -296,7 +296,7 @@ export default function ExerciseScreen() {
       ) : null}
 
       <Card className="mt-7 flex flex-col gap-2">
-        <Link to={`/seance/exercices/${ex.id}/modifier`} className={linkButtonClass('secondary')}>
+        <Link to={`/entrainement/exercices/${ex.id}/modifier`} className={linkButtonClass('secondary')}>
           Modifier
         </Link>
         {ex.overridden ? (

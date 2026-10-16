@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { collectErrors, completeOnboarding } from './helpers.ts'
+import { collectErrors, completeOnboarding, openSettings } from './helpers.ts'
 
 // SHOTS_DIR : dossier où écrire des captures de la page (usage manuel, ignoré sinon).
 const shots = process.env['SHOTS_DIR']
@@ -11,7 +11,7 @@ test('page /dev/ui : accessible depuis Réglages, kit affiché, feuille Ajouter,
   await page.goto('./')
   await completeOnboarding(page)
 
-  await page.getByRole('link', { name: 'Réglages' }).click()
+  await openSettings(page)
   await page.getByRole('link', { name: 'Composants de l’interface (dev)' }).click()
   await expect(page).toHaveURL(/\/dev\/ui$/)
   await expect(page.getByRole('heading', { name: 'Composants', level: 1 })).toBeVisible()

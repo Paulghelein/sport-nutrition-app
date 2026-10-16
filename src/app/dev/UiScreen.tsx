@@ -1,4 +1,13 @@
-import { ChevronLeft, Play, Plus, Settings } from 'lucide-react'
+import {
+  ChevronLeft,
+  ClipboardPaste,
+  FilePlus,
+  Play,
+  Plus,
+  Ruler,
+  Settings,
+  UtensilsCrossed,
+} from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -23,11 +32,12 @@ import {
   StatTile,
   Stepper,
   TabBar,
+  WeekStrip,
   buttonClass,
   formatInt,
   withUnit,
 } from '../../ui/kit'
-import type { LogAction, LogMealOption, TabId } from '../../ui/kit'
+import type { LogAction, LogEntry, LogMealOption, TabId, WeekStripDay } from '../../ui/kit'
 
 /** Page de démonstration du kit v2 (`/dev/ui`). Hors de la mise en page à onglets v1. */
 
@@ -37,6 +47,27 @@ const MEALS = [
   { id: 'dinner', label: 'dîner', phrase: 'au dîner' },
   { id: 'snack', label: 'collation', phrase: 'à la collation' },
 ] as const satisfies readonly LogMealOption[]
+
+/** Entrées des sections « Créer » et « Autres » telles que la v1 de la navigation les branche (R1). */
+const DEMO_CREATE: readonly LogEntry[] = [
+  { action: 'recipe-new', label: 'Nouvelle recette', Icon: UtensilsCrossed },
+  { action: 'food-new', label: 'Nouvel aliment', Icon: FilePlus },
+]
+const DEMO_OTHERS: readonly LogEntry[] = [
+  { action: 'claude-response', label: 'Coller une réponse de Claude', Icon: ClipboardPaste },
+  { action: 'measurements', label: 'Mensurations', Icon: Ruler },
+]
+
+/** Semaine d'exemple : lundi 12 → dimanche 18 octobre 2026, avec un vendredi « aujourd'hui ». */
+const DEMO_WEEK: readonly WeekStripDay[] = [
+  { date: '2026-10-12', level: 2, sessions: 1, minutes: 32, nutritionOk: true, future: false, today: false },
+  { date: '2026-10-13', level: 0, sessions: 0, minutes: 0, nutritionOk: true, future: false, today: false },
+  { date: '2026-10-14', level: 3, sessions: 1, minutes: 48, nutritionOk: false, future: false, today: false },
+  { date: '2026-10-15', level: 0, sessions: 0, minutes: 0, nutritionOk: null, future: false, today: false },
+  { date: '2026-10-16', level: 4, sessions: 1, minutes: 40, nutritionOk: null, future: false, today: true },
+  { date: '2026-10-17', level: 0, sessions: 0, minutes: 0, nutritionOk: null, future: true, today: false },
+  { date: '2026-10-18', level: 0, sessions: 0, minutes: 0, nutritionOk: null, future: true, today: false },
+]
 
 const VIEWS: readonly MuscleView[] = ['front', 'back']
 
@@ -408,6 +439,11 @@ export default function UiScreen() {
               <MacroBar kind="fat" value={52} target={85} />
             </div>
           </Card>
+          <Demo label="Semaine : niveaux 0 à 4, point nutrition plein / anneau / absent, jour courant, jours à venir">
+            <Card className="py-3.5">
+              <WeekStrip days={DEMO_WEEK} />
+            </Card>
+          </Demo>
           <Demo label="Anneau : objectif dépassé">
             <Card className="flex items-center gap-4">
               <KcalRing consumed={3000} target={2840} />
@@ -527,6 +563,8 @@ export default function UiScreen() {
           meal={meal}
           meals={MEALS}
           onMealChange={setMeal}
+          createEntries={DEMO_CREATE}
+          otherEntries={DEMO_OTHERS}
           onAction={(a) => {
             setLastAction(a)
             setLogOpen(false)

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { isAllowedCoachUrl } from '../../domain/claude/coachUrl'
 import { DEFAULT_REQUESTS } from '../../domain/claude/context'
@@ -19,6 +19,10 @@ interface Props {
   build: ((base: ClaudeBaseInput) => ClaudeMessage) | null
   label?: string
   className?: string
+  /** Ouvre l'aperçu d'envoi dès que les données sont prêtes (arrivée depuis la feuille Ajouter). Rien n'est copié ni envoyé. */
+  defaultOpen?: boolean
+  /** Appelé une fois l'ouverture automatique faite (l'appelant nettoie son paramètre d'URL). */
+  onDefaultOpened?: () => void
 }
 
 type CopyState = 'idle' | 'copied' | 'failed'
@@ -144,9 +148,26 @@ function AskSheet({
 }
 
 /** Bouton « Demander à Claude » : ouvre l'aperçu du message, puis copie et ouvre le Projet Coach. */
-export function AskClaudeButton({ kind, build, label = 'Demander à Claude', className = '' }: Props) {
+export function AskClaudeButton({
+  kind,
+  build,
+  label = 'Demander à Claude',
+  className = '',
+  defaultOpen = false,
+  onDefaultOpened,
+}: Props) {
   const [open, setOpen] = useState(false)
   const { base, ready } = useClaudeBase()
+  // Ouverture automatique : pendant le rendu (pas dans un effet), puis l'appelant nettoie son paramètre d'URL.
+  const [autoOpened, setAutoOpened] = useState(false)
+  if (!defaultOpen && autoOpened) setAutoOpened(false)
+  else if (defaultOpen && ready && build !== null && !autoOpened) {
+    setAutoOpened(true)
+    setOpen(true)
+  }
+  useEffect(() => {
+    if (autoOpened) onDefaultOpened?.()
+  }, [autoOpened, onDefaultOpened])
   return (
     <>
       <Button
