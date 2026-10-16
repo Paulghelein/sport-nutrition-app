@@ -10,7 +10,8 @@ référence visuelle : `docs/DESIGN.md` + `docs/design/mockups/`. La v1 (J0–J9
 R0 — Fondations UI : terminé le 2026-10-16 (validé sans retour, « RAS » supposé : gabarit de retour non rempli).
 R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16**.
 Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
-(domain/nutrition, src/db) et F5 (domain/claude) ; (2) écrans R2 et R4 en parallèle ; (3) R3 écrans ensuite ; R5 en dernier.
+(domain/nutrition, src/db) et F5 (domain/claude) — **fait le 2026-10-16** (eeb548d, afc94c4, c5a56c3) ; (2) écrans R2
+et R4 en parallèle — en cours ; (3) R3 écrans ensuite ; R5 en dernier.
 
 ## Décisions prises
 
@@ -53,6 +54,28 @@ Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (d
   première pesée. WeekStrip non interactif en R1 (résumé du jour en R4).
 - 2026-10-16 (R1) : carte « Séance du jour » = même plan que l'aperçu (`planForDuration`, même graine, édition de
   l'aperçu reprise) ; moteur et contenu en `lazy` (démarrage +3 kB gzip seulement).
+
+- 2026-10-16 (F3) : `setType` optionnel, lu partout par `setTypeOf` (absent = `time` si durée sans reps, sinon `reps`) ;
+  bloc F3 dans `src/domain/training/setTypes.ts`. AMRAP **opt-in** par drapeau de contenu `Exercise.amrap` (relecture :
+  les tractions négatives devenaient éligibles) posé sur incline-push-up, push-up, bodyweight-squat, australian-row,
+  pull-up ; en plus : poids du corps en reps, ni finisher ni learnUnloaded, ≥ 2 séances faites, dernier ressenti ≠ hard,
+  groupe non fatigué, jamais en deload ni deux jours de suite, au plus une par séance (dernière série), superset permis.
+  Max > haut × 1,3 → level_up (garde-fous J3 inchangés). Temps fixe : finishers en reps non unilatéraux (swings),
+  fenêtre 45 s à 60 min (30/40 s pour les modèles plus courts) — **45 s et non 60 s** par prudence en fin de séance ;
+  seuil = floor(haut × fenêtre / 45) ; +1 palier après 2 séances au seuil avec record égalé/battu ; `topStreak` partagé
+  avec les séances en reps. Records timedMax séparés par fenêtre (`PersonalRecord.windowSec`) ; force : séries timedMax
+  exclues des reps/durée. Remplacer un exercice AMRAP/timedMax → séries normales.
+- 2026-10-16 (F4/F6) : Dexie v3 = table `foodPhotos` (hors `TABLE_NAMES`), octets en **ArrayBuffer** et non Blob :
+  WebKit refuse les Blob dans IndexedDB en session éphémère (navigation privée, Playwright). Sauvegarde v3 : section
+  `photos` en base64 hors `tables`, une photo doit avoir son aliment dans le fichier, v1/v2 acceptées. Photo : hôtes
+  `images.`/`static.openfoodfacts.org` seulement, HTTPS, sans cookie ni referrer, `redirect: 'error'`, lecture en flux
+  arrêtée à 300 ko, jpeg/png/webp (CORS vérifié : `Access-Control-Allow-Origin: *`). Aliment perso de même EAN : la photo
+  lui est rattachée s'il n'en a pas. `packageG` = `product_quantity` en g (kg × 1000, ml ignorés). Recette par scan :
+  étape par défaut « Recette créée par scan… » (la validation exige une étape), repas par défaut déjeuner, unité omise si
+  « portions » ; `createRecipeWithFridge` en une transaction ; bornes de recette dans `src/domain/nutrition/limits.ts`.
+- 2026-10-16 (F5) : `extractVideoLink` = premier lien https **valide** du texte, pistage retiré sans réencoder la query ;
+  message vidéo : profil réduit aux objectifs du jour, commentaire puis un seul objet `recipe`, captures demandées plutôt
+  qu'une recette inventée, fidélité à la vidéo sauf demande contraire.
 
 - 2026-10-15 : stack et architecture fixées (voir CLAUDE.md, docs/SPEC.md).
 - 2026-10-15 : utilisateur homme (formule BMR homme).
