@@ -100,7 +100,7 @@ function GoalsEditor({ profile, weightKg }: { profile: Profile; weightKg: number
   }
 
   const stepButton =
-    'flex size-12 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-2xl font-semibold active:bg-zinc-700 disabled:text-zinc-600'
+    'flex size-12 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-2xl font-semibold active:bg-zinc-700 disabled:text-zinc-600'
 
   return (
     <Card>
@@ -152,7 +152,7 @@ function GoalsEditor({ profile, weightKg }: { profile: Profile; weightKg: number
           </div>
         </div>
 
-        <div className="rounded-xl border border-line bg-surface-hi p-3" aria-live="polite">
+        <div className="rounded-xl border border-v1-line bg-v1-surface-hi p-3" aria-live="polite">
           <p className="m-0 text-sm text-zinc-400">Objectifs par jour</p>
           {targets ? (
             <p data-testid="goals-preview" className="m-0 mt-1 text-lg font-semibold">

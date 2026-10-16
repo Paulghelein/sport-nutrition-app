@@ -20,7 +20,7 @@ export function VolumeSection({ volumes }: { volumes: readonly GroupVolume[] }) 
           {tracked.map((v) => (
             <li
               key={v.group}
-              className="flex min-h-11 items-center justify-between gap-3 border-b border-line py-1 last:border-b-0"
+              className="flex min-h-11 items-center justify-between gap-3 border-b border-v1-line py-1 last:border-b-0"
             >
               <span className="text-base font-medium">{muscleLabel(v.group)}</span>
               <span className="text-right text-sm tabular-nums">

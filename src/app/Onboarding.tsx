@@ -144,7 +144,7 @@ export function Onboarding() {
           ) : null}
         </div>
         {stepIndex > 0 ? (
-          <div className="mx-auto mt-1 h-1 max-w-xl overflow-hidden rounded-full bg-surface-hi" aria-hidden="true">
+          <div className="mx-auto mt-1 h-1 max-w-xl overflow-hidden rounded-full bg-v1-surface-hi" aria-hidden="true">
             <div
               className="h-full rounded-full bg-orange-400 transition-[width]"
               style={{ width: `${(stepIndex / (STEPS.length - 1)) * 100}%` }}
@@ -197,7 +197,7 @@ export function Onboarding() {
       </main>
 
       <footer
-        className="border-t border-line bg-bg px-4 pt-3"
+        className="border-t border-v1-line bg-v1-bg px-4 pt-3"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
       >
         <div className="mx-auto max-w-xl">
@@ -243,7 +243,7 @@ function Recap({
     ['Autre matériel', owned.length > 0 ? owned.join(', ') : 'Aucun'],
   ]
   return (
-    <dl className="divide-y divide-line rounded-2xl border border-line bg-surface">
+    <dl className="divide-y divide-v1-line rounded-2xl border border-v1-line bg-v1-surface">
       {rows.map(([label, value]) => (
         <div key={label} className="flex items-baseline justify-between gap-4 px-4 py-3">
           <dt className="text-sm text-zinc-400">{label}</dt>

@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 
 export function Card({ className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`rounded-2xl border border-line bg-surface p-4 ${className}`} {...props} />
+  return <div className={`rounded-2xl border border-v1-line bg-v1-surface p-4 ${className}`} {...props} />
 }
 
 /** Section d'écran avec titre h2 et action optionnelle à droite. */

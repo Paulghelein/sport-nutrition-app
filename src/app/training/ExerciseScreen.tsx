@@ -58,7 +58,7 @@ function Bullets({ items }: { items: string[] }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line bg-surface-hi px-3 py-2.5">
+    <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5">
       <dt className="text-sm text-zinc-400">{label}</dt>
       <dd className="m-0 mt-0.5 text-lg font-semibold leading-snug">{value}</dd>
     </div>
@@ -75,7 +75,7 @@ function Variants({ title, items }: { title: string; items: LibraryExercise[] })
           <li key={v.id}>
             <Link
               to={`/seance/exercices/${v.id}`}
-              className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3 py-2 text-base font-medium text-zinc-100 no-underline active:bg-surface-hi"
+              className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2 text-base font-medium text-zinc-100 no-underline active:bg-v1-surface-hi"
             >
               <span>{v.name}</span>
               <LevelBadge level={v.level} />
@@ -156,7 +156,7 @@ export default function ExerciseScreen() {
         <div
           role="img"
           aria-label={ex.name}
-          className="mt-2 rounded-2xl border border-line bg-surface p-4 text-zinc-200 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
+          className="mt-2 rounded-2xl border border-v1-line bg-v1-surface p-4 text-zinc-200 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
           // Contenu de confiance embarqué dans l'app (src/content), jamais un texte saisi.
           dangerouslySetInnerHTML={{ __html: svg }}
         />

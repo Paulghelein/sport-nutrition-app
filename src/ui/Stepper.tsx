@@ -12,7 +12,7 @@ interface StepperProps {
 }
 
 const stepButton =
-  'flex size-12 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-2xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'flex size-12 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-2xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 /** Choix d'un entier borné avec boutons − / + (cibles de 48 px). */
 export function Stepper({ legend, value, min, max, onChange, unitLabel, disabled = false }: StepperProps) {

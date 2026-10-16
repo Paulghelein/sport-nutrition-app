@@ -215,7 +215,7 @@ export function BackupSection() {
           {exportNotice ? (
             <p
               role="status"
-              className="rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-sm text-zinc-200"
+              className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-sm text-zinc-200"
             >
               {exportNotice}
             </p>
@@ -223,7 +223,7 @@ export function BackupSection() {
           {exportDone ? <SuccessNote>Sauvegarde exportée.</SuccessNote> : null}
 
           {prepared ? (
-            <div className="rounded-xl border border-line bg-surface-hi p-3">
+            <div className="rounded-xl border border-v1-line bg-v1-surface-hi p-3">
               <p className="text-sm font-semibold break-all">{prepared.file.name}</p>
               <p className="mt-1 text-sm text-zinc-400">{prepared.summary}</p>
               <div className="mt-3 flex flex-col gap-2">
@@ -265,7 +265,7 @@ export function BackupSection() {
           modifié avant ta confirmation.
         </p>
         <div className="mt-3 flex flex-col gap-3">
-          <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-hi px-4 text-base font-semibold active:bg-zinc-700 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-orange-400">
+          <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base font-semibold active:bg-zinc-700 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-orange-400">
             Choisir un fichier
             <input
               ref={fileInput}
@@ -290,7 +290,7 @@ export function BackupSection() {
           {importDone ? <SuccessNote>{importDone}</SuccessNote> : null}
 
           {pending ? (
-            <div className="rounded-xl border border-line bg-surface-hi p-3">
+            <div className="rounded-xl border border-v1-line bg-v1-surface-hi p-3">
               <p className="text-sm font-semibold break-all">{pending.fileName}</p>
               <p className="mt-1 text-sm text-zinc-400">
                 Exporté le {formatDateTimeFr(pending.backup.exportedAt)}

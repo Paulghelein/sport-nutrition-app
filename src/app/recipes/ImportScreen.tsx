@@ -45,7 +45,7 @@ function Selectable({
   return (
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3 has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
-        checked ? 'border-orange-400/60 bg-orange-400/5' : 'border-line bg-surface'
+        checked ? 'border-orange-400/60 bg-orange-400/5' : 'border-v1-line bg-v1-surface'
       }`}
     >
       <input
@@ -212,7 +212,7 @@ export default function ImportScreen() {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          className={`w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-500 ${focusRing}`}
+          className={`w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-500 ${focusRing}`}
         />
       </div>
       <div className="mt-3 flex flex-col gap-2">
@@ -220,7 +220,7 @@ export default function ImportScreen() {
           Analyser
         </Button>
         <label
-          className={`inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-hi px-4 text-base font-semibold text-zinc-100 active:bg-zinc-700 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-orange-400`}
+          className={`inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base font-semibold text-zinc-100 active:bg-zinc-700 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-orange-400`}
         >
           {fileName ? `Fichier : ${fileName}` : 'Choisir un fichier .json'}
           <input
@@ -322,7 +322,7 @@ export default function ImportScreen() {
               }
               if (item.kind === 'unsupported') {
                 return (
-                  <li key={item.index} className="rounded-2xl border border-line bg-surface p-3 opacity-80">
+                  <li key={item.index} className="rounded-2xl border border-v1-line bg-v1-surface p-3 opacity-80">
                     <p className="text-base font-semibold">
                       Élément {item.index + 1} : <span className="font-mono text-sm">{item.type}</span>
                     </p>

@@ -18,6 +18,7 @@ import { pushVExercises } from './exercises/push_v'
 import { squatExercises } from './exercises/squat'
 
 export { SEED_UPDATED_AT } from './exercises/meta'
+export * from './visuals'
 
 export const seedExercises: readonly Exercise[] = [
   ...hingeExercises,

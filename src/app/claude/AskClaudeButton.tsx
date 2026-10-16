@@ -92,7 +92,7 @@ function AskSheet({
               value={request}
               onChange={(e) => setRequest(e.target.value)}
               placeholder={DEFAULT_REQUESTS[kind]}
-              className="w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+              className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
             />
             <p className="mt-1 text-sm text-zinc-400">Laisse vide pour poser la question proposée.</p>
           </div>
@@ -106,7 +106,7 @@ function AskSheet({
               rows={9}
               value={message.text}
               onFocus={(e) => e.currentTarget.select()}
-              className="w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 font-mono text-xs leading-relaxed text-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+              className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 font-mono text-xs leading-relaxed text-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
             />
           </div>
           {copy === 'copied' ? (

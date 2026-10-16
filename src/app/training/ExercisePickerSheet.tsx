@@ -64,7 +64,7 @@ export function ExercisePickerSheet({
                 <button
                   type="button"
                   onClick={() => onPick(c)}
-                  className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl border border-line bg-surface-hi px-3 py-2 text-left active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                  className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
                 >
                   <span className="text-base font-semibold">{c.name}</span>
                   <span className="flex items-center gap-2 text-sm text-zinc-400">
@@ -75,7 +75,7 @@ export function ExercisePickerSheet({
                   type="button"
                   onClick={() => setHelp(c)}
                   aria-label={`Comment faire ? ${c.name}`}
-                  className="flex min-h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-xl font-bold text-orange-300 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                  className="flex min-h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-xl font-bold text-orange-300 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
                 >
                   ?
                 </button>

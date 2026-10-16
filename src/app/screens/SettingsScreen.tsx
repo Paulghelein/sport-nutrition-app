@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { DEV_UI_PATH } from '../routes'
 import { ErrorBoundary, Section, linkButtonClass } from '../../ui'
 import { EquipmentSection } from '../settings/EquipmentSection'
 import { ProfileSection } from '../settings/ProfileSection'
@@ -75,6 +76,14 @@ export function SettingsScreen() {
           Importer des recettes ou des repas
         </Link>
       </Section>
+      <p className="mt-8 flex justify-center text-sm">
+        <Link
+          to={DEV_UI_PATH}
+          className="inline-flex min-h-11 items-center px-3 text-zinc-500 underline underline-offset-4"
+        >
+          Composants de l’interface (dev)
+        </Link>
+      </p>
     </>
   )
 }

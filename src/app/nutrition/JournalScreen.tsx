@@ -33,7 +33,7 @@ import type { ToastState } from './parts'
 let suggestionHidden = false
 
 const navButton =
-  'flex size-12 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-2xl active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'flex size-12 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-2xl active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 function dayLabel(date: LocalDate, today: LocalDate): string {
   if (date === today) return 'Aujourd’hui'
@@ -77,12 +77,12 @@ function MealCard({
             {meal.entries.map((entry) => {
               const kcal = roundMacros(entry.macros).kcal
               return (
-                <li key={entry.id} className="border-t border-line">
+                <li key={entry.id} className="border-t border-v1-line">
                   <button
                     type="button"
                     aria-label={`Modifier ${entry.name}, ${fmtInt(kcal)} kcal`}
                     onClick={() => onOpen(entry)}
-                    className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-surface-hi"
+                    className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-v1-surface-hi"
                   >
                     <span className="min-w-0">
                       <span className="block text-base font-medium leading-snug">{entry.name}</span>
@@ -96,7 +96,7 @@ function MealCard({
               )
             })}
           </ul>
-          <p className="m-0 border-t border-line px-4 py-2 text-sm tabular-nums text-zinc-400">
+          <p className="m-0 border-t border-v1-line px-4 py-2 text-sm tabular-nums text-zinc-400">
             P {fmtG(roundMacros(meal.totals).protein)} g · G {fmtG(roundMacros(meal.totals).carbs)} g · L{' '}
             {fmtG(roundMacros(meal.totals).fat)} g
           </p>
@@ -237,7 +237,7 @@ export default function JournalScreen() {
             key={l.to}
             to={l.to}
             aria-label={l.aria}
-            className="flex min-h-11 items-center justify-center rounded-xl border border-line px-2 text-center text-base font-medium text-zinc-200 no-underline active:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+            className="flex min-h-11 items-center justify-center rounded-xl border border-v1-line px-2 text-center text-base font-medium text-zinc-200 no-underline active:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
           >
             {l.label}
           </Link>

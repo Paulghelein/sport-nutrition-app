@@ -58,10 +58,10 @@ function targetText(se: SessionExercise, ex: LibraryExercise | undefined): strin
 }
 
 const iconButton =
-  'flex size-11 items-center justify-center rounded-xl border border-line bg-surface-hi text-zinc-100 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'flex size-11 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-zinc-100 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 const smallButton =
-  'flex min-h-11 flex-1 items-center justify-center rounded-xl border border-line bg-surface-hi px-3 text-base font-semibold text-zinc-100 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'flex min-h-11 flex-1 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-3 text-base font-semibold text-zinc-100 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 function Chevron({ up }: { up: boolean }) {
   return (
@@ -145,7 +145,7 @@ function BlockCard({ block, index, count, nextIsFinisher, byId, onMove, onReplac
             </p>
           ) : null}
           {finisher ? <p className="m-0 mb-1 text-sm font-semibold text-orange-300">Finisher</p> : null}
-          <ul className="m-0 list-none divide-y divide-line p-0">
+          <ul className="m-0 list-none divide-y divide-v1-line p-0">
             {block.exercises.map((se, i) => (
               <li key={`${se.exerciseId}-${i}`}>
                 <ExerciseLine
@@ -409,7 +409,7 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
       ) : null}
 
       {!empty ? (
-        <div className="sticky bottom-0 mt-6 rounded-2xl border border-line bg-bg/95 p-3 backdrop-blur">
+        <div className="sticky bottom-0 mt-6 rounded-2xl border border-v1-line bg-v1-bg/95 p-3 backdrop-blur">
           {error ? (
             <div className="mb-2">
               <ErrorNote>{error}</ErrorNote>

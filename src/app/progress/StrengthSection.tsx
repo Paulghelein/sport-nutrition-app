@@ -17,7 +17,7 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
   const points = strengthChartData(row.strength, row.metric)
   const records = recordLines(row.strength)
   return (
-    <div id={id} className="mt-2 rounded-xl border border-line bg-surface-hi/40 p-3">
+    <div id={id} className="mt-2 rounded-xl border border-v1-line bg-v1-surface-hi/40 p-3">
       <p className="text-sm text-zinc-400">
         {METRIC_LABEL[row.metric]} ({METRIC_UNIT[row.metric]}) par séance
       </p>
@@ -76,7 +76,7 @@ export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strengt
                   aria-expanded={open}
                   aria-controls={`strength-${row.exerciseId}`}
                   onClick={() => setOpenId(open ? null : row.exerciseId)}
-                  className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-2 text-left active:bg-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                  className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-4 py-2 text-left active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-base font-medium">{row.name}</span>

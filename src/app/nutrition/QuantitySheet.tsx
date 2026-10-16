@@ -89,7 +89,7 @@ export function QuantitySheet({
               key={g}
               type="button"
               onClick={() => setGrams(toInputNumber(g))}
-              className="min-h-11 rounded-xl border border-line bg-surface-hi px-4 text-base font-semibold active:bg-zinc-700"
+              className="min-h-11 rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base font-semibold active:bg-zinc-700"
             >
               {i === 0 && g === food.defaultPortionG ? `Portion ${fmtG(g)} g` : `${fmtG(g)} g`}
             </button>

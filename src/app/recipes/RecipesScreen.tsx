@@ -54,7 +54,7 @@ function RecipeRow({ item, approx }: { item: RecipeListItem; approx: boolean }) 
     <li>
       <Link
         to={`/nutrition/recettes/${recipe.id}`}
-        className={`flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 no-underline active:bg-surface-hi ${focusRing}`}
+        className={`flex min-h-14 items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface px-4 py-3 no-underline active:bg-v1-surface-hi ${focusRing}`}
       >
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-lg font-semibold leading-snug text-zinc-100">
@@ -122,7 +122,7 @@ function DeletedSheet({
           {deleted.map((r) => (
             <li
               key={r.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-surface-hi p-3 pl-4"
+              className="flex items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface-hi p-3 pl-4"
             >
               <span className="min-w-0 flex-1 text-base font-semibold leading-snug">{r.name}</span>
               <Button
@@ -282,7 +282,7 @@ export default function RecipesScreen() {
           className={`flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-base font-semibold ${focusRing} ${
             activeCount > 0 || panelOpen
               ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-              : 'border-line bg-surface-hi text-zinc-200'
+              : 'border-v1-line bg-v1-surface-hi text-zinc-200'
           }`}
         >
           Filtres
@@ -310,7 +310,7 @@ export default function RecipesScreen() {
                 className={`h-11 shrink-0 rounded-full border px-4 text-base font-medium ${focusRing} ${
                   active
                     ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-                    : 'border-line bg-surface-hi text-zinc-200'
+                    : 'border-v1-line bg-v1-surface-hi text-zinc-200'
                 }`}
               >
                 {s ? (slotChoices.find((c) => c.value === s)?.label ?? s) : 'Tous'}
@@ -323,7 +323,7 @@ export default function RecipesScreen() {
       {panelOpen ? (
         <div
           id="recipe-filters"
-          className="mt-3 flex flex-col gap-4 rounded-2xl border border-line bg-surface p-3"
+          className="mt-3 flex flex-col gap-4 rounded-2xl border border-v1-line bg-v1-surface p-3"
         >
           <ChoiceGroup<TimeFilter>
             legend="Temps total maximum"

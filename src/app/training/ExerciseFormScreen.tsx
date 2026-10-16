@@ -71,7 +71,7 @@ function MuscleChips({
               className={`flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-base font-medium has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
                 on
                   ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-                  : 'border-line bg-surface-hi text-zinc-200'
+                  : 'border-v1-line bg-v1-surface-hi text-zinc-200'
               }`}
             >
               <input type="checkbox" className="sr-only" checked={on} onChange={() => onToggle(m.value)} />
@@ -356,7 +356,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
               maxLength={MAX_SETUP_LENGTH}
               value={draft.setup}
               onChange={(e) => patch({ setup: e.target.value })}
-              className="w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+              className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
             />
           </div>
           <LineListEditor

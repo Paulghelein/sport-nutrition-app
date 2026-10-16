@@ -36,7 +36,7 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 
 function MacroTile({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="rounded-xl border border-line bg-surface-hi px-2 py-2.5 text-center">
+    <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-2 py-2.5 text-center">
       <dt className="text-sm text-zinc-400">{label}</dt>
       <dd className="m-0 text-2xl font-bold tabular-nums">
         {value}
@@ -159,15 +159,15 @@ export default function RecipeScreen() {
       <Macros recipe={recipe} nutrition={nutrition} />
 
       <dl className="m-0 mt-3 grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-line bg-surface-hi px-2 py-2.5 text-center">
+        <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-2 py-2.5 text-center">
           <dt className="text-sm text-zinc-400">Préparation</dt>
           <dd className="m-0 text-lg font-semibold">{fmtMinutes(recipe.prepMinutes)}</dd>
         </div>
-        <div className="rounded-xl border border-line bg-surface-hi px-2 py-2.5 text-center">
+        <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-2 py-2.5 text-center">
           <dt className="text-sm text-zinc-400">Cuisson</dt>
           <dd className="m-0 text-lg font-semibold">{fmtMinutes(recipe.cookMinutes)}</dd>
         </div>
-        <div className="rounded-xl border border-line bg-surface-hi px-2 py-2.5 text-center">
+        <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-2 py-2.5 text-center">
           <dt className="text-sm text-zinc-400">Frigo</dt>
           <dd className="m-0 text-lg font-semibold">
             {recipe.fridgeDays !== undefined
@@ -213,7 +213,7 @@ export default function RecipeScreen() {
           {nutrition.ingredients.map((r, i) => (
             <li
               key={i}
-              className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3 py-2"
+              className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2"
             >
               <span className="min-w-0 text-base leading-snug">
                 {r.ingredient.name}

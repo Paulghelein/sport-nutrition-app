@@ -65,7 +65,7 @@ export function UpdatePrompt() {
   return (
     <div
       role="status"
-      className="flex shrink-0 items-center gap-3 border-t border-orange-400/40 bg-surface px-4 py-2"
+      className="flex shrink-0 items-center gap-3 border-t border-orange-400/40 bg-v1-surface px-4 py-2"
       style={{
         paddingLeft: 'calc(env(safe-area-inset-left) + 1rem)',
         paddingRight: 'calc(env(safe-area-inset-right) + 1rem)',

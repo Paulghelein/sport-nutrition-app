@@ -33,7 +33,7 @@ export function ActiveSessionCard() {
 /** Raccourcis vers l'historique et les modèles. */
 export function SessionLinks() {
   const cls =
-    'flex min-h-14 flex-1 items-center justify-center rounded-xl border border-line bg-surface px-3 text-base font-semibold text-zinc-100 no-underline active:bg-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400'
+    'flex min-h-14 flex-1 items-center justify-center rounded-xl border border-v1-line bg-v1-surface px-3 text-base font-semibold text-zinc-100 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400'
   return (
     <div className="mt-4 flex gap-3">
       <Link to="/seance/historique" className={cls}>

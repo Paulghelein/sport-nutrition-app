@@ -2,7 +2,7 @@ import { useId } from 'react'
 import type { InputHTMLAttributes } from 'react'
 
 const controlClass =
-  'w-full rounded-xl border border-line bg-surface-hi px-3 text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
   label: string

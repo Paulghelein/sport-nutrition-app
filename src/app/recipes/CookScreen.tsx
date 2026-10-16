@@ -147,7 +147,7 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
                         gathered: got ? state.gathered.filter((x) => x !== i) : [...state.gathered, i],
                       })
                     }
-                    className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border border-line px-3 py-2 text-left active:bg-surface-hi ${focusRing} ${got ? 'bg-surface/60' : 'bg-surface'}`}
+                    className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border border-v1-line px-3 py-2 text-left active:bg-v1-surface-hi ${focusRing} ${got ? 'bg-v1-surface/60' : 'bg-v1-surface'}`}
                   >
                     <span
                       aria-hidden="true"
@@ -218,7 +218,7 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
                     ? 'border-orange-400 bg-orange-400 text-zinc-950'
                     : state.doneSteps.includes(i)
                       ? 'border-orange-400/50 bg-orange-400/15 text-orange-300'
-                      : 'border-line bg-surface-hi text-zinc-300'
+                      : 'border-v1-line bg-v1-surface-hi text-zinc-300'
                 }`}
               >
                 {state.doneSteps.includes(i) && i !== step ? '✓' : i + 1}
@@ -229,7 +229,7 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
             {recipe.steps[step]}
           </p>
           <StickyStack>
-            <div className="flex flex-col gap-2 rounded-2xl bg-bg/90 pt-2 backdrop-blur">
+            <div className="flex flex-col gap-2 rounded-2xl bg-v1-bg/90 pt-2 backdrop-blur">
               <Button className="min-h-16 text-xl" onClick={markAndNext}>
                 {step >= total - 1 ? 'Fait, terminer' : 'Fait, étape suivante'}
               </Button>

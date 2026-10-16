@@ -77,7 +77,7 @@ function Editor({
 
   return (
     <div className="mt-5">
-      <p className="m-0 rounded-xl border border-line bg-surface px-4 py-3 text-base text-zinc-300">
+      <p className="m-0 rounded-xl border border-v1-line bg-v1-surface px-4 py-3 text-base text-zinc-300">
         La correction met à jour l’historique et les records ; elle ne modifie pas ta progression.
       </p>
       {session.blocks.map((blk, b) =>
@@ -156,7 +156,7 @@ function Editor({
           maxLength={1000}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+          className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
         />
       </Section>
       <div className="mt-5 flex flex-col gap-3">

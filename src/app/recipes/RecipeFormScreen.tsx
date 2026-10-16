@@ -89,7 +89,7 @@ function IngredientEditor({
   const setValue = (k: 'kcal' | 'protein' | 'carbs' | 'fat', text: string) =>
     v && onChange({ ...ingredient, values: { ...v, [k]: text.replace(/[^\d.,]/g, '') } })
   return (
-    <li className="rounded-2xl border border-line bg-surface-hi p-3">
+    <li className="rounded-2xl border border-v1-line bg-v1-surface-hi p-3">
       <div className="grid grid-cols-[1fr_7rem] gap-2">
         <TextField
           label={`Ingrédient ${n}`}
@@ -115,7 +115,7 @@ function IngredientEditor({
           onChange={(aisle: Aisle) => onChange({ ...ingredient, aisle })}
         />
       </div>
-      <div className="mt-3 rounded-xl border border-line bg-surface px-3 py-2.5">
+      <div className="mt-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2.5">
         {linked !== null ? (
           <p className="text-base">
             <span className="text-zinc-400">Relié à : </span>
@@ -252,7 +252,7 @@ function LiveMacros({ draft, lookup }: { draft: RecipeDraft; lookup: FoodLookup 
   return (
     <div
       aria-live="polite"
-      className="rounded-xl border border-line bg-surface-hi px-3 py-3"
+      className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-3"
       data-testid="live-macros"
     >
       <p className="text-sm font-medium text-zinc-300">Par portion (calculé en direct)</p>

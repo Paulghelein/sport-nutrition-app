@@ -92,7 +92,7 @@ function PickRecipesSheet({
           return (
             <li
               key={r.id}
-              className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-hi py-2 pl-3 pr-2"
+              className="flex items-center justify-between gap-2 rounded-xl border border-v1-line bg-v1-surface-hi py-2 pl-3 pr-2"
             >
               <span className="min-w-0 text-base font-medium leading-snug">{r.name}</span>
               {portions === undefined ? (
@@ -136,7 +136,7 @@ function PickRecipesSheet({
         })}
         {shown.length === 0 ? <li className="text-base text-zinc-400">Aucune recette trouvée.</li> : null}
       </ul>
-      <div className="sticky bottom-0 -mx-4 mt-3 flex flex-col gap-2 bg-surface px-4 pb-1 pt-2">
+      <div className="sticky bottom-0 -mx-4 mt-3 flex flex-col gap-2 bg-v1-surface px-4 pb-1 pt-2">
         {error ? <ErrorNote>{error}</ErrorNote> : null}
         <Button onClick={() => void apply()} disabled={busy}>
           {picked.size === 0
@@ -309,8 +309,8 @@ export default function ShoppingScreen() {
                           onClick={() =>
                             void run(() => setShoppingItemChecked(list.id, item.id, !item.checked))
                           }
-                          className={`flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-2xl border px-3 py-2 text-left active:bg-surface-hi ${focusRing} ${
-                            item.checked ? 'border-line bg-surface/60' : 'border-line bg-surface'
+                          className={`flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-2xl border px-3 py-2 text-left active:bg-v1-surface-hi ${focusRing} ${
+                            item.checked ? 'border-v1-line bg-v1-surface/60' : 'border-v1-line bg-v1-surface'
                           }`}
                         >
                           <span

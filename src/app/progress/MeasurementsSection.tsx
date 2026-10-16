@@ -159,7 +159,7 @@ export function MeasurementsSection({ measurements }: { measurements: readonly M
                 type="button"
                 onClick={() => setSheet({ measurement: m })}
                 aria-label={`Modifier la mensuration du ${formatDateFr(m.date, 'long')} : ${summary(m)}`}
-                className="flex min-h-14 w-full flex-col justify-center rounded-xl border border-line bg-surface px-4 py-2 text-left active:bg-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                className="flex min-h-14 w-full flex-col justify-center rounded-xl border border-v1-line bg-v1-surface px-4 py-2 text-left active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
               >
                 <span className="text-base font-semibold">{formatDateFr(m.date, 'long')}</span>
                 <span className="text-sm text-zinc-300">{summary(m)}</span>

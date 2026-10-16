@@ -15,7 +15,7 @@ interface Props {
 }
 
 const iconButton =
-  'flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-zinc-300 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'flex size-11 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-zinc-300 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -93,7 +93,7 @@ export function LineListEditor({
                 maxLength={maxLength}
                 value={item}
                 onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
-                className="min-h-12 min-w-0 flex-1 rounded-xl border border-line bg-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                className="min-h-12 min-w-0 flex-1 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
               />
             </div>
             <div className={`mt-1 flex justify-end gap-2 ${numbered ? 'pl-8' : ''}`}>

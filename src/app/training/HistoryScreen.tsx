@@ -42,7 +42,7 @@ export default function HistoryScreen() {
               <li key={it.id}>
                 <Link
                   to={`/seance/historique/${it.id}`}
-                  className="flex min-h-20 flex-col justify-center rounded-2xl border border-line bg-surface p-4 no-underline active:bg-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                  className="flex min-h-20 flex-col justify-center rounded-2xl border border-v1-line bg-v1-surface p-4 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-lg font-bold text-zinc-100">{formatDateFr(it.date, 'long')}</span>

@@ -5,7 +5,7 @@ import { formatSeconds, kgText } from './format'
 
 function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4">
+    <div className="rounded-2xl border border-v1-line bg-v1-surface p-4">
       <p className="m-0 text-sm text-zinc-400">{label}</p>
       <p className="m-0 mt-1 text-4xl font-bold tabular-nums">
         {value}
@@ -92,7 +92,7 @@ export function SummaryView({
                       {summary.volume[g].toLocaleString('fr-FR', { maximumFractionDigits: 1 })} séries
                     </span>
                   </div>
-                  <div aria-hidden="true" className="mt-1 h-2 overflow-hidden rounded-full bg-surface-hi">
+                  <div aria-hidden="true" className="mt-1 h-2 overflow-hidden rounded-full bg-v1-surface-hi">
                     <div
                       className="h-full rounded-full bg-orange-400"
                       style={{ width: `${Math.round((summary.volume[g] / maxVolume) * 100)}%` }}
@@ -107,7 +107,7 @@ export function SummaryView({
 
       <Section title="Exercices">
         <Card>
-          <ul className="m-0 flex list-none flex-col divide-y divide-line p-0">
+          <ul className="m-0 flex list-none flex-col divide-y divide-v1-line p-0">
             {summary.exercises.map((e) => (
               <li key={e.exerciseId} className="py-3 first:pt-0 last:pb-0">
                 <p className="m-0 text-lg font-semibold">{name(e.exerciseId)}</p>

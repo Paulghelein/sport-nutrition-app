@@ -25,7 +25,7 @@ import { useFoods } from './useFoods'
 const RecipePickerSheet = lazy(() => import('../recipes/RecipePickerSheet'))
 
 const rowClass =
-  'flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3 py-2 text-left active:bg-surface-hi'
+  'flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2 text-left active:bg-v1-surface-hi'
 
 function FoodRow({ food, onPick }: { food: Food; onPick: (food: Food) => void }) {
   return (
@@ -227,7 +227,7 @@ export default function AddFoodScreen() {
           autoComplete="off"
           autoCorrect="off"
           enterKeyHint="search"
-          className="min-h-12 w-full rounded-xl border border-line bg-surface-hi px-4 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+          className="min-h-12 w-full rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
         />
       </div>
 
@@ -260,7 +260,7 @@ export default function AddFoodScreen() {
         </Button>
         <Link
           to={createLink}
-          className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line px-3 text-center text-base font-semibold text-orange-400 no-underline active:bg-white/5"
+          className="inline-flex min-h-12 items-center justify-center rounded-xl border border-v1-line px-3 text-center text-base font-semibold text-orange-400 no-underline active:bg-white/5"
         >
           Créer un aliment
         </Link>

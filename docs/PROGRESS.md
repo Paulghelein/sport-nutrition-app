@@ -7,7 +7,8 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 **v2 commencée le 2026-10-16.** Feuille de route active : `docs/V2.md` (jalons R0 à R5, remplacent J0–J9),
 référence visuelle : `docs/DESIGN.md` + `docs/design/mockups/`. La v1 (J0–J9) est terminée.
 
-R0 — Fondations UI : **en cours**.
+R0 — Fondations UI : **terminé le 2026-10-16, à valider sur iPhone** (page `/dev/ui`, accessible depuis Réglages →
+« Composants de l'interface (dev) » ; police correcte en mode avion). Ensuite : R1 Navigation + Aujourd'hui.
 
 ## Décisions prises
 
@@ -18,6 +19,13 @@ R0 — Fondations UI : **en cours**.
   (`v1-bg`, `v1-surface`, `v1-surface-hi`, `v1-line`) pour libérer les noms de DESIGN.md ; les composants v2 vivent
   dans `src/ui/kit/` (les homonymes v1 de `src/ui/` restent tant que leurs écrans ne sont pas refaits, suppression
   en R5). Chaque écran passe en clair au moment de sa refonte.
+- 2026-10-16 (R0) : rayons v2 nommés `rounded-ds-sm|md|lg|xl|pill` (10/16/24/32/999) car `rounded-lg` & co. de
+  Tailwind sont utilisés par la v1 ; à renommer en R5. Polices : `@font-face` écrits à la main, sous-ensemble latin
+  seul, Archivo en axe de graisse seulement (≈ 55 ko précachés au total). Classes utilitaires `ds-page`,
+  `focus-ring`, `ds-sheet-enter`, `ds-fade-enter`.
+- 2026-10-16 (R0) : MuscleMap — vue choisie par le nombre de muscles primaires visibles, égalité → vue du premier
+  muscle primaire ; `glutes` allume `hips` de face et `glutes` de dos ; pas de niveau « secondaire » (illisible à
+  40 px). Garde-fou `tests/noHardcodedColors.test.ts` : liste `V2_SCREENS` à étendre à chaque écran refait.
 
 - 2026-10-15 : stack et architecture fixées (voir CLAUDE.md, docs/SPEC.md).
 - 2026-10-15 : utilisateur homme (formule BMR homme).
@@ -231,6 +239,14 @@ R0 — Fondations UI : **en cours**.
   en chunks à la demande).
 
 ## À faire ensuite
+
+- Valider R0 sur iPhone, puis R1 (navigation + Aujourd'hui).
+- Remarques reportées (R0) : lien « Composants de l'interface (dev) » et page `/dev/ui` présents en production
+  (retirer ou conditionner à `import.meta.env.DEV` en R5) ; le kit dépend de `src/ui/choices` (v1) pour
+  `muscleLabel` : ne pas le supprimer avec les homonymes v1 en R5 ; `formatInt`/`withUnit` du kit à fusionner avec
+  `src/ui/format.ts` ; Sheet du kit et Sheet v1 ont des piles `inert` séparées (ne pas les superposer) ;
+  Segmented/PillTabs sans `tabIndex` 0 si `value` absente de la liste ; libellés de TabBar inactifs en `ink-muted`
+  (icônes en `ink-faint`) et cibles 44 px au lieu des 36–40 px des maquettes, par choix d'accessibilité.
 
 - Valider J8 et J9 sur iPhone (fin de la v1), puis refonte complète de l'UI.
 - À vérifier sur iPhone (J6/J7) : barre d'onglets collée en bas en standalone (e2e OK, standalone non émulable) ;

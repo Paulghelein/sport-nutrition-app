@@ -115,7 +115,7 @@ function previousHandled(session: Session, step: Step): SessionCursor | null {
 }
 
 const menuButton =
-  'flex min-h-14 w-full items-center rounded-xl border border-line bg-surface-hi px-4 text-left text-lg font-semibold text-zinc-100 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'flex min-h-14 w-full items-center rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-left text-lg font-semibold text-zinc-100 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
 function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
   const navigate = useNavigate()

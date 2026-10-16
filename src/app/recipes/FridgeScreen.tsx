@@ -21,7 +21,7 @@ import { Loading, Notice, RECIPES_PATH, focusRing } from './parts'
 import type { NoticeState } from './parts'
 import { useFridge, useRecipeLibrary } from './useRecipes'
 
-const roundBtn = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
+const roundBtn = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
 
 function ExpirySheet({ view, onClose }: { view: FridgeView; onClose: () => void }) {
   const [date, setDate] = useState<string>(view.item.expiresOn)

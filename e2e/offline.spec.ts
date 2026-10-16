@@ -51,3 +51,30 @@ test('le journal fonctionne en mode avion (recherche Ciqual + ajout)', async ({ 
   await page.getByRole('button', { name: /^Terminer/ }).click()
   await expect(page.getByTestId('kcal-consumed')).toHaveText('183')
 })
+
+test('les polices Archivo et Figtree se chargent hors ligne (précache)', async ({ page, context }) => {
+  await page.goto('./')
+  await completeOnboarding(page)
+  await page.evaluate('navigator.serviceWorker.ready.then(() => true)')
+  const controlled = async (): Promise<boolean> =>
+    page.evaluate<boolean>('navigator.serviceWorker.controller !== null')
+  if (!(await controlled())) await page.reload()
+  await expect.poll(controlled).toBe(true)
+
+  await context.setOffline(true)
+  await page.goto('./dev/ui')
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Composants', level: 1 })).toBeVisible()
+
+  await page.evaluate('document.fonts.ready.then(() => true)')
+  const loaded = await page.evaluate(() => ({
+    archivo: document.fonts.check('800 20px "Archivo Variable"'),
+    figtree: document.fonts.check('400 15px "Figtree Variable"'),
+    faces: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family),
+  }))
+  expect(loaded.archivo).toBe(true)
+  expect(loaded.figtree).toBe(true)
+  // check() est vrai aussi quand rien n'est à charger : on exige que les deux fichiers soient réellement chargés.
+  expect(loaded.faces.join(' ')).toMatch(/Archivo Variable/)
+  expect(loaded.faces.join(' ')).toMatch(/Figtree Variable/)
+})

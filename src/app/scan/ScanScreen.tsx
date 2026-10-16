@@ -269,7 +269,7 @@ export default function ScanScreen() {
       {state.phase === 'lookup' ? (
         <div
           role="status"
-          className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface p-3"
+          className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface p-3"
         >
           <span className="text-base">Recherche du produit {state.ean}…</span>
           <Button variant="secondary" width="auto" onClick={cancel}>

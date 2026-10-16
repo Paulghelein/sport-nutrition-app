@@ -46,7 +46,7 @@ export default function DeletedScreen() {
           {deleted.map((ex) => (
             <li
               key={ex.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 pl-4"
+              className="flex items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface p-3 pl-4"
             >
               <span className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="text-lg font-semibold leading-snug">{ex.name}</span>

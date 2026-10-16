@@ -51,7 +51,7 @@ export default function WeeklyVolume() {
                   aria-valuemax={r.max}
                   aria-valuenow={Math.min(r.done, r.max)}
                   aria-valuetext={`${nf.format(r.done)} séries sur ${r.min} à ${r.max} visées`}
-                  className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-surface-hi"
+                  className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-v1-surface-hi"
                 >
                   <div
                     className={`h-full rounded-full ${reached ? 'bg-emerald-400' : 'bg-orange-400'}`}

@@ -14,7 +14,7 @@ interface BigStepperProps {
 }
 
 const button =
-  'flex shrink-0 items-center justify-center rounded-2xl border border-line bg-surface-hi text-4xl font-semibold leading-none text-zinc-100 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400'
+  'flex shrink-0 items-center justify-center rounded-2xl border border-v1-line bg-v1-surface-hi text-4xl font-semibold leading-none text-zinc-100 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400'
 
 /** Choix d'un nombre avec de gros boutons − / + (64 px), pensé pour des doigts moites pendant une séance. */
 export function BigStepper({

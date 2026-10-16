@@ -10,7 +10,7 @@ import { useAddContext, useGoBack } from './navContext'
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line bg-surface-hi px-3 py-2.5">
+    <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5">
       <dt className="text-sm text-zinc-400">{label}</dt>
       <dd className="m-0 mt-0.5 text-xl font-bold tabular-nums">{value}</dd>
     </div>

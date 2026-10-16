@@ -8,7 +8,7 @@ interface CheckRowProps {
 
 export function CheckRow({ label, hint, checked, onChange, disabled = false }: CheckRowProps) {
   return (
-    <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface-hi px-3 py-2.5 has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400">
+    <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400">
       <input
         type="checkbox"
         checked={checked}

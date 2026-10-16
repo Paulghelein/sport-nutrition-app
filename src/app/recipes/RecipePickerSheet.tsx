@@ -27,7 +27,7 @@ function PickRow({
       <button
         type="button"
         onClick={() => onPick(item.recipe)}
-        className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface-hi px-3 py-2 text-left active:bg-zinc-700 ${focusRing}`}
+        className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left active:bg-zinc-700 ${focusRing}`}
       >
         <span className="min-w-0">
           <span className="block text-base font-medium leading-snug">{item.recipe.name}</span>

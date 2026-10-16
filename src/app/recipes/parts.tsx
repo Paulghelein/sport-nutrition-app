@@ -27,7 +27,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface-hi px-3 py-2 text-left ${focusRing}`}
+      className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left ${focusRing}`}
     >
       <span className="flex flex-col">
         <span className="text-base font-medium">{label}</span>
@@ -45,7 +45,7 @@ export function Switch({
   )
 }
 
-const stepButton = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
+const stepButton = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
 
 const round2 = (n: number): number => Math.round(n * 100) / 100
 
@@ -119,7 +119,7 @@ export function ToggleChip({
       className={`flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-base font-medium has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
         checked
           ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-          : 'border-line bg-surface-hi text-zinc-200'
+          : 'border-v1-line bg-v1-surface-hi text-zinc-200'
       }`}
     >
       <input
@@ -145,7 +145,7 @@ export function Badge({
       ? 'border-amber-400/40 text-amber-300'
       : tone === 'danger'
         ? 'border-red-400/40 text-red-300'
-        : 'border-line text-zinc-300'
+        : 'border-v1-line text-zinc-300'
   return (
     <span
       className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-medium ${style}`}
@@ -230,9 +230,9 @@ export function Notice({ notice }: { notice: NoticeState | null }) {
   )
 }
 
-export const iconButtonClass = `flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-hi text-zinc-300 active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
+export const iconButtonClass = `flex size-11 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-zinc-300 active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
 
-export const searchInputClass = `min-h-12 w-full rounded-xl border border-line bg-surface-hi pl-10 pr-11 text-base text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 ${focusRing}`
+export const searchInputClass = `min-h-12 w-full rounded-xl border border-v1-line bg-v1-surface-hi pl-10 pr-11 text-base text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 ${focusRing}`
 
 export function SearchIcon() {
   return (

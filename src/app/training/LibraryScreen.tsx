@@ -41,7 +41,7 @@ function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface-hi px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+      className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
     >
       <span className="flex flex-col">
         <span className="text-base font-medium">{label}</span>
@@ -64,7 +64,7 @@ function ExerciseRow({ ex, missing }: { ex: LibraryExercise; missing: boolean })
     <li>
       <Link
         to={`/seance/exercices/${ex.id}`}
-        className="flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5 no-underline active:bg-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+        className="flex min-h-14 items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface px-4 py-2.5 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-lg font-semibold leading-snug text-zinc-100">{ex.name}</span>
@@ -72,7 +72,7 @@ function ExerciseRow({ ex, missing }: { ex: LibraryExercise; missing: boolean })
             <LevelBadge level={ex.level} />
             <span className="text-sm text-zinc-400">{ex.muscles.primary.map(muscleLabel).join(', ')}</span>
             {ex.preference === 'hidden' ? (
-              <span className="rounded-full border border-line px-2 py-0.5 text-xs font-medium text-zinc-300">
+              <span className="rounded-full border border-v1-line px-2 py-0.5 text-xs font-medium text-zinc-300">
                 Masqué
               </span>
             ) : null}
@@ -82,7 +82,7 @@ function ExerciseRow({ ex, missing }: { ex: LibraryExercise; missing: boolean })
               </span>
             ) : null}
             {ex.source === 'user' ? (
-              <span className="rounded-full border border-line px-2 py-0.5 text-xs font-medium text-zinc-300">
+              <span className="rounded-full border border-v1-line px-2 py-0.5 text-xs font-medium text-zinc-300">
                 Perso
               </span>
             ) : null}
@@ -207,7 +207,7 @@ export default function LibraryScreen() {
               setQuery(e.target.value)
               setParam('q', e.target.value)
             }}
-            className="min-h-12 w-full rounded-xl border border-line bg-surface-hi pl-10 pr-11 text-base text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+            className="min-h-12 w-full rounded-xl border border-v1-line bg-v1-surface-hi pl-10 pr-11 text-base text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
           />
           {query !== '' ? (
             <button
@@ -242,7 +242,7 @@ export default function LibraryScreen() {
           className={`flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400 ${
             activeCount > 0 || panelOpen
               ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-              : 'border-line bg-surface-hi text-zinc-200'
+              : 'border-v1-line bg-v1-surface-hi text-zinc-200'
           }`}
         >
           Filtres
@@ -270,7 +270,7 @@ export default function LibraryScreen() {
                 className={`h-11 shrink-0 rounded-full border px-4 text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400 ${
                   active
                     ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-                    : 'border-line bg-surface-hi text-zinc-200'
+                    : 'border-v1-line bg-v1-surface-hi text-zinc-200'
                 }`}
               >
                 {p ? patternLabel(p) : 'Tous'}
@@ -283,7 +283,7 @@ export default function LibraryScreen() {
       {panelOpen ? (
         <div
           id="library-filters"
-          className="mt-3 flex flex-col gap-3 rounded-2xl border border-line bg-surface p-3"
+          className="mt-3 flex flex-col gap-3 rounded-2xl border border-v1-line bg-v1-surface p-3"
         >
           <ChoiceGroup<LevelFilter>
             legend="Niveau"

@@ -104,7 +104,7 @@ export function WeightSection({ weight }: { weight: WeightModel }) {
                 <button
                   type="button"
                   onClick={() => setSheet({ weighIn: w })}
-                  className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-2 text-left active:bg-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                  className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-4 py-2 text-left active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
                   aria-label={`Modifier la pesée du ${formatDateFr(w.date, 'long')} : ${formatKg(w.weightKg)} kg`}
                 >
                   <span className="min-w-0">

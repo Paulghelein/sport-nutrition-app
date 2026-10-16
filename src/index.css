@@ -1,16 +1,161 @@
 @import 'tailwindcss';
 
+/* Polices auto-hébergées (hors ligne) : sous-ensemble latin seulement, axe de graisse seul (les maquettes n'utilisent
+   pas l'axe de chasse de Archivo : 35 ko au lieu de 90 ko). Précachées par le service worker (woff2). */
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Figtree Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url('@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @theme {
-  /* Doit rester égal à themeColor dans vite.config.ts et à <meta name="theme-color"> dans index.html. */
-  --color-bg: #0b0b0f;
-  --color-surface: #15151c;
-  --color-surface-hi: #1e1e27;
-  --color-line: #2c2c38;
+  /* --- v1 (thème sombre), retirés quand les écrans v1 auront été refaits (R5).
+     --color-v1-bg doit rester égal à themeColor dans vite.config.ts et à <meta name="theme-color"> dans index.html. */
+  --color-v1-bg: #0b0b0f;
+  --color-v1-surface: #15151c;
+  --color-v1-surface-hi: #1e1e27;
+  --color-v1-line: #2c2c38;
+
+  /* --- v2 : jetons de docs/DESIGN.md §2 --- */
+  --color-canvas: #e8e6e1;
+  --color-surface: #f5f4f1;
+  --color-surface-raised: #fbfaf8;
+  --color-surface-sunken: #dcd9d2;
+  --color-line: #d3cfc7;
+  --color-ink: #1d1c1a;
+  --color-ink-muted: #5f5b54;
+  --color-ink-faint: #8a857c;
+  --color-inverse: #1d1c1a;
+  --color-on-inverse: #f5f4f1;
+  --color-on-inverse-muted: #a9a49b;
+  --color-ember: #ec6a2e;
+  --color-ember-ink: #a8410f;
+  --color-ember-soft: #f6d2bd;
+  --color-protein: #2f5fd0;
+  --color-carbs: #a87c0e;
+  --color-fat: #2e8a6e;
+  --color-heat-0: #dcd9d2;
+  --color-heat-1: #f6c7a8;
+  --color-heat-2: #f09a62;
+  --color-heat-3: #ec6a2e;
+  --color-heat-4: #a8410f;
+  --color-good: #2f7a3e;
+  --color-warning: #9a5a06;
+  --color-critical: #b3261e;
+  --color-focus: #2f5fd0;
+
+  /* Attention : --font-sans remplace la police par défaut de Tailwind ; le body v1 garde system-ui (voir plus bas),
+     la police Figtree est appliquée par la racine des pages v2 (classe ds-page). */
+  --font-display: 'Archivo Variable', Archivo, 'Arial Narrow', system-ui, sans-serif;
+  --font-sans: 'Figtree Variable', Figtree, system-ui, -apple-system, sans-serif;
+
+  /* Styles de texte : `text-<nom>` règle taille, interligne, graisse et crénage. La famille s'ajoute à part
+     (`font-display` pour display-xl, display-l, number-l, title ; `font-sans` pour le reste). */
+  --text-display-xl: 64px;
+  --text-display-xl--line-height: 64px;
+  --text-display-xl--font-weight: 800;
+  --text-display-xl--letter-spacing: -0.02em;
+  --text-display-l: 34px;
+  --text-display-l--line-height: 38px;
+  --text-display-l--font-weight: 800;
+  --text-display-l--letter-spacing: -0.015em;
+  --text-number-l: 28px;
+  --text-number-l--line-height: 32px;
+  --text-number-l--font-weight: 700;
+  --text-title: 20px;
+  --text-title--line-height: 26px;
+  --text-title--font-weight: 700;
+  --text-headline: 17px;
+  --text-headline--line-height: 22px;
+  --text-headline--font-weight: 600;
+  --text-body: 15px;
+  --text-body--line-height: 22px;
+  --text-body--font-weight: 400;
+  --text-body-strong: 15px;
+  --text-body-strong--line-height: 22px;
+  --text-body-strong--font-weight: 600;
+  --text-caption: 13px;
+  --text-caption--line-height: 18px;
+  --text-caption--font-weight: 500;
+  --text-label: 11px;
+  --text-label--line-height: 14px;
+  --text-label--font-weight: 700;
+  --text-label--letter-spacing: 0.06em;
+
+  /* Rayons : préfixe « ds » car --radius-sm/md/lg/xl sont ceux de Tailwind, utilisés par les écrans v1
+     (rounded-xl…) qui doivent rester identiques. À renommer en R5. */
+  --radius-ds-sm: 10px;
+  --radius-ds-md: 16px;
+  --radius-ds-lg: 24px;
+  --radius-ds-xl: 32px;
+  --radius-ds-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgb(29 28 26 / 0.06), 0 6px 18px rgb(29 28 26 / 0.05);
+  --shadow-float: 0 10px 30px rgb(29 28 26 / 0.16);
+}
+
+/* Anneau de focus v2 : 2 px, couleur `focus`, décalé de 2 px. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+/* Racine d'une page v2 : fond canvas, texte ink, Figtree. */
+@utility ds-page {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  color-scheme: light;
+}
+
+/* Transitions de 200 ms ease-out ; avec prefers-reduced-motion : fondu de 100 ms (DESIGN.md §3). */
+@keyframes ds-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes ds-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility ds-sheet-enter {
+  animation: ds-sheet-up 200ms ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    animation: ds-fade-in 100ms ease-out;
+  }
+}
+
+@utility ds-fade-enter {
+  animation: ds-fade-in 200ms ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 100ms;
+  }
 }
 
 :root {
   color-scheme: dark;
-  background-color: var(--color-bg);
+  background-color: var(--color-v1-bg);
   color: #f4f4f5;
 }
 
@@ -30,7 +175,7 @@ body {
 
 body {
   margin: 0;
-  background-color: var(--color-bg);
+  background-color: var(--color-v1-bg);
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;

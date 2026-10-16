@@ -89,7 +89,7 @@ export function Frame({
           aria-valuemin={0}
           aria-valuemax={p.total}
           aria-valuenow={p.done}
-          className="mx-4 mt-1 h-1.5 overflow-hidden rounded-full bg-surface-hi"
+          className="mx-4 mt-1 h-1.5 overflow-hidden rounded-full bg-v1-surface-hi"
         >
           <div
             className="h-full rounded-full bg-orange-400"
@@ -99,7 +99,7 @@ export function Frame({
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-4">{children}</div>
       <div
-        className="border-t border-line bg-surface px-4 pt-3"
+        className="border-t border-v1-line bg-v1-surface px-4 pt-3"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
       >
         {actions}
@@ -318,7 +318,7 @@ export function SetView({
       }
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-line bg-surface-hi px-3 py-1 text-base font-semibold tabular-nums">
+        <span className="rounded-full border border-v1-line bg-v1-surface-hi px-3 py-1 text-base font-semibold tabular-nums">
           Série {info.cursor.set + 1} sur {n}
         </span>
         {superset ? (
@@ -438,7 +438,7 @@ export function RestView({
       </p>
       <div
         aria-hidden="true"
-        className="mx-auto mt-5 h-3 max-w-sm overflow-hidden rounded-full bg-surface-hi"
+        className="mx-auto mt-5 h-3 max-w-sm overflow-hidden rounded-full bg-v1-surface-hi"
       >
         <div
           className="h-full rounded-full bg-orange-400"
@@ -454,7 +454,7 @@ export function RestView({
         </Button>
       </div>
       {next ? (
-        <div className="mt-8 rounded-2xl border border-line bg-surface p-4">
+        <div className="mt-8 rounded-2xl border border-v1-line bg-v1-surface p-4">
           <p className="m-0 text-sm font-medium text-zinc-400">À suivre</p>
           <p className="m-0 mt-1 text-2xl font-bold leading-tight">{next.name}</p>
           <p className="m-0 mt-1 text-lg text-zinc-300">

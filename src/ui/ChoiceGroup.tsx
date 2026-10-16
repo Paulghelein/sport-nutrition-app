@@ -40,7 +40,7 @@ export function ChoiceGroup<T extends string | number>({
         {options.map((option) => (
           <label
             key={String(option.value)}
-            className={`flex min-h-12 min-w-0 cursor-pointer rounded-xl border border-line bg-surface-hi py-2.5 has-checked:border-orange-400 has-checked:bg-orange-400/15 has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
+            className={`flex min-h-12 min-w-0 cursor-pointer rounded-xl border border-v1-line bg-v1-surface-hi py-2.5 has-checked:border-orange-400 has-checked:bg-orange-400/15 has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
               layout === 'stack'
                 ? 'flex-col justify-center px-3'
                 : `items-center justify-center px-1.5 text-center ${layout === 'row' ? 'flex-1' : ''}`

@@ -112,7 +112,7 @@ export default function ClaudeSection() {
             rows={12}
             value={COACH_PROJECT_INSTRUCTIONS}
             onFocus={(e) => e.currentTarget.select()}
-            className="w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 font-mono text-xs text-zinc-200"
+            className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 font-mono text-xs text-zinc-200"
           />
         ) : null}
       </div>

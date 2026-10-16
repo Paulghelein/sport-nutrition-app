@@ -59,7 +59,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="z-50 shrink-0 border-t border-white/10 bg-bg"
+      className="z-50 shrink-0 border-t border-white/10 bg-v1-bg"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',

@@ -53,7 +53,7 @@ function Selectable({
   return (
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3 has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
-        checked ? 'border-orange-400/60 bg-orange-400/5' : 'border-line bg-surface'
+        checked ? 'border-orange-400/60 bg-orange-400/5' : 'border-v1-line bg-v1-surface'
       }`}
     >
       <input
@@ -199,7 +199,7 @@ export default function ClaudeResponseScreen() {
     }
     if (item.kind === 'unsupported') {
       return (
-        <div className="rounded-2xl border border-line bg-surface p-3 opacity-80">
+        <div className="rounded-2xl border border-v1-line bg-v1-surface p-3 opacity-80">
           <p className="text-base font-semibold">
             Élément {item.index + 1} : <span className="font-mono text-sm">{item.type}</span>
           </p>
@@ -302,7 +302,7 @@ export default function ClaudeResponseScreen() {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          className={`w-full rounded-xl border border-line bg-surface-hi px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-500 ${focusRing}`}
+          className={`w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-500 ${focusRing}`}
         />
       </div>
       <Button

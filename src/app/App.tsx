@@ -4,7 +4,7 @@ import { getSettings, requestPersistentStorage } from '../db'
 import { TabBar, useLiveQuery } from '../ui'
 import { UpdatePrompt } from '../ui/UpdatePrompt'
 import { Onboarding } from './Onboarding'
-import { GUIDED_PATH } from './routes'
+import { DEV_UI_PATH, GUIDED_PATH } from './routes'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 
@@ -39,6 +39,8 @@ const ScanScreen = lazy(() => import('./scan/ScanScreen'))
 const ProgressScreen = lazy(() => import('./progress/ProgressScreen'))
 // J9 — bouton Claude : coller et appliquer la réponse.
 const ClaudeResponseScreen = lazy(() => import('./claude/ClaudeResponseScreen'))
+// v2 (R0) — page de démonstration du kit de composants.
+const UiScreen = lazy(() => import('./dev/UiScreen'))
 
 function Tabs() {
   const mainRef = useRef<HTMLElement>(null)
@@ -113,6 +115,15 @@ function Guided() {
   )
 }
 
+/** Page de composants v2 : plein écran clair, hors de la mise en page à onglets v1. */
+function DevUi() {
+  return (
+    <Suspense fallback={<div aria-busy="true" className="flex-1" />}>
+      <UiScreen />
+    </Suspense>
+  )
+}
+
 /** Délai avant de préparer la base d'aliments en tâche de fond (après l'affichage du premier écran). */
 const CIQUAL_PRELOAD_DELAY_MS = 2000
 
@@ -131,6 +142,7 @@ function Shell() {
   return (
     <Routes>
       <Route path={GUIDED_PATH} element={<Guided />} />
+      <Route path={DEV_UI_PATH} element={<DevUi />} />
       <Route path="*" element={<Tabs />} />
     </Routes>
   )
@@ -163,7 +175,7 @@ export function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       {/* fixed inset-0 : colle aux vrais bords de l’écran (en standalone iOS, height: 100% peut s’arrêter avant le bas). */}
-      <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg text-zinc-100">
+      <div className="fixed inset-0 flex flex-col overflow-hidden bg-v1-bg text-zinc-100">
         <Gate />
       </div>
     </BrowserRouter>

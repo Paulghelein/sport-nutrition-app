@@ -98,7 +98,7 @@ export function Sheet({ title, onClose, busy = false, children }: SheetProps) {
         aria-labelledby={titleId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-b-0 border-line bg-surface px-4 pt-3 text-zinc-100 outline-none"
+        className="mx-auto max-h-[92dvh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-b-0 border-v1-line bg-v1-surface px-4 pt-3 text-zinc-100 outline-none"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.25rem)' }}
       >
         <div aria-hidden="true" className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-zinc-600" />
