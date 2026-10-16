@@ -69,6 +69,12 @@ export interface Exercise {
    * même pour un exercice `kettlebell`. Remplace `LEARN_UNLOADED_IDS`.
    */
   learnUnloaded?: boolean
+  /**
+   * F3 : peut recevoir une dernière série « max » (AMRAP). Opt-in : absent = jamais. Réservé aux exercices au poids du
+   * corps en répétitions dont l'échec technique reste sûr (pompes, squat, rowing australien…) ; jamais excentriques
+   * (tractions négatives), isolation du tronc, unilatéraux instables, tête en bas, balistiques ou chargés.
+   */
+  amrap?: boolean
   source: ContentSource
   /** Surcharge d'un exercice de départ supprimé par l'utilisateur (masqué partout). */
   deleted?: boolean

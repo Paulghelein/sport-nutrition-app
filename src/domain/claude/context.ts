@@ -12,6 +12,7 @@ import type { RecipeNutrition } from '../../types/recipes'
 import type { Feeling, LibraryExercise, MuscleGroup, MovementPattern, Session, SetEntry } from '../../types/training'
 import { addDays } from '../shared/dates'
 import { isAvailable } from '../training/library'
+import { setTypeOf, timedMaxWindowOf } from '../training/setTypes'
 
 // ---------- Entrées ----------
 
@@ -298,8 +299,13 @@ export function buildJournalMessage(input: JournalContextInput): ClaudeMessage {
 
 // ---------- séance ----------
 
-function setTarget(s: SetEntry | undefined): { reps?: [number, number]; dureeSec?: number } {
+function setTarget(
+  s: SetEntry | undefined,
+): { reps?: [number, number]; dureeSec?: number; type?: 'tempsMax'; fenetreSec?: number } {
   if (s === undefined) return {}
+  // F3 : max de répétitions en temps fixe ; la durée est une fenêtre, pas une tenue.
+  const w = timedMaxWindowOf(s)
+  if (w !== undefined) return { type: 'tempsMax', fenetreSec: w }
   if (s.targetReps !== undefined) return { reps: [s.targetReps[0], s.targetReps[1]] }
   if (s.targetDurationSec !== undefined) return { dureeSec: s.targetDurationSec }
   return {}
@@ -342,6 +348,8 @@ export function buildSessionBeforeMessage(input: SessionBeforeContextInput): Cla
         nom: nameOf(library, se.exerciseId),
         series: se.sets.length,
         ...setTarget(first),
+        // F3 : dernière série au max de répétitions (AMRAP).
+        ...(setTypeOf(se.sets.at(-1) ?? {}) === 'amrap' ? { derniereSerie: 'amrap' } : {}),
         ...(first?.loadKg !== undefined ? { chargeKg: first.loadKg } : {}),
         reposSec: se.restSec,
         ...(se.tempo !== undefined ? { tempo: se.tempo } : {}),
@@ -369,7 +377,15 @@ function setLine(s: SetEntry): string {
       : s.actualDurationSec !== undefined
         ? `${String(s.actualDurationSec)}s${s.loadKg !== undefined ? `×${fr(s.loadKg)}kg` : ''}`
         : '?'
-  return s.feeling === undefined ? amount : `${amount} ${FEELING_FR[s.feeling]}`
+  // F3 : « amrap 22 » (max à l'échec), « 24×16kg en 45s » (max en temps fixe).
+  const w = timedMaxWindowOf(s)
+  const typed =
+    setTypeOf(s) === 'amrap'
+      ? `amrap ${amount}`
+      : w !== undefined && s.actualReps !== undefined
+        ? `${amount} en ${String(w)}s`
+        : amount
+  return s.feeling === undefined ? typed : `${typed} ${FEELING_FR[s.feeling]}`
 }
 
 export function buildSessionAfterMessage(input: SessionAfterContextInput): ClaudeMessage {
@@ -400,6 +416,7 @@ export function buildSessionAfterMessage(input: SessionAfterContextInput): Claud
       valeur: r1(r.value),
       avant: r1(r.previous),
       ...(r.loadKg !== undefined ? { chargeKg: r.loadKg } : {}),
+      ...(r.windowSec !== undefined ? { fenetreSec: r.windowSec } : {}),
     })),
   }
   return assemble('session_after', input, data)

@@ -14,6 +14,7 @@ import { doneSets, dominantFeeling } from './feeling'
 import { isAvailable, sortLibrary } from './library'
 import { adjustableLoads, maxLoad, nextLoadDown, nextLoadUp, snapLoadDown } from './loads'
 import { isLearningUnloaded } from './sets'
+import { AMRAP_RATIO, canAmrap, timedMaxThreshold, timedMaxWindowOf } from './setTypes'
 
 /** Ressentis conservés dans l'état. */
 export const MAX_RECENT_FEELINGS = 10
@@ -23,6 +24,12 @@ export const DURATION_STEP_SEC = 5
 export const HARD_STREAK_DECREASE = 3
 /** Séances consécutives au haut de la fourchette (au maximum de charge ou de durée) avant de suggérer la suite. */
 export const LEVEL_UP_STREAK = 2
+/**
+ * Séries `timedMax` (F3) : séances consécutives au seuil (haut de la fourchette dans la fenêtre, record égalé ou
+ * battu) avant +1 palier de charge. 2 plutôt que 1 : le max sur une fenêtre varie d'une séance à l'autre, on
+ * attend une performance confirmée avant d'alourdir un mouvement balistique.
+ */
+export const TIMED_MAX_STREAK = 2
 
 const EPS = 1e-9
 
@@ -135,6 +142,19 @@ export function nextLevelVariant(
  *   que le haut de fourchette n'est pas atteint `LEVEL_UP_STREAK` séances de suite (ressenti `hard` : pas de
  *   passage) ; ensuite plus petite charge réglable (`change: 'increase'`, `topStreak` remis à 0) ; jamais de
  *   suggestion pendant l'apprentissage ; le ressenti est enregistré, rien ne baisse.
+ * - séries `amrap` (F3) : comptent comme des séries normales pour tout ce qui précède ; en plus, si le max d'une
+ *   AMRAP dépasse le haut de la fourchette de plus de 30 % (> × 1,3, exercice au poids du corps), que toutes les
+ *   séries sont au haut de la fourchette, hors deload, sans 2 `hard` de suite ni baisse → suggestion `level_up`
+ *   immédiate (même variante bornée à profil + 1 ; sans variante, la règle habituelle s'applique) ;
+ * - séries `timedMax` (F3, finisher en répétitions, fenêtre valide `timedMaxWindowOf`) : une série est au seuil si
+ *   ses reps atteignent `timedMaxThreshold` (haut de la fourchette × fenêtre / 45 s) ; la séance compte pour
+ *   `topStreak` si toutes les séries sont au seuil ET que le meilleur résultat égale ou bat le record
+ *   (`timedMaxBestReps`, même fenêtre, même charge). +1 palier seulement à `TIMED_MAX_STREAK` (2) séances de
+ *   suite ; pas de suggestion `tempo` (geste balistique). `topStreak` est partagé avec les séances en répétitions
+ *   du même exercice (règle assumée : les deux mesurent « haut atteint à la charge actuelle ») ;
+ * - record `timedMaxBestReps` / `timedMaxSec` : meilleur nombre de reps dans la fenêtre à la charge courante (séries
+ *   faites à une charge ≥ la charge prévue) ; repart de cette séance si la fenêtre change ; effacé dès que la charge
+ *   change pendant la séance (hausse, baisse, même par une séance en répétitions).
  * Si aucune série n'a été faite, l'état est rendu tel quel (`change: 'none'`).
  */
 export function applySessionResult(params: SessionResultParams): ProgressionOutcome {
@@ -166,6 +186,10 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
     if (set.status !== 'done') return false
     if (currentLoad !== null && set.loadKg !== undefined && set.loadKg < currentLoad - EPS) return false
     if (reps !== undefined) {
+      // Temps fixe : seuil = haut de la fourchette ramené à la fenêtre (`timedMaxThreshold`).
+      const w = timedMaxWindowOf(set)
+      if (w !== undefined)
+        return set.actualReps !== undefined && set.actualReps >= timedMaxThreshold(reps[1], w)
       // Référence = au moins le haut de la fourchette de l'exercice : une cible abaissée (séance proposée par
       // Claude, ex. [3, 5] sur un 8-12) ne déclenche pas de hausse.
       const top = Math.max(set.targetReps?.[1] ?? reps[1], reps[1])
@@ -177,7 +201,29 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
       target !== undefined && currentDuration !== undefined ? Math.max(target, currentDuration) : target
     return top !== undefined && set.actualDurationSec !== undefined && set.actualDurationSec >= top
   }
-  const topReached = params.performed.sets.length > 0 && params.performed.sets.every(reachedTop)
+  const atLoad = (set: SetEntry): boolean =>
+    currentLoad === null || set.loadKg === undefined || set.loadKg >= currentLoad - EPS
+  const bestReps = (sets: readonly SetEntry[]): number | undefined => {
+    const values = sets.filter(atLoad).flatMap((s) => (s.actualReps === undefined ? [] : [s.actualReps]))
+    return values.length > 0 ? Math.max(...values) : undefined
+  }
+
+  // Séries en temps fixe (finisher en répétitions) : fenêtre de la première, record à cette fenêtre.
+  // Série `timedMax` sans fenêtre valide : traitée comme une série en répétitions (`timedMaxWindowOf`).
+  const windowSec =
+    reps === undefined
+      ? undefined
+      : params.performed.sets.map(timedMaxWindowOf).find((w): w is number => w !== undefined)
+  const hasTimedMax = windowSec !== undefined
+  const timedBest = bestReps(done.filter((s) => timedMaxWindowOf(s) === windowSec))
+  const previousBest =
+    windowSec !== undefined && base.timedMaxSec === windowSec ? base.timedMaxBestReps : undefined
+  const recordHeld = previousBest === undefined || (timedBest !== undefined && timedBest >= previousBest)
+
+  const topReached =
+    params.performed.sets.length > 0 &&
+    params.performed.sets.every(reachedTop) &&
+    (!hasTimedMax || recordHeld)
   let streak = deload ? (base.topStreak ?? 0) : topReached ? (base.topStreak ?? 0) + 1 : 0
 
   let load = currentLoad
@@ -220,7 +266,7 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
           change = 'increase'
         }
       }
-    } else if (load !== null) {
+    } else if (load !== null && (!hasTimedMax || streak >= TIMED_MAX_STREAK)) {
       const up = nextLoadUp(load, exercise.loadStepKg, kb)
       if (up !== null) {
         load = up
@@ -241,11 +287,46 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
   if (duration !== undefined) state.targetDurationSec = duration
   else delete state.targetDurationSec
 
+  // Record en temps fixe : valable à la charge courante seulement (charge de l'état arrondie à une charge réglable).
+  const sameLoad =
+    load === null || currentLoad === null ? load === currentLoad : Math.abs(load - currentLoad) <= EPS
+  if (!sameLoad) {
+    delete state.timedMaxBestReps
+    delete state.timedMaxSec
+  } else if (windowSec !== undefined) {
+    const best = Math.max(previousBest ?? Number.NEGATIVE_INFINITY, timedBest ?? Number.NEGATIVE_INFINITY)
+    if (Number.isFinite(best)) {
+      state.timedMaxBestReps = best
+      state.timedMaxSec = windowSec
+    }
+  }
+
   // Suggestion : au maximum de ce que l'exercice permet, deux séances de suite au haut de la fourchette.
   const loadAtMax = load === null || load >= maxLoad(kb) - EPS
   const durationAtMax = range === undefined || (duration !== undefined && duration >= range[1])
   let suggestion: ProgressionSuggestion | undefined
+
+  // AMRAP au-delà du haut de la fourchette × 1,3 : variante supérieure proposée sans attendre.
+  const amrapBest = bestReps(done.filter((s) => s.setType === 'amrap'))
+  const amrapHit =
+    canAmrap(exercise) &&
+    reps !== undefined &&
+    amrapBest !== undefined &&
+    amrapBest > reps[1] * AMRAP_RATIO + EPS
+  if (amrapHit && !deload && !learning && !twoHard && change !== 'decrease' && topReached) {
+    const variant = nextLevelVariant(exercise, library, equipment, profileLevel)
+    if (variant !== undefined) {
+      suggestion = {
+        kind: 'level_up',
+        exerciseId: exercise.id,
+        toExerciseId: variant.id,
+        message: `${amrapBest} répétitions au max sur « ${exercise.name} », plus de 30 % au-dessus de l’objectif : tu peux passer à « ${variant.name} » (niveau ${variant.level}).`,
+      }
+    }
+  }
+
   if (
+    suggestion === undefined &&
     !deload &&
     !learning &&
     !twoHard &&
@@ -266,8 +347,8 @@ export function applySessionResult(params: SessionResultParams): ProgressionOutc
         toExerciseId: variant.id,
         message: `Objectif atteint sur « ${exercise.name} » ${streak} séances de suite : tu peux passer à « ${variant.name} » (niveau ${variant.level}).${unloaded}`,
       }
-    } else if (reps !== undefined && base.tempo !== true) {
-      // Le tempo n'a de sens qu'en répétitions (pas pour une tenue ou un porté).
+    } else if (reps !== undefined && base.tempo !== true && !hasTimedMax) {
+      // Le tempo n'a de sens qu'en répétitions (pas pour une tenue, un porté, ni un swing en temps fixe).
       suggestion = {
         kind: 'tempo',
         exerciseId: exercise.id,

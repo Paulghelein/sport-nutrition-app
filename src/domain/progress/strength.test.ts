@@ -248,3 +248,50 @@ describe('strengthByExercise : unilatéral et cas limites', () => {
     expect(recordsInRange(rows, '2026-10-07', '2026-10-01', byId)).toEqual([])
   })
 })
+
+describe('F3 : séries en temps fixe et AMRAP', () => {
+  const sw = 'two-hand-swing'
+  const timed = (actualReps: number, window = 45, loadKg = 16): SetEntry => ({
+    setType: 'timedMax',
+    targetDurationSec: window,
+    status: 'done',
+    actualReps,
+    actualDurationSec: window,
+    feeling: 'ok',
+    loadKg,
+  })
+
+  it('strengthByExercise : reps et durée en temps fixe exclues ; charge et tonnage comptés', () => {
+    const rows = [
+      session('n1', '2026-10-01', [block('b1', sw, [reps(15, 16)])]),
+      session('t1', '2026-10-03', [block('b1', sw, [timed(30)])]),
+    ]
+    const out = find(strengthByExercise(rows, byId), sw)
+    expect(out.points[1]).toEqual({ date: '2026-10-03', sessionId: 't1', topLoadKg: 16, tonnageKg: 480 })
+    expect(out.records.reps).toEqual({ value: 15, date: '2026-10-01', loadKg: 16 })
+    expect(out.records.duration).toBeUndefined()
+    expect(out.records.tonnage).toEqual({ value: 480, date: '2026-10-03' })
+  })
+
+  it('AMRAP : compte comme une série normale (reps max)', () => {
+    const rows = [
+      session('a1', '2026-10-01', [block('b1', 'incline-push-up', [reps(12), { ...reps(19), setType: 'amrap' }])]),
+    ]
+    expect(find(strengthByExercise(rows, byId), 'incline-push-up').records.reps).toEqual({ value: 19, date: '2026-10-01' })
+  })
+
+  it('recordsInRange : record temps fixe avec windowSec, jamais fusionné avec le record de reps normal', () => {
+    const rows = [
+      session('n1', '2026-10-01', [block('b1', sw, [reps(15, 16)])]),
+      session('t1', '2026-10-02', [block('b1', sw, [timed(22)])]),
+      session('n2', '2026-10-06', [block('b1', sw, [reps(16, 16)])]),
+      session('t2', '2026-10-07', [block('b1', sw, [timed(25)])]),
+      session('t3', '2026-10-08', [block('b1', sw, [timed(27)])]),
+    ]
+    const r = recordsInRange(rows, '2026-10-05', '2026-10-11', byId).filter((x) => x.kind === 'reps')
+    expect(r).toEqual([
+      { exerciseId: sw, kind: 'reps', value: 16, previous: 15, loadKg: 16 },
+      { exerciseId: sw, kind: 'reps', value: 27, previous: 22, loadKg: 16, windowSec: 45 },
+    ])
+  })
+})

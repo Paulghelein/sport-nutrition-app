@@ -10,7 +10,10 @@
 //   entre deux exercices (poser, changer de charge) + un seul repos après le tour, égal au plus long `restSec`
 //   des exercices du bloc ;
 // - les séries `skipped` ne comptent pas ; le repos après la toute dernière série est compté (rangement, transition).
+// - types de séries (F3) : `amrap` = haut de la fourchette × 1,3 répétitions ; `timedMax` = la fenêtre
+//   (`targetDurationSec`) ; × 2 si unilatéral comme les autres. Séries sans `setType` : calcul d'avant la v2.
 import type { Exercise, SessionBlock, SessionExercise, SetEntry } from '../../types/training'
+import { AMRAP_RATIO, timedMaxWindowOf } from './setTypes'
 
 export const SECONDS_PER_REP = 3
 export const SETUP_SEC = 60
@@ -33,7 +36,11 @@ export function secondsPerRep(tempo: string | undefined): number {
 export function setWorkSeconds(set: SetEntry, ex: Exercise | undefined, tempo?: string): number {
   const perRep = secondsPerRep(tempo)
   let base: number
-  if (set.targetReps !== undefined) base = ((set.targetReps[0] + set.targetReps[1]) / 2) * perRep
+  const reps = set.targetReps ?? ex?.repRange
+  const windowSec = timedMaxWindowOf(set)
+  if (set.setType === 'amrap' && reps !== undefined) base = reps[1] * AMRAP_RATIO * perRep
+  else if (windowSec !== undefined) base = windowSec
+  else if (set.targetReps !== undefined) base = ((set.targetReps[0] + set.targetReps[1]) / 2) * perRep
   else if (set.targetDurationSec !== undefined) base = set.targetDurationSec
   else if (ex?.repRange !== undefined) base = ((ex.repRange[0] + ex.repRange[1]) / 2) * perRep
   else if (ex?.durationRange !== undefined) base = ex.durationRange[0]

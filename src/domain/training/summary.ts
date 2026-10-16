@@ -1,6 +1,7 @@
 // Récapitulatif de séance, records et historique (SPEC §3.4, §3.6). Fonctions pures.
 import type { ExerciseSummary, PersonalRecord, SessionHistoryItem, SessionSummary } from '../../types/guided'
 import type { Exercise, Id, Session, SetEntry } from '../../types'
+import { timedMaxWindowOf } from './setTypes'
 import { addExerciseVolume, emptyVolume } from './volume'
 
 const EPS = 1e-9
@@ -68,18 +69,39 @@ function summarizeExercise(
   return summary
 }
 
-/** Clé de charge d'une série : `bw` (poids du corps / sans charge) ou la charge en kg. */
-function loadKey(set: SetEntry): string {
-  return set.loadKg === undefined ? 'bw' : String(set.loadKg)
+/** Où un record se mesure : charge (absente = poids du corps) et, pour une série en temps fixe, fenêtre. */
+interface RecordSlot {
+  loadKg?: number
+  windowSec?: number
 }
 
-function bestBy(sets: readonly SetEntry[], value: (s: SetEntry) => number | undefined): Map<string, number> {
-  const best = new Map<string, number>()
+/** Clé d'un emplacement (comparaison seulement, jamais relue). */
+function slotKey(slot: RecordSlot): string {
+  return `${slot.loadKg ?? 'bw'}|${slot.windowSec ?? '-'}`
+}
+
+function slotOf(set: SetEntry, withWindow: boolean): RecordSlot {
+  const slot: RecordSlot = {}
+  if (set.loadKg !== undefined) slot.loadKg = set.loadKg
+  const w = withWindow ? timedMaxWindowOf(set) : undefined
+  if (w !== undefined) slot.windowSec = w
+  return slot
+}
+
+/** Meilleure valeur par emplacement. */
+function bestBy(
+  sets: readonly SetEntry[],
+  value: (s: SetEntry) => number | undefined,
+  withWindow: boolean,
+): Map<string, { slot: RecordSlot; value: number }> {
+  const best = new Map<string, { slot: RecordSlot; value: number }>()
   for (const s of sets) {
     const v = value(s)
     if (v === undefined) continue
-    const k = loadKey(s)
-    best.set(k, Math.max(best.get(k) ?? Number.NEGATIVE_INFINITY, v))
+    const slot = slotOf(s, withWindow)
+    const k = slotKey(slot)
+    const seen = best.get(k)
+    if (seen === undefined || v > seen.value) best.set(k, { slot, value: v })
   }
   return best
 }
@@ -88,6 +110,13 @@ function bestBy(sets: readonly SetEntry[], value: (s: SetEntry) => number | unde
  * Records d'un exercice par rapport aux séances antérieures (`priorSessions` : séries de chaque séance passée).
  * Aucun record sans passage antérieur (rien à battre), ni pour une mesure jamais faite avant (ex. première séance
  * chargée après l'apprentissage sans charge, ou nouvelle charge pour `reps` / `duration`).
+ * Types de séries (F3) :
+ * - `amrap` : une série comme une autre (son max entre dans le record `reps` à sa charge) ;
+ * - `timedMax` : record `reps` à charge donnée comparé SEULEMENT aux séries `timedMax` antérieures de même fenêtre
+ *   (`targetDurationSec`, rendue dans `windowSec`) ; ces séries ne comptent ni pour le record `reps` des séries
+ *   normales (des reps en 45 s ne se comparent pas à une série de 12), ni pour le record `duration` (la durée est
+ *   imposée). Première fois à une fenêtre ou une charge : pas de record (rien à battre). Une série `timedMax` sans
+ *   fenêtre valide (donnée incohérente) est comptée comme une série normale (`timedMaxWindowOf`).
  */
 function exerciseRecords(
   exerciseId: Id,
@@ -108,18 +137,21 @@ function exerciseRecords(
     if (value > previous + EPS) records.push({ exerciseId, kind: 'load', value, previous })
   }
 
-  for (const [kind, pick] of [
-    ['reps', (s: SetEntry) => s.actualReps],
-    ['duration', (s: SetEntry) => s.actualDurationSec],
+  // Série en temps fixe valide (fenêtre > 0) ; une `timedMax` sans fenêtre compte comme une série normale.
+  const isTimed = (s: SetEntry): boolean => timedMaxWindowOf(s) !== undefined
+  const plain = (s: SetEntry): boolean => !isTimed(s)
+  for (const [kind, pick, filter] of [
+    ['reps', (s: SetEntry) => s.actualReps, plain],
+    ['duration', (s: SetEntry) => s.actualDurationSec, plain],
+    ['reps', (s: SetEntry) => s.actualReps, isTimed],
   ] as const) {
-    const now = bestBy(done, pick)
-    const before = bestBy(priorDone, pick)
-    for (const [k, value] of now) {
-      const previous = before.get(k)
+    const timed = filter === isTimed
+    const now = bestBy(done.filter(filter), pick, timed)
+    const before = bestBy(priorDone.filter(filter), pick, timed)
+    for (const [k, { slot, value }] of now) {
+      const previous = before.get(k)?.value
       if (previous === undefined || value <= previous) continue
-      const record: PersonalRecord = { exerciseId, kind, value, previous }
-      if (k !== 'bw') record.loadKg = Number(k)
-      records.push(record)
+      records.push({ exerciseId, kind, value, previous, ...slot })
     }
   }
 

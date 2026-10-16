@@ -25,6 +25,7 @@ import type {
 import { deloadSets } from './deload'
 import { SUPERSET_TRANSITION_SEC, estimateMinutes } from './estimate'
 import { buildSessionExercise } from './sets'
+import { timedMaxWindowOf } from './setTypes'
 
 // ---------------------------------------------------------------------------------------------------------------
 // Ordre des séries
@@ -301,7 +302,8 @@ function withCursorAfter(session: Session, from: SessionCursor): Session {
 }
 
 /**
- * Enregistre une série faite : `done`, reps ou durée réelles (entiers ≥ 0 ; valeur non finie ignorée), ressenti,
+ * Enregistre une série faite : `done`, reps ou durée réelles (entiers ≥ 0 ; valeur non finie ignorée ; durée
+ * ignorée sur une série en temps fixe, dont la fenêtre est la cible), ressenti,
  * charge réellement utilisée si fournie (> 0). Une saisie précédente de la série est remplacée.
  * Charge saisie différente de la charge prévue : la prévue est gardée dans `plannedLoadKg` (retirée si l'on
  * revient à la prévue) pour que `undoSet` la rétablisse. Série sans charge prévue (poids du corps lesté) :
@@ -315,7 +317,8 @@ export function recordSet(session: Session, cursor: SessionCursor, input: SetInp
   const updated = mapSet(session, cursor, (set) => {
     const next: SetEntry = { ...clearResult(set), status: 'done', feeling: input.feeling }
     if (reps !== undefined) next.actualReps = reps
-    if (duration !== undefined) next.actualDurationSec = duration
+    // Temps fixe (F3) : la fenêtre est la cible, une durée saisie est ignorée.
+    if (duration !== undefined && timedMaxWindowOf(set) === undefined) next.actualDurationSec = duration
     if (input.loadKg !== undefined && Number.isFinite(input.loadKg) && input.loadKg > 0)
       return setLoads(next, input.loadKg)
     return next

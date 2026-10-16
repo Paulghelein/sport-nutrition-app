@@ -21,6 +21,16 @@ import { isAvailable } from './library'
 import { isMidReplacement } from './guided'
 import { snapLoadDown } from './loads'
 import { buildSessionExercise, buildTargetSets, isLearningUnloaded } from './sets'
+import {
+  TIMED_MAX_WINDOW_RANGE,
+  amrapAllowed,
+  asTimedMax,
+  canTimedMax,
+  placeAmrap,
+  setTypeOf,
+  timedMaxWindowSec,
+} from './setTypes'
+import { fatiguedGroups } from './volume'
 
 export type TemplateDraft = Omit<SessionTemplate, 'id' | 'createdAt' | 'updatedAt'>
 
@@ -45,6 +55,8 @@ export function setsBeforeDeload(n: number, kind: SessionBlock['kind']): number 
  *   le nombre total de séries prévu pour l'exercice remplacé (y compris en chaîne).
  * - Deload (`session.deload`, ou `opts.deload` pour des blocs) : nombre de séries d'avant le deload
  *   (`setsBeforeDeload`), le modèle décrit une séance normale ; `planFromTemplate` réapplique le deload si besoin.
+ * - Types de séries (F3) : `setType: 'timedMax'` si la première série gardée l'est (`durationSec` = fenêtre) ;
+ *   `lastSetAmrap: true` si une série gardée est une AMRAP. Sinon absents (déduits, comme avant la v2).
  */
 export function templateFromSession(
   source: Session | readonly SessionBlock[],
@@ -80,6 +92,8 @@ export function templateFromSession(
       if (first.targetReps !== undefined) tb.reps = [first.targetReps[0], first.targetReps[1]]
       if (first.targetDurationSec !== undefined) tb.durationSec = first.targetDurationSec
       if (first.loadKg !== undefined) tb.loadKg = first.loadKg
+      if (setTypeOf(first) === 'timedMax') tb.setType = 'timedMax'
+      if (kept.some((s) => setTypeOf(s) === 'amrap')) tb.lastSetAmrap = true
       out.push(tb)
     })
   })
@@ -208,7 +222,7 @@ function templateTargets(
     if (reps !== undefined) entry.targetReps = reps
     else out.ignoredReps = true
   }
-  if (tb.durationSec !== undefined) {
+  if (tb.durationSec !== undefined && !isTimedMaxRow(ex, tb)) {
     const d = Math.round(tb.durationSec)
     if (ex.durationRange !== undefined && ex.repRange === undefined && Number.isFinite(d) && d > 0) {
       entry.targetDurationSec = Math.min(d, ex.durationRange[1])
@@ -230,6 +244,24 @@ function templateTargets(
     }
   }
   return out
+}
+
+/**
+ * Ligne de modèle en temps fixe (`setType: 'timedMax'`) sur un exercice qui le permet (`canTimedMax`) : sa
+ * `durationSec` est la fenêtre, pas une durée tenue.
+ */
+function isTimedMaxRow(ex: LibraryExercise, tb: TemplateBlock): boolean {
+  return tb.setType === 'timedMax' && canTimedMax(ex)
+}
+
+/**
+ * Fenêtre d'une ligne `timedMax` : `durationSec` arrondie si elle est dans `TIMED_MAX_WINDOW_RANGE` (20–60 s),
+ * sinon la fenêtre par défaut de la durée de séance.
+ */
+function templateWindowSec(tb: TemplateBlock, durationMin: SessionDuration): number {
+  const d = tb.durationSec === undefined ? Number.NaN : Math.round(tb.durationSec)
+  const [lo, hi] = TIMED_MAX_WINDOW_RANGE
+  return Number.isFinite(d) && d >= lo && d <= hi ? d : timedMaxWindowSec(durationMin)
 }
 
 /** Nombre en français : 12,5 ; 16. */
@@ -316,6 +348,14 @@ export function templateTargetNotes(template: Pick<SessionTemplate, 'blocks'>, i
  * (`input.durationMin` est remplacé par celui du modèle).
  * `opts.useTemplateTargets` (séance proposée par Claude) : cibles et charge du modèle retenues avec garde-fous
  * (voir `templateTargets` ; écarts décrits par `templateTargetNotes`) ; séries, repos et deload inchangés.
+ * Types de séries (F3), règles de sécurité revérifiées comme à la génération :
+ * - `setType: 'timedMax'` : seulement dans un bloc `finisher`, sur un exercice `canTimedMax`, hors deload ; fenêtre
+ *   = `durationSec` du modèle (20–60 s) sinon `timedMaxWindowSec` ; sinon séries normales ;
+ * - `lastSetAmrap` (ou `setType: 'amrap'`, lu comme « dernière série », jamais toutes les séries à l'échec) :
+ *   au plus une AMRAP dans la séance, posée par `placeAmrap` parmi ces lignes seulement (`amrapEligible`, pas en
+ *   deload, pas d'AMRAP aujourd'hui ni hier, pas sur un groupe fatigué) ; sinon dernière série normale.
+ *   Le moteur n'ajoute jamais d'AMRAP qu'un modèle ne demande pas. Autres `setType` (`reps`, `time`) : ignorés
+ *   (déduits des cibles).
  */
 export function planFromTemplate(
   template: Pick<SessionTemplate, 'blocks' | 'durationMin'>,
@@ -329,9 +369,12 @@ export function planFromTemplate(
   const deloadState = deloadStatus(input.sessions, input.date, input.settings)
   const deload = deloadState.active
 
-  const blocks: SessionBlock[] = []
+  let blocks: SessionBlock[] = []
+  /** Positions `bloc|exercice` des lignes qui demandent une AMRAP. */
+  const amrapWanted = new Set<string>()
   for (const run of groupRuns(template.blocks)) {
     const exercises: SessionExercise[] = []
+    const kind = run[0]?.kind ?? 'single'
     for (const tb of run) {
       const ex = index.get(tb.exerciseId)
       if (ex === undefined || issueOf(ex, input, levels, stateIds) !== undefined) continue
@@ -344,16 +387,35 @@ export function planFromTemplate(
         const { entry } = templateTargets(ex, state, input.equipment, tb)
         se.sets = se.sets.map(() => ({ ...entry }))
       }
-      exercises.push(se)
+      if (tb.lastSetAmrap === true || tb.setType === 'amrap') {
+        amrapWanted.add(`${blocks.length}|${exercises.length}`)
+      }
+      exercises.push(
+        kind === 'finisher' && isTimedMaxRow(ex, tb) && !deload
+          ? asTimedMax(se, templateWindowSec(tb, template.durationMin))
+          : se,
+      )
     }
     if (exercises.length === 0) continue
-    const kind = run[0]?.kind ?? 'single'
     // Superset réduit à un exercice (l'autre a été écarté) : bloc simple.
     blocks.push({
       id: `b${blocks.length + 1}`,
       kind: kind === 'superset' && exercises.length < 2 ? 'single' : kind,
       exercises,
     })
+  }
+
+  if (amrapWanted.size > 0) {
+    blocks = placeAmrap(
+      blocks,
+      {
+        allowed: amrapAllowed(input.sessions, input.date, deload),
+        states: stateById,
+        exercises: index,
+        fatigued: fatiguedGroups(input.sessions, input.library, input.date),
+      },
+      (bi, ei) => amrapWanted.has(`${bi}|${ei}`),
+    )
   }
 
   const warmupMin = SESSION_FORMATS[template.durationMin].defaultWarmup

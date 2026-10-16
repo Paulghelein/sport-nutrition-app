@@ -31,7 +31,10 @@ export interface RestPlan {
   seconds: number
 }
 
-/** Saisie de l'utilisateur à la fin d'une série. Exactement un de `reps` / `durationSec` selon la cible. */
+/**
+ * Saisie de l'utilisateur à la fin d'une série : `reps` (reps, amrap), `durationSec` (time), `reps` seul pour `timedMax`
+ * (la fenêtre est la cible `targetDurationSec`).
+ */
 export interface SetInput {
   reps?: number
   durationSec?: number
@@ -54,6 +57,8 @@ export interface PersonalRecord {
   value: number
   previous: number
   loadKg?: number
+  /** F3 : record de répétitions d'une série `timedMax`, sur cette fenêtre (secondes) ; absent = série normale. */
+  windowSec?: number
 }
 
 /** Bilan d'un exercice dans le récapitulatif (séries fusionnées si l'exercice apparaît dans plusieurs blocs). */

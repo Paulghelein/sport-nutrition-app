@@ -326,3 +326,93 @@ describe('exercices perso et supprimés', () => {
     expect(msg.text).toContain('exercice supprimé')
   })
 })
+
+describe('F3 : types de séries dans le contexte de séance', () => {
+  const library = seedLibrary()
+  it('avant : temps fixe (type + fenêtre, sans dureeSec) et dernière série AMRAP ; séries normales inchangées', () => {
+    const blocks: Session['blocks'] = [
+      {
+        id: 'b1',
+        kind: 'single',
+        exercises: [
+          {
+            exerciseId: 'incline-push-up',
+            restSec: 60,
+            sets: [{ targetReps: [8, 15] }, { targetReps: [8, 15] }, { targetReps: [8, 15], setType: 'amrap' }],
+          },
+        ],
+      },
+      {
+        id: 'b2',
+        kind: 'finisher',
+        exercises: [
+          {
+            exerciseId: 'two-hand-swing',
+            restSec: 90,
+            sets: [1, 2].map(() => ({ setType: 'timedMax' as const, targetDurationSec: 45, loadKg: 16 })),
+          },
+        ],
+      },
+    ]
+    const msg = buildSessionBeforeMessage({ ...base, plan: { durationMin: 60, estimatedMin: 60, deload: false, blocks }, library })
+    const data = dataOf(msg.text) as { seance: { blocs: { exercices: Record<string, unknown>[] }[] } }
+    expect(data.seance.blocs[0]?.exercices[0]).toEqual({
+      exerciseId: 'incline-push-up',
+      nom: 'Pompes inclinées',
+      series: 3,
+      reps: [8, 15],
+      derniereSerie: 'amrap',
+      reposSec: 60,
+    })
+    const swing = data.seance.blocs[1]?.exercices[0] ?? {}
+    expect(swing).toMatchObject({ series: 2, type: 'tempsMax', fenetreSec: 45, chargeKg: 16 })
+    expect(swing).not.toHaveProperty('dureeSec')
+  })
+
+  it('après : « amrap 22 », « 24×16kg en 45s », fenêtre du record', () => {
+    const session: Session = {
+      id: 's',
+      date: '2026-10-16',
+      durationMin: 60,
+      status: 'done',
+      warmup: [],
+      blocks: [
+        {
+          id: 'b1',
+          kind: 'single',
+          exercises: [
+            {
+              exerciseId: 'incline-push-up',
+              restSec: 60,
+              sets: [
+                { status: 'done', actualReps: 15, feeling: 'ok' },
+                { setType: 'amrap', status: 'done', actualReps: 22, feeling: 'hard' },
+              ],
+            },
+            {
+              exerciseId: 'two-hand-swing',
+              restSec: 90,
+              sets: [{ setType: 'timedMax', targetDurationSec: 45, status: 'done', actualReps: 24, actualDurationSec: 45, loadKg: 16, feeling: 'ok' }],
+            },
+          ],
+        },
+      ],
+      deload: false,
+      estimatedMin: 60,
+      updatedAt: T,
+    }
+    const msg = buildSessionAfterMessage({
+      ...base,
+      session,
+      exercises: [
+        { id: 'incline-push-up', name: 'Pompes inclinées' },
+        { id: 'two-hand-swing', name: 'Swing' },
+      ],
+      records: [{ exerciseId: 'two-hand-swing', kind: 'reps', value: 24, previous: 22, loadKg: 16, windowSec: 45 }],
+    })
+    const data = dataOf(msg.text) as { seance: { exercices: { series: string[] }[] }; records: Record<string, unknown>[] }
+    expect(data.seance.exercices[0]?.series).toEqual(['15 ok', 'amrap 22 dur'])
+    expect(data.seance.exercices[1]?.series).toEqual(['24×16kg en 45s ok'])
+    expect(data.records[0]).toMatchObject({ valeur: 24, chargeKg: 16, fenetreSec: 45 })
+  })
+})

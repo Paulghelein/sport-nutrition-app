@@ -7,9 +7,14 @@
 //    déficit) ; un schéma n'est utilisé qu'une fois (≤ 30 min : strict ; au-delà : réutilisation pénalisée) ;
 // 3. ajustement au temps : nombre d'exercices et de séries dans le format, échauffement de 3 à 6 min et repos
 //    allongé jusqu'à × 1,5 si besoin, en retenant la combinaison dont l'estimation est la plus proche de la durée ;
-// 4. deload : séries divisées par deux (au moins 2), charge inchangée (séance plus courte, volontairement).
+// 4. deload : séries divisées par deux (au moins 2), charge inchangée (séance plus courte, volontairement) ;
+// 5. types de séries (F3), posés pendant l'ajustement au temps pour que l'estimation en tienne compte :
+//    - finisher en répétitions (swings) → toutes ses séries en `timedMax` (fenêtre `timedMaxWindowSec`), sauf deload ;
+//    - au plus une AMRAP, sur la dernière série du premier exercice admissible (`placeAmrap`, `amrapEligible`) :
+//      drapeau `amrap`, déjà fait 2 fois, dernier ressenti pas `hard`, pas en deload, pas d'AMRAP aujourd'hui ni
+//      hier, jamais sur un groupe fatigué (< 48 h).
 import type { LocalDate } from '../../types/common'
-import type { EngineInput, MuscleVolume, PatternLevels, SessionPlan } from '../../types/engine'
+import type { DeloadStatus, EngineInput, MuscleVolume, PatternLevels, SessionPlan } from '../../types/engine'
 import type { Equipment, KettlebellSpec } from '../../types/profile'
 import type {
   ExerciseState,
@@ -30,6 +35,14 @@ import { PATTERN_ORDER, isAvailable, sortLibrary } from './library'
 import { snapLoadDown } from './loads'
 import { seededUnit } from './random'
 import { buildSessionExercise, isBallistic, isFinisherExercise } from './sets'
+import {
+  type AmrapContext,
+  amrapAllowed,
+  asTimedMax,
+  canTimedMax,
+  placeAmrap,
+  timedMaxWindowSec,
+} from './setTypes'
 import {
   MUSCLE_GROUPS,
   addExerciseVolume,
@@ -111,6 +124,10 @@ interface Context {
   recentIds: Set<string>
   states: Map<string, ExerciseState>
   candidates: LibraryExercise[]
+  /** Deload du jour (un seul calcul : actif et raison viennent du même statut). */
+  deload: DeloadStatus
+  /** Contexte de pose de l'AMRAP (F3). */
+  amrap: AmrapContext
 }
 
 function hasTarget(ex: LibraryExercise): boolean {
@@ -155,6 +172,9 @@ function buildContext(input: EngineInput): Context {
   const targets = volumeTargets(input.settings, input.equipment)
   const targetMid = {} as Record<MuscleGroup, number>
   for (const g of MUSCLE_GROUPS) targetMid[g] = Math.max(0, (targets[g][0] + targets[g][1]) / 2)
+  const states = new Map(input.states.map((s) => [s.exerciseId, s]))
+  const deload = deloadStatus(input.sessions, input.date, input.settings)
+  const fatigued = fatiguedGroups(input.sessions, library, input.date)
   return {
     date: input.date,
     format: SESSION_FORMATS[input.durationMin],
@@ -164,10 +184,17 @@ function buildContext(input: EngineInput): Context {
     levels,
     targetMid,
     volume: weeklyVolume(input.sessions, library, input.date),
-    fatigued: fatiguedGroups(input.sessions, library, input.date),
+    fatigued,
     recentIds: lastDoneSessionIds(input),
-    states: new Map(input.states.map((s) => [s.exerciseId, s])),
+    states,
     candidates: library.filter((ex) => isEligible(ex, input, levels)),
+    deload,
+    amrap: {
+      allowed: amrapAllowed(input.sessions, input.date, deload.active),
+      states,
+      exercises: new Map(library.map((e) => [e.id, e])),
+      fatigued,
+    },
   }
 }
 
@@ -435,13 +462,16 @@ function buildBlocks(
     return { id: `b${i + 1}`, kind: 'superset', exercises: members.map((m) => toSe(m, sets, rest)) }
   })
   if (finisher !== undefined) {
+    const se = toSe(finisher, FINISHER_SETS, finisher.restSec)
+    // Swings en fin de séance : le plus de répétitions en N s (jamais en deload : pas d'effort maximal).
+    const timed = canTimedMax(finisher) && !ctx.deload.active
     blocks.push({
       id: `b${blocks.length + 1}`,
       kind: 'finisher',
-      exercises: [toSe(finisher, FINISHER_SETS, finisher.restSec)],
+      exercises: [timed ? asTimedMax(se, timedMaxWindowSec(ctx.durationMin)) : se],
     })
   }
-  return blocks
+  return placeAmrap(blocks, ctx.amrap)
 }
 
 function range(lo: number, hi: number, step = 1): number[] {
@@ -618,7 +648,7 @@ export function generateSession(input: EngineInput): SessionPlan {
   const warmupMin = fitted.config.warmupMin
 
   // Un seul calcul du deload : actif et raison viennent du même statut.
-  const deloadState = deloadStatus(input.sessions, input.date, input.settings)
+  const deloadState = ctx.deload
   const deload = deloadState.active
   if (deload) {
     blocks = blocks.map((b) => ({

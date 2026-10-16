@@ -3,6 +3,7 @@ import type { Id, LocalDate } from '../../types/common'
 import type { PersonalRecord } from '../../types/guided'
 import type { ExerciseRecords, ExerciseStrength, RecordValue, StrengthPoint } from '../../types/progress'
 import type { Exercise, Session, SetEntry } from '../../types/training'
+import { timedMaxWindowOf } from '../training/setTypes'
 import { compareSessionTime, mergedSets, summarizeSession, tonnageOf } from '../training/summary'
 
 /**
@@ -12,6 +13,11 @@ import { compareSessionTime, mergedSets, summarizeSession, tonnageOf } from '../
 export type ExercisesById = ReadonlyMap<Id, Exercise>
 
 const isDone = (s: SetEntry): boolean => s.status === 'done'
+/**
+ * Série en temps fixe (F3, `timedMax`) : ses reps (dans une fenêtre imposée) ne se comparent pas à celles d'une
+ * série normale, et sa durée est imposée. Elle compte pour la charge et le tonnage, pas pour les reps ni la durée.
+ */
+const isPlain = (s: SetEntry): boolean => timedMaxWindowOf(s) === undefined
 
 /** Séances `done` dans l'ordre chronologique (date, `startedAt`, puis id pour un ordre stable). */
 function chronologicalDone(sessions: readonly Session[]): Session[] {
@@ -30,11 +36,16 @@ function strengthPoint(
 ): StrengthPoint | undefined {
   const done = sets.filter(isDone)
   if (done.length === 0) return undefined
-  const topLoad = maxOf(done.map((s) => s.loadKg).filter((x): x is number => x !== undefined))
+  // Charge de la courbe : séries normales ; séance faite seulement en temps fixe → charge de ces séries.
+  const plain = done.filter(isPlain)
+  const loaded = (plain.length > 0 ? plain : done).map((s) => s.loadKg)
+  const topLoad = maxOf(loaded.filter((x): x is number => x !== undefined))
   // Sans charge dans la séance, toutes les séries faites sont au poids du corps.
-  const atTop = done.filter((s) => s.loadKg === topLoad)
+  const atTop = plain.filter((s) => s.loadKg === topLoad)
   const bestReps = maxOf(atTop.map((s) => s.actualReps).filter((x): x is number => x !== undefined))
-  const bestDuration = maxOf(done.map((s) => s.actualDurationSec).filter((x): x is number => x !== undefined))
+  const bestDuration = maxOf(
+    plain.map((s) => s.actualDurationSec).filter((x): x is number => x !== undefined),
+  )
   const point: StrengthPoint = {
     date: session.date,
     sessionId: session.id,
@@ -66,6 +77,8 @@ function recordValue(value: number, date: LocalDate, loadKg?: number): RecordVal
  * - `duration` : durée max en une série, toutes charges confondues (`loadKg` = charge de cette série) ;
  * - `tonnage` : plus gros tonnage d'une séance (> 0).
  * Une valeur nulle (0 rep, 0 s) n'est pas un record.
+ * Séries en temps fixe (`timedMax`) : comptent pour `load` et `tonnage` seulement (voir `isPlain`) ; leurs records
+ * de reps par fenêtre sont ceux du récapitulatif (`recordsInRange`, `windowSec`).
  */
 function historyRecords(sets: readonly DatedSet[], points: readonly StrengthPoint[]): ExerciseRecords {
   const records: ExerciseRecords = {}
@@ -74,13 +87,13 @@ function historyRecords(sets: readonly DatedSet[], points: readonly StrengthPoin
     if (set.loadKg !== undefined && set.loadKg > (records.load?.value ?? 0)) {
       records.load = recordValue(set.loadKg, date)
     }
-    const d = set.actualDurationSec
+    const d = isPlain(set) ? set.actualDurationSec : undefined
     if (d !== undefined && d > (records.duration?.value ?? 0)) {
       records.duration = recordValue(d, date, set.loadKg)
     }
   }
 
-  const withReps = sets.filter(({ set }) => set.actualReps !== undefined)
+  const withReps = sets.filter(({ set }) => set.actualReps !== undefined && isPlain(set))
   const repLoad = maxOf(withReps.map(({ set }) => set.loadKg).filter((x): x is number => x !== undefined))
   for (const { date, set } of withReps) {
     const reps = set.actualReps ?? 0
@@ -146,13 +159,15 @@ export function strengthByExercise(
   )
 }
 
-const recordKey = (r: PersonalRecord): string => `${r.exerciseId}|${r.kind}|${r.loadKg ?? 'bw'}`
+/** Clé de fusion : exercice, type, charge et fenêtre (un record `timedMax` ne fusionne pas avec une série normale). */
+const recordKey = (r: PersonalRecord): string =>
+  `${r.exerciseId}|${r.kind}|${r.loadKg ?? 'bw'}|${r.windowSec ?? '-'}`
 
 /**
  * Records battus par les séances `done` datées de `from` à `to` inclus, chacune comparée à toutes les séances `done`
  * antérieures (même calcul que le récapitulatif : `summarizeSession`, le premier passage n'est pas un record).
  * `exercisesById` doit contenir les exercices supprimés (tonnage unilatéral × 2).
- * Un même record battu plusieurs fois dans la période (même exercice, type et charge) est fusionné : valeur finale
+ * Un même record battu plusieurs fois dans la période (même exercice, type, charge et fenêtre) est fusionné : valeur finale
  * (la meilleure) et `previous` = meilleur d'avant la période. Ordre : première séance qui l'a battu, puis ordre
  * du récapitulatif.
  */

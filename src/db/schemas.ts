@@ -135,6 +135,7 @@ export const exerciseSchema = z.strictObject({
   videoUrl: str.optional(),
   finisher: z.boolean().optional(),
   learnUnloaded: z.boolean().optional(),
+  amrap: z.boolean().optional(),
   source: contentSource,
   deleted: z.boolean().optional(),
   updatedAt: isoDateTime,

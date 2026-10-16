@@ -10,6 +10,7 @@ export const squatExercises: Exercise[] = [
     muscles: { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'lower_back', 'abs'] },
     equipment: [],
     loadType: 'bodyweight',
+    amrap: true,
     repRange: [10, 20],
     restSec: 60,
     compound: true,
