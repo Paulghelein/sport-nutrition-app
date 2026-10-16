@@ -37,6 +37,8 @@ const ImportScreen = lazy(() => import('./recipes/ImportScreen'))
 const ScanScreen = lazy(() => import('./scan/ScanScreen'))
 // J8 — page Progrès (Recharts et contenu embarqué hors du démarrage).
 const ProgressScreen = lazy(() => import('./progress/ProgressScreen'))
+// J9 — bouton Claude : coller et appliquer la réponse.
+const ClaudeResponseScreen = lazy(() => import('./claude/ClaudeResponseScreen'))
 
 function Tabs() {
   const mainRef = useRef<HTMLElement>(null)
@@ -90,6 +92,7 @@ function Tabs() {
               <Route path="/progres" element={<ProgressScreen />} />
               <Route path="/reglages" element={<SettingsScreen />} />
               <Route path="/reglages/importer" element={<ImportScreen />} />
+              <Route path="/claude/reponse" element={<ClaudeResponseScreen />} />
               <Route path="*" element={<Navigate to="/seance" replace />} />
             </Routes>
           </Suspense>
