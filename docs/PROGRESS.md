@@ -4,10 +4,9 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 
 ## Jalon en cours
 
-J6 — Recettes et J7 — Scan : **terminés et validés sur iPhone le 2026-10-16** (meal prep, import Claude, scans ; sans
-retour particulier).
-Moteur de J8 (src/domain/progress) écrit et testé, sans écran. J4/J5 : aucun retour iPhone transmis à cette session.
-Prochain : écran Progrès (J8).
+J8 — Page Progrès : **terminé le 2026-10-16, à valider sur iPhone** (chaque bloc sur 2 semaines de données réelles).
+J9 — Bouton Claude : moteur (src/domain/claude, src/db/claude.ts) en cours de relecture, écrans pas commencés ;
+reprise après validation de J8.
 
 ## Décisions prises
 
@@ -144,6 +143,25 @@ Prochain : écran Progrès (J8).
   J8 et J9 avec une UI fonctionnelle et sobre, sans polissage visuel ni refactor de src/ui ; toute la logique dans
   src/domain, src/db et des hooks, pour que la refonte ne réécrive que les composants.
 
+- 2026-10-16 (J8) : carte du lundi fermée = `settings.reviewDismissedWeek` (champ optionnel, pas de version Dexie),
+  ne recule jamais, jamais dans le futur ; fusion de sauvegarde = max. Carte masquée si le profil a été créé après
+  la semaine évaluée. Bilan jugé avec les objectifs de la fin de la semaine (poids à `range.to`, ajustement
+  +150 accepté depuis retiré) ; `few_sessions` contre `weeklySessionsTarget`.
+- 2026-10-16 (J8) : série de régularité au seuil `min(3, weeklySessionsMin)` (SPEC §8 complétée).
+- 2026-10-16 (J8) : nutrition de la semaine en cours = lundi → hier (la journée en cours fausserait la moyenne).
+- 2026-10-16 (J8) : couloir de poids (prise de masse seulement) ancré au lundi de la semaine d'il y a 56 jours, ou au
+  dernier ajustement kcal s'il est plus récent ; départ = moyenne des 7 jours suivant la première pesée.
+- 2026-10-16 (J8) : rappel de sauvegarde à 7 jours (`backupReminder`), lien `/reglages#sauvegarde`.
+- 2026-10-16 (J8) : « mode sombre » = thème sombre forcé déjà en place (color-scheme, theme-color, barre d'état) ;
+  la SPEC ne demande pas de mode clair : à reconsidérer avec la refonte.
+- 2026-10-16 (J8) : écran Progrès en `lazy()`, Recharts dans des chunks à la demande ; données lues en une
+  transaction (`loadProgressData`), modèle pur `buildProgressModel` (src/app/progress/progressModel.ts) : la refonte
+  ne réécrira que les composants.
+- 2026-10-16 (J9) : pas de pré-remplissage par URL (`claude.ai/new?q=` non documenté, déjà cassé par le passé, peut
+  envoyer seul, contextes trop longs pour une URL) : presse-papiers uniquement.
+- 2026-10-16 (J9) : séance de Claude = modèle unique `claude-plan` écrasé à chaque application puis ouvert dans
+  l'aperçu ; cibles de Claude reprises, charge jamais au-dessus de la progression.
+
 ## Fait
 
 - J0 Socle (2026-10-15) : projet Vite + React + TS strict, Tailwind, PWA « Forge » (manifest FR, standalone,
@@ -178,23 +196,28 @@ Prochain : écran Progrès (J8).
   frigo, liste de courses, import JSON, portion de recette dans le journal.
 - J7 Scan (2026-10-16) : scan caméra, saisie manuelle, Open Food Facts + cache, création d'aliment pré-remplie,
   EAN sur les aliments, mention ODbL.
+- J8 Page Progrès (2026-10-16) : bilan du lundi fermable, rappel de sauvegarde, poids + couloir cible, régularité,
+  force et records par exercice, niveau par schéma, volume 7 j, nutrition de la semaine, mensurations. Remarques
+  traitées : `weightSeries` sans O(n²), seuil de série, `plannedLoadKg` des corrections (règle partagée `setLoads`).
+  Total : 1158 tests Vitest, 68 e2e. Entrée + chunks préchargés ≈ 483 kB / 152 kB gzip.
 - J8 moteur (2026-10-16) : régularité, force et records, volume vs cible, nutrition de la semaine, bilan du lundi.
   Total : 1077 tests Vitest, 66 e2e. Bundle d'entrée 480 kB / 149,5 kB gzip (recettes, Ciqual, Zod d'import, @zxing
   en chunks à la demande).
 
 ## À faire ensuite
 
-- Écran Progrès (J8) sur le moteur déjà écrit, puis J9 (bouton Claude) = fin de la v1, puis refonte de l'UI.
+- Valider J8 sur iPhone, puis J9 (bouton Claude) = fin de la v1, puis refonte de l'UI.
 - À vérifier sur iPhone (J6/J7) : barre d'onglets collée en bas en standalone (e2e OK, standalone non émulable) ;
   lecture réelle d'un EAN, voyant caméra éteint en quittant l'écran / en arrière-plan, message « Réglages → Apps →
   Safari → Caméra » exact, lampe (probablement absente), bip ; mode cuisine d'une main (boutons collés en bas, Wake
   Lock) ; cases de courses 64 px ; formulaire de recette long ; « Depuis le frigo » présélectionné.
+- Remarques reportées (J8, pour la refonte ou plus tard) : libellés coupés (« Au- / dessus », « Poussée
+  horizontale »), « 0 » au-dessus des semaines vides, tooltip du poids à vérifier au tactile, `Stat` et
+  `formatNumber` dupliqués, ticks de l'axe de force ; test « pesée future » sensible au fuseau (UTC-11).
 - Remarques non bloquantes reportées (J6/J7/J8) :
   - Stepper / Switch dupliqués dans src/app/recipes/parts.tsx (vs src/ui/Stepper, LibraryScreen) : mutualiser dans src/ui.
   - Filtre e2e « Importing a module script failed » global (WebKit ne donne pas l'URL du chunk).
   - Mode cuisine dans la barre d'onglets (pas plein écran comme le mode guidé) : à revoir selon le retour iPhone.
-  - Série de régularité au seuil fixe de 3 séances : un profil à 2 séances/sem. n'en aura jamais (min(3, profil) ?).
-  - `sessionDrafts.ts` (correction d'une séance faite) réécrit `loadKg` sans toucher `plannedLoadKg` (sans effet).
   - « Riz basmati cru » sans candidat Ciqual sûr à l'import par nom (garde ses `per100g` s'ils sont fournis).
   - Bundle d'entrée +22 kB (db/recipes, foods-off réexportés par src/db/index.ts) : avec la remarque Zod (J1).
 - À vérifier sur iPhone (J4) : son en mode silencieux, Wake Lock en standalone, lisibilité à 1 m, panneau du bas
@@ -225,8 +248,6 @@ Prochain : écran Progrès (J8).
   - Zod et le code de sauvegarde restent dans le bundle principal (~415 kB bruts, ~131 kB gzip) car
     `src/db/repositories.ts` importe les schémas : sortir Zod du démarrage (validateurs sans Zod, `import()` du module
     backup) si le démarrage dépasse 2 s.
-  - `weightSeries` en O(n²) : fenêtre glissante si les pesées dépassent quelques centaines.
-  - `weightTargetCorridor` prêt mais non affiché (J8).
   - `tests/format.test.ts` (cas Infinity) dépend de la base partagée : tester `checkWeighIn` directement.
   - Couverture Vitest chiffrée : `@vitest/coverage-v8` non installé (à décider).
 - Remarques non bloquantes du reviewer reportées (J0) :
