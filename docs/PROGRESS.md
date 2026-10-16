@@ -5,8 +5,11 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 ## Jalon en cours
 
 J8 — Page Progrès : **terminé le 2026-10-16, à valider sur iPhone** (chaque bloc sur 2 semaines de données réelles).
-J9 — Bouton Claude : moteur (src/domain/claude, src/db/claude.ts) en cours de relecture, écrans pas commencés ;
-reprise après validation de J8.
+J9 — Bouton Claude : moteur commité (messages de contexte, import séance / exercice / préférence, `applyClaudeSelection`,
+`planFromTemplate({ useTemplateTargets })`), relu sans point bloquant ; écrans pas commencés (reprise après validation
+de J8). À brancher : PreviewScreen (`useTemplateTargets` pour `claude-plan` + `templateTargetNotes`), écran « Coller la
+réponse » (`kettlebell`, `planIssues`, `newExerciseIssue`, `sessionPlanSkipped`), boutons d'envoi en important
+`domain/claude/context` directement (pas le barrel, qui contient Zod).
 
 ## Décisions prises
 
