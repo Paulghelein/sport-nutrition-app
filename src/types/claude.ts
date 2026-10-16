@@ -13,6 +13,8 @@ export type ClaudeContextKind =
   | 'recipe'
   | 'progress'
   | 'review'
+  /** F5 : recette à partir d'un lien vidéo (TikTok, Reels…) collé par l'utilisateur. */
+  | 'video_recipe'
 
 /**
  * Message prêt à copier : contexte compact (profil résumé, objectifs, données de l'écran en JSON) + demande saisie
@@ -78,3 +80,14 @@ export interface ClaudeApplyOutcome {
 
 /** Exercice personnel reçu (`exercise`), converti en `ExerciseInput` (valeurs par défaut complétées). */
 export type ImportedExercise = ExerciseInput
+
+// ---------- F5 : recette depuis une vidéo ----------
+
+/** Plateforme reconnue dans le lien (libellé seulement : tout lien HTTPS est accepté, `other`). */
+export type VideoPlatform = 'tiktok' | 'instagram' | 'youtube' | 'other'
+
+/** Lien extrait du texte collé (`extractVideoLink`) : premier lien `https://` du texte, nettoyé. */
+export interface VideoLink {
+  url: string
+  platform: VideoPlatform
+}

@@ -2,7 +2,7 @@
 // Ce module n'importe pas Zod (les boutons d'envoi restent légers). Aucune donnée d'identité : ni nom ni date de
 // naissance (seulement l'âge), pas d'id interne hors `exerciseId`.
 import type { ContentSource, Id, LocalDate } from '../../types/common'
-import type { ClaudeContextKind, ClaudeMessage } from '../../types/claude'
+import type { ClaudeContextKind, ClaudeMessage, VideoLink, VideoPlatform } from '../../types/claude'
 import type { PatternLevels } from '../../types/engine'
 import type { PersonalRecord } from '../../types/guided'
 import type { DayLog, MealSlot, Macros, NutritionTargets, Recipe } from '../../types/nutrition'
@@ -175,6 +175,7 @@ const SCREEN_TITLES: Record<ClaudeContextKind, string> = {
   recipe: 'Fiche recette',
   progress: 'Page Progrès',
   review: 'Bilan de la semaine',
+  video_recipe: 'Recette depuis une vidéo',
 }
 
 export const DEFAULT_REQUESTS: Record<ClaudeContextKind, string> = {
@@ -184,6 +185,7 @@ export const DEFAULT_REQUESTS: Record<ClaudeContextKind, string> = {
   recipe: 'Que penses-tu de cette recette pour ma prise de masse ? Propose une variante si utile.',
   progress: 'Analyse mes progrès (poids, régularité, volume, nutrition) et dis-moi ce que je dois ajuster.',
   review: 'Commente mon bilan de la semaine et propose-moi un plan pour la semaine prochaine.',
+  video_recipe: 'Extrais la recette de cette vidéo, telle qu’elle est faite, avec un nombre de portions réaliste.',
 }
 
 const FORMAT_EXAMPLES: Record<string, string> = {
@@ -204,6 +206,7 @@ const USEFUL_TYPES: Record<ClaudeContextKind, readonly string[]> = {
   recipe: ['recipe'],
   progress: ['recipe', 'exercisePreference'],
   review: ['recipe', 'exercisePreference'],
+  video_recipe: ['recipe'],
 }
 
 const EXERCISE_ID_RULE: Record<ClaudeContextKind, string> = {
@@ -214,12 +217,17 @@ const EXERCISE_ID_RULE: Record<ClaudeContextKind, string> = {
   recipe: '',
   progress: 'Utilise les exerciseId des données ci-dessus (exercice sans exerciseId : son nom exact).',
   review: 'Utilise les exerciseId des données ci-dessus (exercice sans exerciseId : son nom exact).',
+  video_recipe: '',
 }
 
 function formatReminder(kind: ClaudeContextKind): string {
   const types = USEFUL_TYPES[kind]
+  const head =
+    kind === 'video_recipe'
+      ? 'Format de réponse : écris d’abord un court commentaire (quelques phrases), puis termine par UN SEUL bloc ```json contenant un seul objet de type recipe (quantités en grammes crus). Si tu me demandes des captures d’écran, pas de bloc json.'
+      : 'Format de réponse : explique d’abord en quelques phrases simples. Si quelque chose doit entrer dans l’app, termine par UN SEUL bloc ```json contenant un tableau d’objets (quantités en grammes crus). Sinon, pas de bloc json.'
   const lines = [
-    'Format de réponse : explique d’abord en quelques phrases simples. Si quelque chose doit entrer dans l’app, termine par UN SEUL bloc ```json contenant un tableau d’objets (quantités en grammes crus). Sinon, pas de bloc json.',
+    head,
     `Types utiles ici : ${types.join(', ')}.`,
     ...types.map((t) => `- ${FORMAT_EXAMPLES[t] ?? ''}`),
   ]
@@ -239,17 +247,20 @@ export function profileSummary(base: ClaudeBaseInput): string {
   ].join('\n')
 }
 
-function assemble(kind: ClaudeContextKind, base: ClaudeBaseInput, data: unknown, extra = ''): ClaudeMessage {
+/** `data` absent : pas de bloc « Données » (F5). `profile` : résumé du profil si différent du résumé complet. */
+function assemble(
+  kind: ClaudeContextKind,
+  base: ClaudeBaseInput,
+  data: unknown,
+  extra = '',
+  profile: string = profileSummary(base),
+): ClaudeMessage {
   const request = base.request?.trim() ?? ''
   const text = [
     `Contexte envoyé par mon app Forge. Écran : ${SCREEN_TITLES[kind]} (${base.today}).`,
     '',
-    profileSummary(base),
-    '',
-    'Données :',
-    '```json',
-    json(data),
-    '```',
+    profile,
+    ...(data === undefined ? [] : ['', 'Données :', '```json', json(data), '```']),
     ...(extra === '' ? [] : ['', extra]),
     '',
     `Ma demande : ${request === '' ? DEFAULT_REQUESTS[kind] : request}`,
@@ -501,4 +512,43 @@ export function buildReviewMessage(input: ReviewContextInput): ClaudeMessage {
     suggestionApp: review.suggestion.message,
   }
   return assemble('review', input, data)
+}
+
+// ---------- recette depuis une vidéo (F5) ----------
+
+export interface VideoRecipeContextInput extends ClaudeBaseInput {
+  /** Lien nettoyé (`extractVideoLink`). */
+  video: VideoLink
+}
+
+const VIDEO_PLATFORM_FR: Record<VideoPlatform, string> = {
+  tiktok: 'TikTok',
+  instagram: 'Instagram',
+  youtube: 'YouTube',
+  other: 'une vidéo',
+}
+
+/**
+ * Message « recette depuis une vidéo ». Le profil est joint (objectifs, protéines) uniquement pour que Claude
+ * puisse proposer, À LA FIN, une remarque ou variante en texte ; la recette JSON reste fidèle à la vidéo (consigne
+ * explicite : ni substitution ni « amélioration » des ingrédients). Aucune donnée du journal n'est envoyée.
+ */
+export function buildVideoRecipeMessage(input: VideoRecipeContextInput): ClaudeMessage {
+  const { profile, targets } = input
+  // Profil réduit : objectif et objectifs du jour seulement (ni matériel, ni taille, ni âge).
+  const summary = [
+    `Objectif : ${GOALS[profile.goal]}. Objectifs du jour : ${String(r0(targets.kcal))} kcal, protéines ${String(r0(targets.protein))} g, glucides ${String(r0(targets.carbs))} g, lipides ${String(r0(targets.fat))} g.`,
+    '(Données seulement pour un commentaire après la recette ; ne change pas la recette pour qu’elle colle à mes objectifs.)',
+  ].join('\n')
+  const extra = [
+    `Vidéo (${VIDEO_PLATFORM_FR[input.video.platform]}) : ${input.video.url}`,
+    '',
+    'Je veux récupérer la recette de cette vidéo dans mon app.',
+    '- Reste fidèle à la vidéo : mêmes ingrédients et même méthode, sans rien ajouter ni substituer, sauf si ma demande ci-dessous le précise.',
+    '- Si tu ne peux pas ouvrir le lien, ou si la description / légende ne contient pas la recette, n’invente rien : demande-moi 2 à 3 captures d’écran des ingrédients (et des étapes si besoin), puis attends.',
+    '- Quantités CRUES en grammes (convertis cuillères, tasses, pièces ; estime et dis-le si la vidéo ne donne pas de quantité).',
+    '- Nombre de portions réaliste : ce qu’une personne mange vraiment par portion, pas le nombre de parts de la vidéo si elle est irréaliste.',
+    '- Un rayon par ingrédient (fruits-legumes, boucherie, poissonnerie, cremerie, epicerie, surgeles, boulangerie, autre).',
+  ].join('\n')
+  return assemble('video_recipe', input, undefined, extra, summary)
 }
