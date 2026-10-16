@@ -8,7 +8,9 @@ Tenu par l'agent chef. Une nouvelle session commence par lire ce fichier.
 référence visuelle : `docs/DESIGN.md` + `docs/design/mockups/`. La v1 (J0–J9) est terminée.
 
 R0 — Fondations UI : terminé le 2026-10-16 (validé sans retour, « RAS » supposé : gabarit de retour non rempli).
-R1 — Navigation + Aujourd'hui : **terminé le 2026-10-16, à valider sur iPhone**. Ensuite : R2 Entraînement.
+R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16**.
+Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
+(domain/nutrition, src/db) et F5 (domain/claude) ; (2) écrans R2 et R4 en parallèle ; (3) R3 écrans ensuite ; R5 en dernier.
 
 ## Décisions prises
 
@@ -271,7 +273,6 @@ R1 — Navigation + Aujourd'hui : **terminé le 2026-10-16, à valider sur iPhon
 
 ## À faire ensuite
 
-- Valider R1 sur iPhone, puis R2 (Entraînement).
 - Remarques reportées (R1) : WeekCard charge tout `loadProgressData` pour 7 jours (requête limitée en R4) ;
   `dayActivities` en O(R × H) pour les records (passage chronologique unique en R4 si lent) ; pesée depuis + : si
   la feuille est fermée pendant la lecture des pesées, la feuille de pesée s'ouvre quand même (rare) ; pas de toast
