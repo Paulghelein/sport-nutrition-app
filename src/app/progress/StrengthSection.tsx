@@ -1,6 +1,9 @@
+import { ChevronDown } from 'lucide-react'
 import { Suspense, lazy, useState } from 'react'
 import { formatDateFr } from '../../domain/shared/dates'
-import { Card, ErrorBoundary, Section, levelLabel, patternLabel } from '../../ui'
+import { ErrorBoundary, levelLabel, patternLabel } from '../../ui'
+import { Card, formatDecimal } from '../../ui/kit'
+import { Note, ScreenSection } from './parts'
 import type { ProgressModel } from './progressModel'
 import {
   METRIC_LABEL,
@@ -17,8 +20,8 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
   const points = strengthChartData(row.strength, row.metric)
   const records = recordLines(row.strength)
   return (
-    <div id={id} className="mt-2 rounded-xl border border-v1-line bg-v1-surface-hi/40 p-3">
-      <p className="text-sm text-zinc-400">
+    <div id={id} className="flex flex-col gap-2 pb-3">
+      <p className="m-0 text-caption text-ink-muted">
         {METRIC_LABEL[row.metric]} ({METRIC_UNIT[row.metric]}) par séance
       </p>
       {points.length >= 2 ? (
@@ -28,23 +31,23 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
           </Suspense>
         </ErrorBoundary>
       ) : (
-        <p className="py-3 text-base text-zinc-300">
+        <Note>
           {points.length === 1
             ? `Une seule séance pour l’instant : ${formatNumber(points[0]?.value ?? 0)} ${METRIC_UNIT[row.metric]}. La courbe apparaît à la deuxième.`
             : 'Pas de mesure à tracer pour cet exercice.'}
-        </p>
+        </Note>
       )}
-      <h4 className="mt-2 mb-1 text-base font-semibold text-zinc-300">Records</h4>
+      <h4 className="m-0 mt-1 text-label uppercase text-ink-muted">Records</h4>
       {records.length === 0 ? (
-        <p className="text-sm text-zinc-400">Pas encore de record.</p>
+        <Note className="text-caption">Pas encore de record.</Note>
       ) : (
         <ul className="m-0 list-none p-0">
           {records.map((r) => (
-            <li key={r.label} className="flex justify-between gap-3 py-1 text-base">
-              <span className="text-zinc-300">{r.label}</span>
+            <li key={r.label} className="flex justify-between gap-3 py-1 text-body">
+              <span className="text-ink-muted">{r.label}</span>
               <span className="text-right">
-                <span className="font-semibold tabular-nums">{r.text}</span>
-                <span className="text-sm text-zinc-400"> · {formatDateFr(r.date)}</span>
+                <span className="font-display font-bold tabular-nums">{r.text}</span>
+                <span className="text-caption text-ink-muted"> · {formatDateFr(r.date)}</span>
               </span>
             </li>
           ))}
@@ -54,59 +57,76 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
   )
 }
 
+/** Force par exercice (courbe et records au toucher) et niveau atteint par schéma de mouvement. */
 export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strength' | 'patterns'> }) {
   const [openId, setOpenId] = useState<string | null>(null)
   return (
-    <Section title="Force">
-      {model.strength.length === 0 ? (
-        <Card>
-          <p className="text-base text-zinc-300">
-            Pas encore de séance terminée : tes exercices et tes records apparaîtront ici.
-          </p>
-        </Card>
-      ) : (
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
-          {model.strength.map((row) => {
-            const open = openId === row.exerciseId
-            const lastValue = lastMetricValue(row.strength, row.metric)
-            return (
-              <li key={row.exerciseId}>
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  aria-controls={`strength-${row.exerciseId}`}
-                  onClick={() => setOpenId(open ? null : row.exerciseId)}
-                  className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-4 py-2 text-left active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-base font-medium">{row.name}</span>
-                    <span className="block text-sm text-zinc-400">
-                      {row.strength.points.length} séance{row.strength.points.length > 1 ? 's' : ''} ·
-                      dernière le {formatDateFr(row.strength.lastPerformedOn)}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-lg font-bold tabular-nums">
-                    {lastValue === undefined ? '' : `${formatNumber(lastValue)} ${METRIC_UNIT[row.metric]}`}
-                  </span>
-                </button>
-                {open ? <ExerciseDetail id={`strength-${row.exerciseId}`} row={row} /> : null}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+    <>
+      <ScreenSection title="Force">
+        {model.strength.length === 0 ? (
+          <Card padding="none" className="px-[18px] py-4">
+            <Note>Pas encore de séance terminée : tes exercices et tes records apparaîtront ici.</Note>
+          </Card>
+        ) : (
+          <Card padding="none" className="px-4 py-1.5">
+            <ul className="m-0 list-none p-0">
+              {model.strength.map((row) => {
+                const open = openId === row.exerciseId
+                const lastValue = lastMetricValue(row.strength, row.metric)
+                return (
+                  <li key={row.exerciseId} className="border-t border-line first:border-t-0">
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      aria-controls={`strength-${row.exerciseId}`}
+                      onClick={() => setOpenId(open ? null : row.exerciseId)}
+                      className="focus-ring flex min-h-14 w-full items-center justify-between gap-3 rounded-ds-sm py-2 text-left text-ink active:opacity-70"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-headline">{row.name}</span>
+                        <span className="block text-caption text-ink-muted">
+                          {row.strength.points.length} séance{row.strength.points.length > 1 ? 's' : ''} ·
+                          dernière le {formatDateFr(row.strength.lastPerformedOn)}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <span className="font-display text-base font-bold tabular-nums">
+                          {lastValue === undefined
+                            ? ''
+                            : `${formatDecimal(lastValue, 2)} ${METRIC_UNIT[row.metric]}`}
+                        </span>
+                        <ChevronDown
+                          size={20}
+                          strokeWidth={1.75}
+                          aria-hidden="true"
+                          className={`text-ink-faint transition-transform motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+                        />
+                      </span>
+                    </button>
+                    {open ? <ExerciseDetail id={`strength-${row.exerciseId}`} row={row} /> : null}
+                  </li>
+                )
+              })}
+            </ul>
+          </Card>
+        )}
+      </ScreenSection>
 
-      <h3 className="mt-6 mb-2 text-base font-semibold text-zinc-300">Niveau par mouvement</h3>
-      <Card>
-        <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-1 p-0">
-          {model.patterns.map((p) => (
-            <li key={p.pattern} className="flex min-h-9 items-center justify-between gap-2 text-base">
-              <span className="text-zinc-300">{patternLabel(p.pattern)}</span>
-              <span className="font-semibold">{levelLabel(p.level)}</span>
-            </li>
-          ))}
-        </ul>
-      </Card>
-    </Section>
+      <ScreenSection title="Niveau par mouvement">
+        <Card padding="none" className="px-4 py-2">
+          <ul className="m-0 grid list-none grid-cols-1 gap-x-4 p-0">
+            {model.patterns.map((p) => (
+              <li
+                key={p.pattern}
+                className="flex min-h-10 items-center justify-between gap-2 border-t border-line text-body first:border-t-0"
+              >
+                <span className="text-ink-muted">{patternLabel(p.pattern)}</span>
+                <span className="font-semibold">{levelLabel(p.level)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </ScreenSection>
+    </>
   )
 }

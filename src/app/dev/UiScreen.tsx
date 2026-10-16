@@ -37,7 +37,16 @@ import {
   formatInt,
   withUnit,
 } from '../../ui/kit'
-import type { LogAction, LogEntry, LogMealOption, TabId, WeekStripDay } from '../../ui/kit'
+import { CalendarHeatmap } from '../../ui/kit/CalendarHeatmap'
+import { DaySummarySheet } from '../../ui/kit/DaySummarySheet'
+import type {
+  DaySummaryView,
+  LogAction,
+  LogEntry,
+  LogMealOption,
+  TabId,
+  WeekStripDay,
+} from '../../ui/kit'
 
 /** Page de démonstration du kit v2 (`/dev/ui`). Hors de la mise en page à onglets v1. */
 
@@ -68,6 +77,52 @@ const DEMO_WEEK: readonly WeekStripDay[] = [
   { date: '2026-10-17', level: 0, sessions: 0, minutes: 0, nutritionOk: null, future: true, today: false },
   { date: '2026-10-18', level: 0, sessions: 0, minutes: 0, nutritionOk: null, future: true, today: false },
 ]
+
+/** 12 semaines d'exemple (lundi 3 août → dimanche 25 octobre 2026), aujourd'hui = vendredi 16 octobre. */
+const DEMO_HEAT_LEVELS = '0200100 0201020 1020300 0030200 2003100 0203020 3020300 0302030 2030402 0303030 3040302 2030000'
+const DEMO_HEAT_FOOD = '0110110 1110101 0111011 1011010 1101101 0111011 1110111 1011101 1111011 0111110 1111101 1110000'
+const DEMO_HEATMAP: readonly WeekStripDay[] = (() => {
+  const levels = DEMO_HEAT_LEVELS.replace(/ /g, '')
+  const food = DEMO_HEAT_FOOD.replace(/ /g, '')
+  const start = new Date(2026, 7, 3, 12)
+  const todayIndex = 11 * 7 + 4
+  return Array.from({ length: 84 }, (_, i) => {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    const p = (n: number) => String(n).padStart(2, '0')
+    const level = Number(levels.charAt(i)) as WeekStripDay['level']
+    const future = i > todayIndex
+    return {
+      date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+      level: future ? 0 : level,
+      sessions: !future && level > 0 ? 1 : 0,
+      minutes: level === 1 ? 20 : level === 2 ? 32 : level === 0 ? 0 : 50,
+      nutritionOk: future ? null : food.charAt(i) === '1',
+      future,
+      today: i === todayIndex,
+    }
+  })
+})()
+
+const DEMO_DAY: DaySummaryView = {
+  title: 'Mercredi 14 octobre',
+  future: false,
+  sessions: [
+    {
+      id: 's1',
+      title: 'Séance de 32 min',
+      details: '14 séries · Goblet squat, Pompes, Rowing 1 bras',
+      records: ['Goblet squat, 18 kg × 12'],
+    },
+  ],
+  meals: [
+    { id: 'breakfast', label: 'Petit-déjeuner', details: 'Skyr, Flocons d’avoine', kcal: 540 },
+    { id: 'lunch', label: 'Déjeuner', details: 'Riz, Poulet, Brocoli', kcal: 820 },
+  ],
+  totals: { kcal: 2710, protein: 148 },
+  targets: { kcal: 2840, protein: 140 },
+  nutritionOk: true,
+}
 
 const VIEWS: readonly MuscleView[] = ['front', 'back']
 
@@ -198,6 +253,7 @@ export default function UiScreen() {
   const [tab, setTab] = useState<TabId>('today')
   const [logOpen, setLogOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [dayOpen, setDayOpen] = useState<string | null>(null)
   const [meal, setMeal] = useState<MealSlot>('lunch')
   const [lastAction, setLastAction] = useState<LogAction | null>(null)
   const [pill, setPill] = useState<'journal' | 'recipes' | 'fridge' | 'shopping'>('journal')
@@ -452,6 +508,23 @@ export default function UiScreen() {
           </Demo>
         </Section>
 
+        <Section title="Calendrier">
+          <Demo label="12 semaines : niveaux 0 à 4, point nutrition, jour courant, jours à venir ; chaque case est un bouton">
+            <Card padding="none" className="px-[18px] py-4">
+              <CalendarHeatmap
+                days={DEMO_HEATMAP}
+                label="Calendrier d’exemple"
+                onSelectDay={(date) => setDayOpen(date)}
+              />
+            </Card>
+          </Demo>
+          <Demo label="Semaine cliquable (ouvre le résumé du jour)">
+            <Card className="py-3.5">
+              <WeekStrip days={DEMO_WEEK} onSelectDay={(date) => setDayOpen(date)} />
+            </Card>
+          </Demo>
+        </Section>
+
         <Section title="Feuilles">
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" onClick={() => setSheetOpen(true)}>
@@ -546,10 +619,17 @@ export default function UiScreen() {
             </div>
           </Demo>
         </Section>
+
       </div>
 
       <TabBar current={tab} hrefs={TAB_HREFS} onPlus={() => setLogOpen(true)} onSelect={setTab} />
 
+      {dayOpen !== null && (
+        <DaySummarySheet
+          day={{ ...DEMO_DAY, title: `Résumé du ${dayOpen}` }}
+          onClose={() => setDayOpen(null)}
+        />
+      )}
       {sheetOpen && (
         <Sheet title="Quantité" description="Exemple de feuille" onClose={() => setSheetOpen(false)}>
           <Stepper label="Portions" value={2} min={1} max={10} onChange={() => undefined} />

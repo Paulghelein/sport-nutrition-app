@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { completeOnboarding } from './helpers.ts'
+import { completeOnboarding, localDate } from './helpers.ts'
 
 test("l'app s'ouvre hors ligne (lien profond + rechargement)", async ({ page, context }) => {
   await page.goto('./')
@@ -10,6 +10,31 @@ test("l'app s'ouvre hors ligne (lien profond + rechargement)", async ({ page, co
     page.evaluate<boolean>('navigator.serviceWorker.controller !== null')
   if (!(await controlled())) await page.reload()
   await expect.poll(controlled).toBe(true)
+
+  // Deux pesées dans les 8 dernières semaines : la courbe (Recharts, chunk à la demande) s'affiche.
+  const earlier = localDate(-10)
+  await page.evaluate(
+    (date) =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('forge')
+        open.onerror = () => reject(new Error('open'))
+        open.onsuccess = () => {
+          const tx = open.result.transaction('weighIns', 'readwrite')
+          tx.objectStore('weighIns').put({
+            id: 'offline-w',
+            date,
+            weightKg: 71.5,
+            createdAt: new Date().toISOString(),
+          })
+          tx.oncomplete = () => {
+            open.result.close()
+            resolve()
+          }
+          tx.onerror = () => reject(new Error('write'))
+        }
+      }),
+    earlier,
+  )
 
   await context.setOffline(true)
 
@@ -23,7 +48,7 @@ test("l'app s'ouvre hors ligne (lien profond + rechargement)", async ({ page, co
   await page.goto('./reglages')
   await expect(page.getByRole('button', { name: 'Préparer la sauvegarde' })).toBeVisible()
   await page.goto('./progres')
-  await expect(page.getByRole('img', { name: /Courbe de poids/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: /Courbe de la moyenne 7 jours/ })).toBeVisible()
 })
 
 test('le journal fonctionne en mode avion (recherche Ciqual + ajout)', async ({ page, context }) => {

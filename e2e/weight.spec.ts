@@ -40,7 +40,7 @@ test('pesées : ajout, remplacement à la même date, modification, suppression'
   await expect(page.getByText('72,5')).toHaveCount(0)
 
   // Le résumé se met à jour : dernière pesée = 73,2
-  const stat = page.locator('dl', { hasText: 'Dernière pesée' })
+  const stat = page.getByRole('region', { name: 'Poids', exact: true })
   await expect(stat).toContainText('73,2')
 
   // Modification de la pesée d'hier

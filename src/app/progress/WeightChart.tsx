@@ -1,108 +1,100 @@
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, ComposedChart, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { addDays, formatDateFr } from '../../domain/shared'
 import { formatKg } from '../../ui'
 import type { WeightModel } from './progressModel'
 
-const ORANGE = '#fb923c'
-const ZINC = '#a1a1aa'
-const GREEN = '#34d399'
+// Couleurs : variables CSS des jetons (src/index.css), jamais de valeur en dur.
+const INK = 'var(--color-ink)'
+const INK_MUTED = 'var(--color-ink-muted)'
+const EMBER = 'var(--color-ember)'
+const EMBER_SOFT = 'var(--color-ember-soft)'
+const SURFACE = 'var(--color-surface)'
+const LINE = 'var(--color-line)'
 
-/** Quatre repères de date régulièrement espacés (jours depuis la première pesée). */
-function ticksFor(span: number): number[] {
-  if (span <= 0) return [0]
-  const count = Math.min(4, span + 1)
-  const ticks = Array.from({ length: count }, (_, i) => Math.round((span * i) / (count - 1)))
-  return [...new Set(ticks)]
-}
+const WEIGHT_CHART_HEIGHT = 120
 
-/** Affiche seulement : les données viennent de `buildWeightModel`. */
-export function WeightChart({ model }: { model: WeightModel }) {
-  const { chart: data, firstDate, corridor } = model
-  if (!firstDate) return null
-  const span = data[data.length - 1]?.day ?? 0
-  const dateOf = (day: number) => formatDateFr(addDays(firstDate, Math.round(day)))
-  const summary = `Courbe de poids : ${data.length} pesée${data.length > 1 ? 's' : ''}, de ${formatKg(Math.min(...data.map((d) => d.weight)))} à ${formatKg(Math.max(...data.map((d) => d.weight)))} kg.`
+/**
+ * Courbe de la moyenne 7 j sur les 8 dernières semaines (carte poids de Progrès) : ligne ink, couloir de prise en
+ * `ember-soft`, pesées en petits points, dernier point en ember. Pas d'axes (les repères de début, de fin et le
+ * couloir sont écrits sous la courbe) ; l'infobulle donne la date et les valeurs. Affiche seulement : les données
+ * viennent de `buildWeightModel`.
+ */
+export function WeightChart({ model, summary }: { model: WeightModel; summary: string }) {
+  const trend = model.trend
+  if (!trend) return null
+  const hasBand = model.corridor !== null
+  const data = trend.points.map((p) => ({
+    ...p,
+    band: p.low !== undefined && p.high !== undefined ? ([p.low, p.high] as [number, number]) : undefined,
+  }))
+  const values = trend.points
+    .flatMap((p) => [p.avg, p.weight, ...(hasBand ? [p.low, p.high] : [])])
+    .filter((v): v is number => v !== undefined)
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const pad = Math.max(0.3, (hi - lo) * 0.12)
+  const last = data[data.length - 1]
+  const dateOf = (day: number) => formatDateFr(addDays(trend.firstDate, Math.round(day)))
+  const nameOf = (key: string): string =>
+    key === 'avg' ? 'Moyenne 7 j' : key === 'band' ? 'Couloir' : 'Pesée'
 
   return (
-    <div role="img" aria-label={summary} className="h-64 w-full">
+    <div role="img" aria-label={summary} style={{ height: WEIGHT_CHART_HEIGHT }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
-          <CartesianGrid stroke="#2c2c38" vertical={false} />
-          <XAxis
-            dataKey="day"
-            type="number"
-            domain={[0, Math.max(span, 1)]}
-            ticks={ticksFor(span)}
-            tickFormatter={dateOf}
-            tick={{ fill: ZINC, fontSize: 12 }}
-            stroke="#2c2c38"
-            padding={{ left: 8, right: 8 }}
-          />
-          <YAxis
-            domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]}
-            tick={{ fill: ZINC, fontSize: 12 }}
-            stroke="#2c2c38"
-            width={44}
-            allowDecimals={false}
-          />
+        <ComposedChart data={data} margin={{ top: 8, right: 6, bottom: 4, left: 6 }}>
+          <XAxis dataKey="day" type="number" hide domain={[0, Math.max(trend.spanDays, 1)]} />
+          <YAxis hide domain={[lo - pad, hi + pad]} />
           <Tooltip
+            cursor={{ stroke: LINE }}
             contentStyle={{
-              background: '#1e1e27',
-              border: '1px solid #2c2c38',
-              borderRadius: 12,
-              color: '#f4f4f5',
+              background: 'var(--color-surface-raised)',
+              border: 'none',
+              borderRadius: 16,
+              color: INK,
+              boxShadow: 'var(--shadow-float)',
+              fontSize: 13,
             }}
             labelFormatter={(label) => dateOf(Number(label))}
-            formatter={(value, name) => [
-              `${formatKg(Number(value))} kg`,
-              name === 'avg'
-                ? 'Moyenne 7 j'
-                : name === 'low'
-                  ? 'Couloir bas'
-                  : name === 'high'
-                    ? 'Couloir haut'
-                    : 'Pesée',
-            ]}
+            formatter={(value, name) => {
+              const key = String(name)
+              const text = Array.isArray(value)
+                ? `${formatKg(Number(value[0]))} à ${formatKg(Number(value[1]))} kg`
+                : `${formatKg(Number(value))} kg`
+              return [text, nameOf(key)]
+            }}
           />
-          {corridor ? (
-            <>
-              <Line
-                dataKey="low"
-                stroke={GREEN}
-                strokeWidth={1.5}
-                strokeDasharray="5 4"
-                dot={false}
-                activeDot={false}
-                isAnimationActive={false}
-              />
-              <Line
-                dataKey="high"
-                stroke={GREEN}
-                strokeWidth={1.5}
-                strokeDasharray="5 4"
-                dot={false}
-                activeDot={false}
-                isAnimationActive={false}
-              />
-            </>
-          ) : null}
-          <Line
-            type="monotone"
-            dataKey="avg"
-            stroke={ORANGE}
-            strokeWidth={3}
-            dot={false}
-            activeDot={{ r: 5 }}
-            isAnimationActive={false}
-          />
+          {hasBand && (
+            <Area
+              dataKey="band"
+              stroke="none"
+              fill={EMBER_SOFT}
+              fillOpacity={0.7}
+              activeDot={false}
+              isAnimationActive={false}
+            />
+          )}
           <Line
             dataKey="weight"
             stroke="none"
-            dot={{ r: 4, fill: ZINC, stroke: 'none' }}
-            activeDot={{ r: 6, fill: '#f4f4f5' }}
+            dot={{ r: 2.5, fill: INK_MUTED, stroke: 'none' }}
+            activeDot={{ r: 4, fill: INK_MUTED, stroke: 'none' }}
             isAnimationActive={false}
           />
-        </LineChart>
+          <Line
+            type="monotone"
+            dataKey="avg"
+            stroke={INK}
+            strokeWidth={2.25}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            dot={false}
+            activeDot={{ r: 4, fill: INK, stroke: SURFACE, strokeWidth: 2 }}
+            isAnimationActive={false}
+          />
+          {last && (
+            <ReferenceDot x={last.day} y={last.avg} r={4} fill={EMBER} stroke={SURFACE} strokeWidth={2} />
+          )}
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   )

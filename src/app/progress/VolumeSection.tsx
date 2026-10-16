@@ -1,46 +1,45 @@
-import { Card, Section, muscleLabel } from '../../ui'
+import { muscleLabel } from '../../ui'
+import { Card } from '../../ui/kit'
 import type { GroupVolume } from '../../types'
+import { Note, ScreenSection } from './parts'
 import { VOLUME_STATUS_LABEL, formatNumber } from './progressModel'
 
 const COLOR: Record<GroupVolume['status'], string> = {
-  below: 'text-orange-300',
-  within: 'text-emerald-300',
-  above: 'text-sky-300',
-  untracked: 'text-zinc-400',
+  below: 'text-ember-ink',
+  within: 'text-good',
+  above: 'text-warning',
+  untracked: 'text-ink-muted',
 }
 
-/** Séries des 7 derniers jours par groupe face à la cible, en liste colorée. */
+/** Séries des 7 derniers jours par groupe face à la cible : le mot d'état est toujours écrit, la couleur le renforce. */
 export function VolumeSection({ volumes }: { volumes: readonly GroupVolume[] }) {
   const tracked = volumes.filter((v) => v.status !== 'untracked')
   const untracked = volumes.filter((v) => v.status === 'untracked' && v.sets > 0)
   return (
-    <Section title="Volume des 7 derniers jours">
-      <Card>
+    <ScreenSection title="Volume des 7 derniers jours">
+      <Card padding="none" className="px-4 py-1.5">
         <ul className="m-0 flex list-none flex-col p-0">
           {tracked.map((v) => (
             <li
               key={v.group}
-              className="flex min-h-11 items-center justify-between gap-3 border-b border-v1-line py-1 last:border-b-0"
+              className="flex min-h-11 items-center justify-between gap-3 border-t border-line py-1.5 first:border-t-0"
             >
-              <span className="text-base font-medium">{muscleLabel(v.group)}</span>
-              <span className="text-right text-sm tabular-nums">
-                <span className="text-base font-semibold text-zinc-100">{formatNumber(v.sets)}</span>
-                <span className="text-zinc-400">
-                  {' '}
-                  / {v.target[0]}–{v.target[1]} séries ·{' '}
-                </span>
-                <span className={`font-semibold ${COLOR[v.status]}`}>{VOLUME_STATUS_LABEL[v.status]}</span>
+              <span className="text-body-strong">{muscleLabel(v.group)}</span>
+              <span className="text-right text-caption tabular-nums text-ink-muted">
+                <span className="font-display text-base font-bold text-ink">{formatNumber(v.sets)}</span>
+                {` / ${v.target[0]}–${v.target[1]} séries · `}
+                <span className={`font-bold ${COLOR[v.status]}`}>{VOLUME_STATUS_LABEL[v.status]}</span>
               </span>
             </li>
           ))}
         </ul>
         {untracked.length > 0 ? (
-          <p className="mt-3 text-sm text-zinc-400">
+          <Note className="border-t border-line py-2.5 text-caption">
             {VOLUME_STATUS_LABEL.untracked} (pas de cible) :{' '}
             {untracked.map((v) => `${muscleLabel(v.group)} ${formatNumber(v.sets)}`).join(', ')}.
-          </p>
+          </Note>
         ) : null}
       </Card>
-    </Section>
+    </ScreenSection>
   )
 }

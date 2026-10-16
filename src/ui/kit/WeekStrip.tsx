@@ -7,6 +7,10 @@ export type { WeekStripDay }
 export interface WeekStripProps {
   /** Les 7 jours, lundi → dimanche. */
   days: readonly WeekStripDay[]
+  /** Si fourni, chaque jour est un bouton (cible ≥ 44 px) qui appelle `onSelectDay(date)` ; sinon la bande est décorative. */
+  onSelectDay?: (date: string) => void
+  /** Jour dont le résumé est ouvert : `aria-current="date"` sur son bouton. */
+  selectedDate?: string | null
   className?: string
 }
 
@@ -21,22 +25,23 @@ const HEAT: Record<WeekStripDay['level'], string> = {
 /**
  * Semaine en cours en 7 cases (L M M J V S D) colorées par niveau `heat-0..4`, avec un point nutrition dessous :
  * plein = dans la cible, anneau = hors cible, absent = non évalué. La couleur n'est jamais seule porteuse de sens :
- * chaque jour a un libellé complet. Présentationnel, sans interaction.
+ * chaque jour a un libellé complet. Sans `onSelectDay`, présentationnelle ; avec, chaque jour est un bouton.
  */
-export function WeekStrip({ days, className }: WeekStripProps) {
+export function WeekStrip({ days, onSelectDay, selectedDate = null, className }: WeekStripProps) {
   return (
     <ul
       aria-label="Semaine en cours"
-      className={cx('m-0 grid list-none grid-cols-7 gap-2 p-0 text-center', className)}
+      className={cx(
+        'm-0 grid list-none grid-cols-7 p-0 text-center',
+        // Interactif : colonnes jointives (≈ 46 px de large sur 390 px) pour tenir les 44 px tactiles ; l'écart
+        // visuel entre les cases reste ≈ 15 px, comme avec `gap-2` autour de cases de 32 px.
+        onSelectDay ? 'gap-0' : 'gap-2',
+        className,
+      )}
     >
-      {days.map((day) => (
-        <li key={day.date} className="flex justify-center">
-          <div
-            role="img"
-            aria-label={weekDayLabel(day)}
-            data-testid="week-day"
-            className="flex flex-col items-center gap-1.5"
-          >
+      {days.map((day) => {
+        const content = (
+          <>
             <span
               aria-hidden="true"
               className={cx(
@@ -62,9 +67,34 @@ export function WeekStrip({ days, className }: WeekStripProps) {
                 !day.future && day.nutritionOk === false && 'border-2 border-warning',
               )}
             />
-          </div>
-        </li>
-      ))}
+          </>
+        )
+        return (
+          <li key={day.date} className="flex justify-center">
+            {onSelectDay ? (
+              <button
+                type="button"
+                aria-label={weekDayLabel(day)}
+                aria-current={day.date === selectedDate ? 'date' : undefined}
+                data-testid="week-day"
+                onClick={() => onSelectDay(day.date)}
+                className="focus-ring flex min-h-14 w-full flex-col items-center justify-center gap-1.5 rounded-ds-sm active:opacity-70"
+              >
+                {content}
+              </button>
+            ) : (
+              <div
+                role="img"
+                aria-label={weekDayLabel(day)}
+                data-testid="week-day"
+                className="flex flex-col items-center gap-1.5"
+              >
+                {content}
+              </div>
+            )}
+          </li>
+        )
+      })}
     </ul>
   )
 }

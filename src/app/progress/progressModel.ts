@@ -2,7 +2,11 @@
 // Les composants n'affichent que ce modèle : la refonte de l'UI peut les réécrire sans toucher à ce fichier.
 import { backupReminder } from '../../domain/progress/backup'
 import { nutritionWeek } from '../../domain/progress/nutrition'
+import { dayActivities } from '../../domain/progress/calendar'
+import type { DaySummaryInput } from '../../domain/progress/daySummary'
+import { recentRecords } from '../../domain/progress/recentRecords'
 import { regularity, weekStartOf } from '../../domain/progress/regularity'
+import { nutritionOkShare, sessionsThisMonth } from '../../domain/progress/stats'
 import { previousWeekRange, shouldShowReview, weeklyReview } from '../../domain/progress/review'
 import { recordsInRange, strengthByExercise } from '../../domain/progress/strength'
 import type { ExercisesById } from '../../domain/progress/strength'
@@ -21,6 +25,7 @@ import { MAJOR_GROUPS } from '../../domain/training/volume'
 import { addDays, daysBetween, toLocalDate } from '../../domain/shared/dates'
 import { REGULARITY_WEEK_TARGET } from '../../types/progress'
 import type {
+  DayActivity,
   BackupReminder,
   Equipment,
   Exercise,
@@ -37,6 +42,10 @@ import type {
   WeeklyReview,
 } from '../../types'
 import type { ProgressData } from '../../db'
+import type { WeekStripDay } from '../../ui/kit'
+import { heatmapRange, makeTargetsFor, recordRows, toStripDays } from './calendarModel'
+import type { RecordRowModel } from './calendarModel'
+import { formatNumber } from './format'
 
 export interface StrengthRow {
   exerciseId: string
@@ -70,7 +79,18 @@ export interface ProgressModel {
   measurements: Measurement[]
   /** Nom d'un exercice, y compris supprimé (« Exercice supprimé » si introuvable). */
   nameOf: (id: string) => string
+  /** Les trois chiffres de tête : série (semaines), séances du mois, % de jours nutrition OK (`null` : rien évalué). */
+  headline: { streakWeeks: number; monthSessions: number; nutritionShare: number | null }
+  /** 12 semaines (84 jours, du lundi au dimanche de la semaine en cours) pour le calendrier. */
+  days: WeekStripDay[]
+  /** Records des 6 dernières semaines, du plus récent au plus ancien. */
+  records: RecordRowModel[]
+  /** De quoi calculer le résumé d'un jour touché (sans `date`). */
+  dayInput: Omit<DaySummaryInput, 'date'>
 }
+
+/** Fenêtre des « records récents », en jours. */
+export const RECENT_RECORDS_DAYS = 42
 
 /**
  * Index des exercices par id pour les calculs d'historique : exercices de départ (version d'origine), recouverts par
@@ -144,8 +164,7 @@ export const METRIC_LABEL: Record<StrengthMetric, string> = {
   reps: 'Répétitions max',
 }
 
-const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
-export const formatNumber = (n: number): string => nf.format(n)
+export { formatNumber }
 
 export interface RecordLine {
   label: string
@@ -182,12 +201,16 @@ export function personalRecordText(
   kind: 'load' | 'reps' | 'duration' | 'tonnage',
   value: number,
   loadKg?: number,
+  /** Record de répétitions d'une série en temps fixe : la fenêtre en secondes (« en 45 s »). */
+  windowSec?: number,
 ): string {
   const at = loadKg !== undefined ? ` à ${formatNumber(loadKg)} kg` : ''
   switch (kind) {
     case 'load':
       return `charge max ${formatNumber(value)} kg`
     case 'reps':
+      if (windowSec !== undefined)
+        return `${formatNumber(value)} répétitions en ${formatNumber(windowSec)} s${at}`
       return `${formatNumber(value)} répétitions${at}`
     case 'duration':
       return `${formatNumber(value)} s${at}`
@@ -250,6 +273,28 @@ export interface WeightModel {
   chart: WeightChartPoint[]
   /** Couloir cible : seulement en prise de masse et s'il a au moins 2 points. */
   corridor: CorridorStart | null
+  /** Courbe des 8 dernières semaines (carte poids) ; `null` si moins de 2 pesées dans la fenêtre. */
+  trend: WeightTrend | null
+}
+
+/** Fenêtre de la carte poids : la même que la recherche du départ du couloir (8 semaines). */
+export const WEIGHT_TREND_DAYS = CORRIDOR_WINDOW_DAYS
+
+export type CorridorStatus = 'inside' | 'below' | 'above'
+
+export interface WeightTrend {
+  /** Date de la première pesée de la fenêtre. */
+  firstDate: LocalDate
+  /** Moyenne 7 j au début et à la fin de la fenêtre. */
+  startAvg: number
+  endAvg: number
+  changeKg: number
+  /** Jours entre la première et la dernière pesée de la fenêtre. */
+  spanDays: number
+  /** Position de la moyenne actuelle par rapport au couloir (prise de masse avec couloir seulement). */
+  corridorStatus: CorridorStatus | null
+  /** Points de la fenêtre (`day` = jours depuis `firstDate`). */
+  points: WeightChartPoint[]
 }
 
 const round2 = (n: number): number => Math.round(n * 100) / 100
@@ -292,6 +337,48 @@ export function buildWeightModel(
     firstDate: first?.date ?? null,
     chart,
     corridor,
+    trend: buildWeightTrend(series, chart, today, corridor ? bandByDate : undefined),
+  }
+}
+
+/** Fenêtre des 8 dernières semaines : variation de la moyenne 7 j et place par rapport au couloir. */
+function buildWeightTrend(
+  series: readonly { date: LocalDate; avg7d: number }[],
+  chart: readonly WeightChartPoint[],
+  today: LocalDate,
+  band: ReadonlyMap<LocalDate, { lowKg: number; highKg: number }> | undefined,
+): WeightTrend | null {
+  const from = addDays(today, -WEIGHT_TREND_DAYS)
+  const idx: number[] = []
+  series.forEach((p, i) => {
+    if (p.date >= from && p.date <= today) idx.push(i)
+  })
+  const firstI = idx[0]
+  const lastI = idx[idx.length - 1]
+  if (firstI === undefined || lastI === undefined || firstI === lastI) return null
+  const a = series[firstI]
+  const b = series[lastI]
+  if (!a || !b) return null
+  const base = chart[firstI]?.day ?? 0
+  const at = band?.get(b.date)
+  const corridorStatus: CorridorStatus | null = at
+    ? b.avg7d < at.lowKg
+      ? 'below'
+      : b.avg7d > at.highKg
+        ? 'above'
+        : 'inside'
+    : null
+  return {
+    firstDate: a.date,
+    startAvg: a.avg7d,
+    endAvg: b.avg7d,
+    changeKg: b.avg7d - a.avg7d,
+    spanDays: daysBetween(a.date, b.date),
+    corridorStatus,
+    points: idx.map((i) => {
+      const p = chart[i] as WeightChartPoint
+      return { ...p, day: p.day - base }
+    }),
   }
 }
 
@@ -372,6 +459,17 @@ export function buildProgressModel({ data, equipment, seeds, now }: ProgressInpu
 
   const levels = patternLevels(library, data.states, profile.level)
 
+  const targetsFor = makeTargetsFor(profile, data.weighIns)
+  const calendarRange = heatmapRange(today)
+  const activities: DayActivity[] = dayActivities({
+    ...calendarRange,
+    today,
+    sessions: data.sessions,
+    exercisesById: byId,
+    foodLog: data.foodLog,
+    targetsFor,
+  })
+
   return {
     today,
     bulk: profile.goal === 'bulk',
@@ -388,6 +486,18 @@ export function buildProgressModel({ data, equipment, seeds, now }: ProgressInpu
     hasNutritionTargets: current.has,
     measurements: data.measurements,
     nameOf,
+    headline: {
+      streakWeeks: reg.currentStreak,
+      monthSessions: sessionsThisMonth(activities, today),
+      nutritionShare: nutritionOkShare(activities, today),
+    },
+    days: toStripDays(activities, today),
+    records: recordRows(
+      recentRecords(data.sessions, addDays(today, -RECENT_RECORDS_DAYS), today, byId, 5),
+      nameOf,
+      today,
+    ),
+    dayInput: { today, sessions: data.sessions, exercisesById: byId, foodLog: data.foodLog, targetsFor },
   }
 }
 

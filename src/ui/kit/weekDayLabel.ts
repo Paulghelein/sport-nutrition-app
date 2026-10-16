@@ -30,11 +30,8 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-/** Libellé lu par les lecteurs d'écran : « Mercredi : séance de 32 min, nutrition dans la cible ». */
-export function weekDayLabel(day: WeekStripDay): string {
-  const name = capitalize(longName.format(parseLocalNoon(day.date)))
-  const head = day.today ? `${name} (aujourd’hui)` : name
-  if (day.future) return `${head} : à venir`
+/** Détail d'un jour sans son nom : « séance de 32 min (record battu), nutrition dans la cible ». */
+function dayDetail(day: WeekStripDay): string {
   const training =
     day.sessions <= 0
       ? 'pas de séance'
@@ -48,7 +45,30 @@ export function weekDayLabel(day: WeekStripDay): string {
       : day.nutritionOk === false
         ? 'nutrition hors cible'
         : 'nutrition non évaluée'
-  return `${head} : ${training}${record}, ${nutrition}`
+  return `${training}${record}, ${nutrition}`
+}
+
+/** Libellé lu par les lecteurs d'écran : « Mercredi : séance de 32 min, nutrition dans la cible ». */
+export function weekDayLabel(day: WeekStripDay): string {
+  const name = capitalize(longName.format(parseLocalNoon(day.date)))
+  const head = day.today ? `${name} (aujourd’hui)` : name
+  if (day.future) return `${head} : à venir`
+  return `${head} : ${dayDetail(day)}`
+}
+
+const longDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+
+/** « Mercredi 14 octobre » (jour, date, mois) : titre du résumé d'un jour et libellé des cases du calendrier. */
+export function longDateLabel(date: string): string {
+  return capitalize(longDate.format(parseLocalNoon(date)))
+}
+
+/** Libellé d'une case du calendrier (date complète) : « Mercredi 14 octobre : séance de 32 min, nutrition dans la cible ». */
+export function calendarDayLabel(day: WeekStripDay): string {
+  const name = longDateLabel(day.date)
+  const head = day.today ? `${name} (aujourd’hui)` : name
+  if (day.future) return `${head} : à venir`
+  return `${head} : ${dayDetail(day)}`
 }
 
 /** Initiale du jour (« L », « M »…). */

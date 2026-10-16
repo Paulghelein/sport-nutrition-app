@@ -144,6 +144,31 @@ describe('records', () => {
   })
 })
 
+describe('records en temps fixe', () => {
+  const timed = (reps: number): SetEntry => ({
+    status: 'done',
+    actualReps: reps,
+    feeling: 'ok',
+    setType: 'timedMax',
+    targetDurationSec: 45,
+    loadKg: 12,
+  })
+  const withSets = (date: string, n: number): Session =>
+    sess(date, 20, {
+      blocks: [
+        { id: 'b', kind: 'single', exercises: [{ exerciseId: 'two-hand-swing', restSec: 60, sets: [timed(n)] }] },
+      ],
+    })
+  it('plus de reps dans la même fenêtre : record le jour de la séance seulement', () => {
+    const out = dayActivities(
+      base({ sessions: [withSets('2026-10-05', 30), withSets('2026-10-14', 36)] }),
+    )
+    expect(day(out, '2026-10-14').record).toBe(true)
+    expect(day(out, '2026-10-13').record).toBe(false)
+    expect(day(out, '2026-10-15').record).toBe(false)
+  })
+})
+
 describe('nutrition', () => {
   const d = '2026-10-13'
   const ok = (kcal: number, protein: number) =>

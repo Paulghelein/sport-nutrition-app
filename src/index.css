@@ -97,6 +97,9 @@
   --text-label--line-height: 14px;
   --text-label--font-weight: 700;
   --text-label--letter-spacing: 0.06em;
+  /* Étiquettes de grille (jours du calendrier) : plus petit que `label`, sans capitales. */
+  --text-micro: 10px;
+  --text-micro--line-height: 12px;
 
   /* Rayons : préfixe « ds » car --radius-sm/md/lg/xl sont ceux de Tailwind, utilisés par les écrans v1
      (rounded-xl…) qui doivent rester identiques. À renommer en R5. */

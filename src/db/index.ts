@@ -95,8 +95,8 @@ export {
   updateRecipe,
 } from './recipes'
 // `./claude` (applyClaudeSelection) n'est pas réexporté : importé directement par l'écran de réponse (chargé à la demande).
-export { PROGRESS_FOOD_DAYS, loadProgressData } from './progress'
-export type { ProgressData } from './progress'
+export { PROGRESS_FOOD_DAYS, loadCalendarData, loadProgressData } from './progress'
+export type { CalendarData, ProgressData } from './progress'
 export {
   cacheOffFood,
   cacheOffFoodWithPhoto,

@@ -36,3 +36,14 @@ export type { ExerciseThumbProps, MuscleMapProps } from './MuscleMap'
 export { FoodPictogram, FoodTile } from './FoodPictogram'
 export type { FoodPictogramProps, FoodTileProps } from './FoodPictogram'
 export { chooseMuscleView, isVisibleIn, zonesFor } from './muscleZones'
+// CalendarHeatmap et DaySummarySheet (Progrès, Aujourd'hui) ne sont volontairement PAS réexportés ici : un composant
+// réexporté par ce barrel est embarqué dans le chunk « kit » préchargé au démarrage (+6 kB, mesuré). Les importer
+// par leur chemin : `import { CalendarHeatmap } from '../../ui/kit/CalendarHeatmap'`.
+export type { CalendarHeatmapProps } from './CalendarHeatmap'
+export type {
+  DaySummaryMealView,
+  DaySummarySessionView,
+  DaySummarySheetProps,
+  DaySummaryView,
+} from './DaySummarySheet'
+export { calendarDayLabel, longDateLabel } from './weekDayLabel'

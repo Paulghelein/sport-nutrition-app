@@ -1,50 +1,56 @@
-import { useMemo } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import { seedExercises } from '../../content'
-import { loadProgressData } from '../../db'
-import { nutritionTargets, targetWeight } from '../../domain/nutrition/targets'
+import { loadCalendarData } from '../../db'
 import { dayActivities, weekDays } from '../../domain/progress/calendar'
 import { regularity } from '../../domain/progress/regularity'
 import type { LocalDate } from '../../types'
 import { useLiveQuery } from '../../ui'
 import { Card, WeekStrip } from '../../ui/kit'
-import { buildExercisesById, profileWeekTarget } from '../progress/progressModel'
+import { makeTargetsFor, toStripDays } from '../progress/calendarModel'
+import { DELETED_EXERCISE_NAME, buildExercisesById, profileWeekTarget } from '../progress/progressModel'
 import { WEEK_CARD_MIN_H } from './layout'
 import { CardError } from './SectionBoundary'
 import { WeekSkeleton } from './Skeletons'
 
-/** Carte « Ta semaine » : 7 cases heat + point nutrition, série en semaines, séances faites sur la cible. */
+// Résumé du jour à la demande : feuille et calcul du résumé ne sont chargés qu'au premier toucher.
+const DayDetail = lazy(() => import('../progress/DayDetail').then((m) => ({ default: m.DayDetail })))
+
+/**
+ * Carte « Ta semaine » : 7 cases heat + point nutrition, série en semaines, séances faites sur la cible.
+ * Chaque jour est un bouton : il ouvre son résumé. Lecture ciblée (`loadCalendarData`) : seul le journal alimentaire
+ * est borné (7 jours de la semaine) ; profil, pesées, séances et exercices sont lus en entier (records, série de
+ * régularité et objectif du jour en dépendent), mais ni réglages, ni mensurations, ni états de progression.
+ */
 export function WeekCard({ today }: { today: LocalDate }) {
-  const { data, error } = useLiveQuery(() => loadProgressData(today), [today])
+  const days = useMemo(() => weekDays(today), [today])
+  const { data, error } = useLiveQuery(() => loadCalendarData(days[0] ?? today, today), [today, days])
+  const [selected, setSelected] = useState<LocalDate | null>(null)
 
   const model = useMemo(() => {
     if (!data?.profile) return undefined
     const profile = data.profile
-    const days = weekDays(today)
-    const from = days[0] ?? today
-    const to = days[6] ?? today
+    const exercisesById = buildExercisesById(seedExercises, data.exerciseRows)
+    const targetsFor = makeTargetsFor(profile, data.weighIns)
     const activities = dayActivities({
-      from,
-      to,
+      from: days[0] ?? today,
+      to: days[6] ?? today,
       today,
       sessions: data.sessions,
-      exercisesById: buildExercisesById(seedExercises, data.exerciseRows),
+      exercisesById,
       foodLog: data.foodLog,
-      targetsFor: (d) => {
-        const w = targetWeight(data.weighIns, d)
-        if (w === undefined) return null
-        const t = nutritionTargets(profile, w, d)
-        return { kcal: t.kcal, protein: t.protein }
-      },
+      targetsFor,
     })
     // Même seuil que la page Progrès : un profil à 2 séances/sem. peut aussi avoir une série.
     const weekTarget = profileWeekTarget(profile)
     return {
-      days: activities.map((a) => ({ ...a, today: a.date === today })),
+      days: toStripDays(activities, today),
       streak: regularity(data.sessions, today, { weekTarget }).currentStreak,
       done: activities.reduce((n, a) => n + a.sessions, 0),
       planned: profile.weeklySessionsTarget,
+      dayInput: { today, sessions: data.sessions, exercisesById, foodLog: data.foodLog, targetsFor },
+      nameOf: (id: string) => exercisesById.get(id)?.name ?? DELETED_EXERCISE_NAME,
     }
-  }, [data, today])
+  }, [data, today, days])
 
   if (error && !data) return <CardError>Impossible de lire ta semaine. Réessaie dans un instant.</CardError>
   // Lecture faite mais pas de profil (onboarding incomplet) : un message plutôt qu'un squelette sans fin.
@@ -65,7 +71,19 @@ export function WeekCard({ today }: { today: LocalDate }) {
           séances
         </p>
       </div>
-      <WeekStrip days={model.days} />
+      <WeekStrip days={model.days} selectedDate={selected} onSelectDay={setSelected} />
+      {selected !== null && (
+        <Suspense fallback={null}>
+          <DayDetail
+            date={selected}
+            minDate={days[0] ?? selected}
+            input={model.dayInput}
+            nameOf={model.nameOf}
+            onSelect={setSelected}
+            onClose={() => setSelected(null)}
+          />
+        </Suspense>
+      )}
     </Card>
   )
 }

@@ -1,42 +1,63 @@
+import { useState } from 'react'
 import { buildProgressMessage } from '../../domain/claude/context'
-import { ErrorNote } from '../../ui'
+import type { LocalDate } from '../../types'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { progressData } from '../claude/inputs'
 import { BackupBanner } from './BackupBanner'
+import { DayDetail } from './DayDetail'
 import { MeasurementsSection } from './MeasurementsSection'
 import { NutritionSection } from './NutritionSection'
+import { Note } from './parts'
+import { RecordsSection } from './RecordsSection'
 import { RegularitySection } from './RegularitySection'
 import { ReviewCard } from './ReviewCard'
 import { StrengthSection } from './StrengthSection'
 import { VolumeSection } from './VolumeSection'
-import { WeightSection } from './WeightSection'
+import { WeighInHistory, WeightSection } from './WeightSection'
 import { useScrollToHash } from '../useScrollToHash'
 import { useProgress } from './useProgress'
 
-/** Écran Progrès (SPEC §8). Chargé en lazy : `export default`. Les composants n'affichent que `useProgress()`. */
+/**
+ * Écran Progrès (SPEC §8, DESIGN §4). Une question : « est-ce que je progresse ? ». Ordre : bilan du lundi, les trois
+ * chiffres et le calendrier, le poids, les records, puis le détail (force, volume, nutrition, mesures).
+ * Chargé en lazy : `export default`. Les composants n'affichent que `useProgress()`.
+ */
 export default function ProgressScreen() {
   const { model, error } = useProgress()
+  const [selected, setSelected] = useState<LocalDate | null>(null)
   // `#mensurations` : lien « Mensurations » de la feuille Ajouter.
   useScrollToHash(model !== undefined)
 
   return (
-    <>
-      <h1 className="text-3xl font-bold">Progrès</h1>
+    <div className="flex flex-col gap-5">
+      <header className="flex items-end justify-between gap-3">
+        <h1 className="m-0 font-display text-display-l">Progrès</h1>
+        <span className="pb-1 text-caption font-semibold text-ink-muted">12 dernières semaines</span>
+      </header>
       {error ? (
-        <div className="mt-4">
-          <ErrorNote>Impossible de lire tes données de progression.</ErrorNote>
-        </div>
+        <p
+          role="alert"
+          className="m-0 rounded-ds-md bg-surface px-4 py-3 text-body font-semibold text-critical shadow-card"
+        >
+          Impossible de lire tes données de progression.
+        </p>
       ) : null}
-      {model === undefined && !error ? <div className="mt-6 h-64" aria-busy="true" /> : null}
-      {model === null ? (
-        <p className="mt-6 text-base text-zinc-300">Termine d’abord la configuration de ton profil.</p>
-      ) : null}
+      {model === undefined && !error ? <div className="h-64" aria-busy="true" /> : null}
+      {model === null ? <Note>Termine d’abord la configuration de ton profil.</Note> : null}
       {model ? (
         <>
           {model.review ? <ReviewCard review={model.review} nameOf={model.nameOf} /> : null}
           {model.backup ? <BackupBanner reminder={model.backup} /> : null}
+          <RegularitySection
+            headline={model.headline}
+            days={model.days}
+            regularity={model.regularity}
+            target={model.regularityTarget}
+            selectedDate={selected}
+            onSelectDay={setSelected}
+          />
           <WeightSection weight={model.weight} />
-          <RegularitySection regularity={model.regularity} target={model.regularityTarget} />
+          <RecordsSection records={model.records} />
           <StrengthSection model={model} />
           <VolumeSection volumes={model.volumes} />
           <NutritionSection
@@ -44,17 +65,26 @@ export default function ProgressScreen() {
             hasTargets={model.hasNutritionTargets}
             daysElapsed={model.nutritionDaysElapsed}
           />
-          <div id="mensurations">
+          <WeighInHistory rows={model.weight.recent} />
+          <div id="mensurations" className="scroll-mt-4">
             <MeasurementsSection measurements={model.measurements} />
           </div>
-          <div className="mt-8">
-            <AskClaudeButton
-              kind="progress"
-              build={(base) => buildProgressMessage({ ...base, ...progressData(model) })}
+          <AskClaudeButton
+            kind="progress"
+            build={(base) => buildProgressMessage({ ...base, ...progressData(model) })}
+          />
+          {selected !== null && (
+            <DayDetail
+              date={selected}
+              minDate={model.days[0]?.date ?? selected}
+              onSelect={setSelected}
+              input={model.dayInput}
+              nameOf={model.nameOf}
+              onClose={() => setSelected(null)}
             />
-          </div>
+          )}
         </>
       ) : null}
-    </>
+    </div>
   )
 }

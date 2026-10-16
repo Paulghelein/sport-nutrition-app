@@ -25,8 +25,11 @@ import {
   sortSessions,
 } from './repositories'
 
-/** Fenêtre du journal alimentaire lue pour l'écran Progrès, en jours (aujourd'hui compris). */
-export const PROGRESS_FOOD_DAYS = 35
+/**
+ * Fenêtre du journal alimentaire lue pour l'écran Progrès, en jours (aujourd'hui compris) : 12 semaines du calendrier
+ * (jusqu'à 83 jours en arrière, le lundi de la première colonne) ; les autres sections filtrent leur propre plage.
+ */
+export const PROGRESS_FOOD_DAYS = 84
 
 export interface ProgressData {
   profile: Profile | undefined
@@ -85,4 +88,33 @@ export async function loadProgressData(today: LocalDate = toLocalDate(new Date()
       }
     },
   )
+}
+
+export interface CalendarData {
+  profile: Profile | undefined
+  weighIns: WeighIn[]
+  /** Séances `done` de tout l'historique : les records d'un jour se comparent aux séances antérieures. */
+  sessions: Session[]
+  /** Lignes de base de la table `exercises` (y compris supprimées). */
+  exerciseRows: Exercise[]
+  /** Journal de `from` à `to` inclus. */
+  foodLog: FoodLogEntry[]
+}
+
+/**
+ * Lecture ciblée pour le calendrier de régularité et les résumés de jour (carte « Ta semaine » d'Aujourd'hui) :
+ * ni réglages, ni mensurations, ni états de progression, et le journal limité à `from`–`to` (7 jours au lieu de
+ * toute la fenêtre de l'écran Progrès). Une transaction en lecture seule.
+ */
+export async function loadCalendarData(from: LocalDate, to: LocalDate): Promise<CalendarData> {
+  return db.transaction('r', [db.profile, db.weighIns, db.sessions, db.exercises, db.foodLog], async () => {
+    const [profile, weighIns, sessions, exerciseRows, foodLog] = await Promise.all([
+      getProfile(),
+      listWeighIns(),
+      db.sessions.where('status').equals('done').toArray().then(sortSessions),
+      listExerciseRows(),
+      listLogBetween(from, to),
+    ])
+    return { profile, weighIns, sessions, exerciseRows, foodLog }
+  })
 }

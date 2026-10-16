@@ -3,8 +3,10 @@ import { addDays, formatDateFr } from '../../domain/shared/dates'
 import { METRIC_LABEL, METRIC_UNIT, formatNumber } from './progressModel'
 import type { StrengthChartPoint, StrengthMetric } from './progressModel'
 
-const ORANGE = '#fb923c'
-const ZINC = '#a1a1aa'
+// Couleurs : variables CSS des jetons (src/index.css), jamais de valeur en dur.
+const EMBER = 'var(--color-ember)'
+const INK_MUTED = 'var(--color-ink-muted)'
+const LINE = 'var(--color-line)'
 
 export function StrengthChart({
   points,
@@ -24,38 +26,40 @@ export function StrengthChart({
     <div role="img" aria-label={summary} className="h-52 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
-          <CartesianGrid stroke="#2c2c38" vertical={false} />
+          <CartesianGrid stroke={LINE} vertical={false} />
           <XAxis
             dataKey="day"
             type="number"
             domain={[0, Math.max(span, 1)]}
             tickFormatter={dateOf}
-            tick={{ fill: ZINC, fontSize: 12 }}
-            stroke="#2c2c38"
+            tick={{ fill: INK_MUTED, fontSize: 12 }}
+            stroke={LINE}
             padding={{ left: 8, right: 8 }}
           />
           <YAxis
-            tick={{ fill: ZINC, fontSize: 12 }}
-            stroke="#2c2c38"
+            tick={{ fill: INK_MUTED, fontSize: 12 }}
+            stroke={LINE}
             width={44}
             domain={[0, (max: number) => Math.ceil(max * 1.1)]}
             allowDecimals={false}
           />
           <Tooltip
             contentStyle={{
-              background: '#1e1e27',
-              border: '1px solid #2c2c38',
-              borderRadius: 12,
-              color: '#f4f4f5',
+              background: 'var(--color-surface-raised)',
+              border: 'none',
+              borderRadius: 16,
+              color: 'var(--color-ink)',
+              boxShadow: 'var(--shadow-float)',
+              fontSize: 13,
             }}
             labelFormatter={(label) => dateOf(Number(label))}
             formatter={(value) => [`${formatNumber(Number(value))} ${unit}`, METRIC_LABEL[metric]]}
           />
           <Line
             dataKey="value"
-            stroke={ORANGE}
-            strokeWidth={3}
-            dot={{ r: 4, fill: ORANGE, stroke: 'none' }}
+            stroke={EMBER}
+            strokeWidth={2.5}
+            dot={{ r: 3.5, fill: EMBER, stroke: 'none' }}
             isAnimationActive={false}
           />
         </LineChart>

@@ -44,8 +44,9 @@ describe('mise en page', () => {
     expect(hidesTabBar('/entrainement')).toBe(false)
     expect(hidesTabBar('/nutrition/recettes/abc')).toBe(false)
   })
-  it('seul l’accueil est en clair', () => {
+  it('seuls les écrans refaits (accueil, Progrès) sont en clair', () => {
     expect(usesCanvas('/')).toBe(true)
+    expect(usesCanvas('/progres')).toBe(true)
     expect(usesCanvas('/nutrition')).toBe(false)
   })
 })

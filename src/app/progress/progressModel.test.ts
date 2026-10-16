@@ -472,3 +472,129 @@ describe('bilan : jugé à la fin de la semaine évaluée', () => {
     expect(build(data({ sessions: extra }))?.review?.suggestion).toEqual(base)
   })
 })
+
+describe('R4 : chiffres de tête, calendrier, records récents', () => {
+  const entry = (id: string, date: string, kcal: number, protein: number): FoodLogEntry =>
+    ({
+      id,
+      date,
+      slot: 'lunch',
+      name: 'x',
+      origin: { kind: 'free' },
+      macros: { kcal, protein, carbs: 0, fat: 0 },
+      createdAt: T0,
+    }) as unknown as FoodLogEntry
+  const w = (date: string, weightKg: number): WeighIn =>
+    ({ id: date, date, weightKg, createdAt: T0 }) as WeighIn
+
+  it('calendrier : 84 jours, du lundi d’il y a 11 semaines au dimanche de la semaine en cours', () => {
+    const m = build(data())
+    expect(m?.days).toHaveLength(84)
+    expect(m?.days[0]?.date).toBe('2026-07-27')
+    expect(m?.days[83]?.date).toBe('2026-10-18')
+    expect(m?.days.filter((d) => d.today).map((d) => d.date)).toEqual(['2026-10-16'])
+    expect(m?.days.filter((d) => d.future)).toHaveLength(2)
+  })
+
+  it('chiffres de tête : séances du mois, % de jours nutrition OK, série', () => {
+    const sessions = [
+      session('a', '2026-09-30', 'goblet-squat', 12, 10),
+      session('b', '2026-10-02', 'goblet-squat', 12, 10),
+      session('c', '2026-10-14', 'goblet-squat', 14, 10),
+    ]
+    // Objectif : 75 kg → on s'en sert pour fabriquer un jour dans la cible et un jour hors cible.
+    const weighIns = [w('2026-10-01', 75)]
+    const probe = build(data({ weighIns }))
+    const target = probe?.nutrition.targetKcal ?? 0
+    const protein = probe?.nutrition.targetProtein ?? 0
+    const foodLog = [
+      entry('f1', '2026-10-10', target, protein),
+      entry('f2', '2026-10-11', target * 0.5, protein),
+      entry('f3', '2026-10-12', target, protein),
+      entry('f4', '2026-10-13', target, protein),
+    ]
+    const m = build(data({ sessions, weighIns, foodLog }))
+    expect(m?.headline.monthSessions).toBe(2)
+    expect(m?.headline.nutritionShare).toBe(75)
+    expect(m?.headline.streakWeeks).toBeGreaterThanOrEqual(0)
+    expect(build(data())?.headline).toMatchObject({ monthSessions: 0, nutritionShare: null })
+  })
+
+  it('le journal des 84 derniers jours alimente le calendrier (un jour d’il y a 10 semaines est évalué)', () => {
+    const weighIns = [w('2026-07-01', 75)]
+    const probe = build(data({ weighIns }))
+    const day = '2026-08-12'
+    const foodLog = [entry('old', day, probe?.nutrition.targetKcal ?? 0, probe?.nutrition.targetProtein ?? 0)]
+    const m = build(data({ weighIns, foodLog }))
+    expect(m?.days.find((d) => d.date === day)?.nutritionOk).toBe(true)
+  })
+
+  it('records récents : ligne avec nom, nature, jour relatif et valeur', () => {
+    const sessions = [
+      session('a', '2026-10-01', 'goblet-squat', 12, 10),
+      session('b', '2026-10-14', 'goblet-squat', 16, 10),
+    ]
+    const m = build(data({ sessions }))
+    const load = m?.records.find((r) => r.detail.startsWith('Charge max'))
+    expect(load).toMatchObject({
+      exerciseId: 'goblet-squat',
+      name: squat.name,
+      value: '16 kg',
+      detail: 'Charge max · mercredi',
+    })
+  })
+
+  it('records récents : fenêtre de 6 semaines', () => {
+    const sessions = [
+      session('a', '2026-07-01', 'goblet-squat', 12, 10),
+      session('b', '2026-08-01', 'goblet-squat', 16, 10),
+    ]
+    expect(build(data({ sessions }))?.records).toEqual([])
+  })
+
+  it('résumé d’un jour : dayInput permet de relire la séance et les repas', () => {
+    const sessions = [session('a', '2026-10-14', 'goblet-squat', 16, 10)]
+    const m = build(data({ sessions, foodLog: [entry('f', '2026-10-14', 500, 30)] }))
+    expect(m?.dayInput.today).toBe('2026-10-16')
+    expect(m?.dayInput.sessions).toHaveLength(1)
+    expect(m?.dayInput.foodLog).toHaveLength(1)
+  })
+
+  it('texte d’un record de série en temps fixe : « en 45 s »', () => {
+    expect(personalRecordText('reps', 36, 12, 45)).toBe('36 répétitions en 45 s à 12 kg')
+    expect(personalRecordText('reps', 36, undefined, 45)).toBe('36 répétitions en 45 s')
+    expect(personalRecordText('reps', 12, 8)).toBe('12 répétitions à 8 kg')
+  })
+})
+
+describe('R4 : tendance du poids (8 semaines)', () => {
+  const w = (date: string, weightKg: number): WeighIn =>
+    ({ id: date, date, weightKg, createdAt: T0 }) as WeighIn
+
+  it('moins de deux pesées dans la fenêtre : pas de courbe', () => {
+    expect(buildWeightModel([], '2026-10-16', true).trend).toBeNull()
+    expect(buildWeightModel([w('2026-10-15', 73)], '2026-10-16', true).trend).toBeNull()
+    expect(buildWeightModel([w('2026-06-01', 70), w('2026-10-15', 73)], '2026-10-16', true).trend).toBeNull()
+  })
+
+  it('variation de la moyenne 7 j, durée couverte et points relatifs à la première pesée de la fenêtre', () => {
+    const rows = [w('2026-08-21', 71.2), w('2026-09-18', 72), w('2026-10-16', 72.8)]
+    const t = buildWeightModel(rows, '2026-10-16', false).trend
+    expect(t?.firstDate).toBe('2026-08-21')
+    expect(t?.spanDays).toBe(56)
+    expect(t?.changeKg).toBeCloseTo(1.6, 5)
+    expect(t?.points.map((p) => p.day)).toEqual([0, 28, 56])
+    expect(t?.corridorStatus).toBeNull()
+  })
+
+  it('position par rapport au couloir : dans, sous, au-dessus', () => {
+    const base = [w('2026-08-24', 70), w('2026-09-21', 70)]
+    const at = (last: number) =>
+      buildWeightModel([...base, w('2026-10-16', last)], '2026-10-16', true).trend?.corridorStatus
+    // Départ 70 kg le 24 août ; 7,6 semaines plus tard le couloir vaut 71,3 à 72,6 kg (la moyenne 7 j de la
+    // dernière pesée est cette pesée seule : les précédentes sont à plus de 6 jours).
+    expect(at(70)).toBe('below')
+    expect(at(72)).toBe('inside')
+    expect(at(74)).toBe('above')
+  })
+})

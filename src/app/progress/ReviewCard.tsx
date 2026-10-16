@@ -2,22 +2,15 @@ import { useState } from 'react'
 import { dismissReview } from '../../db'
 import { buildReviewMessage } from '../../domain/claude/context'
 import { formatDateFr, addDays } from '../../domain/shared/dates'
-import { Button, Card, ErrorNote, Section, formatSignedKg } from '../../ui'
+import { formatSignedKg } from '../../ui'
+import { Button, Card, StatTile } from '../../ui/kit'
 import type { WeeklyReview } from '../../types'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { reviewData } from '../claude/inputs'
+import { Note, ScreenSection, Unit } from './parts'
 import { formatNumber, personalRecordText } from './progressModel'
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 flex-1">
-      <dt className="text-xs text-zinc-400">{label}</dt>
-      <dd className="m-0 mt-1 text-xl font-bold tabular-nums">{value}</dd>
-    </div>
-  )
-}
-
-/** Carte du lundi : bilan de la semaine écoulée. `names` : nom d'un exercice (supprimés compris). */
+/** Carte du lundi : bilan de la semaine écoulée. `nameOf` : nom d'un exercice (supprimés compris). */
 export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (id: string) => string }) {
   const [error, setError] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -32,55 +25,103 @@ export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (
       setBusy(false)
     }
   }
+  const unit = (text: string) => <Unit> {text}</Unit>
   return (
-    <Section title="Bilan de la semaine">
-      <Card aria-label="Bilan de la semaine écoulée">
-        <p className="mb-3 text-sm text-zinc-400">
+    <ScreenSection title="Bilan de la semaine">
+      <Card
+        aria-label="Bilan de la semaine écoulée"
+        padding="none"
+        className="flex flex-col gap-3 px-[18px] py-4"
+      >
+        <p className="m-0 text-caption text-ink-muted">
           Du {formatDateFr(review.weekStart, 'long')} au {formatDateFr(addDays(review.weekStart, 6), 'long')}
         </p>
-        <dl className="m-0 grid grid-cols-2 gap-3">
-          <Stat label="Séances" value={`${review.sessions} / ${review.plannedSessions}`} />
-          <Stat label="Minutes" value={`${formatNumber(review.minutes)} min`} />
-          <Stat
+        <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+          <StatTile align="start" label="Séances" value={`${review.sessions} / ${review.plannedSessions}`} />
+          <StatTile
+            align="start"
+            label="Minutes"
+            value={
+              <>
+                {formatNumber(review.minutes)}
+                {unit('min')}
+              </>
+            }
+          />
+          <StatTile
+            align="start"
             label="Poids (moyenne 7 j)"
-            value={review.weightChangeKg === null ? '—' : `${formatSignedKg(review.weightChangeKg)} kg`}
+            value={
+              review.weightChangeKg === null ? (
+                '—'
+              ) : (
+                <>
+                  {formatSignedKg(review.weightChangeKg)}
+                  {unit('kg')}
+                </>
+              )
+            }
           />
-          <Stat label="Jours logués" value={`${n.daysLogged} / 7`} />
-          <Stat
+          <StatTile align="start" label="Jours logués" value={`${n.daysLogged} / 7`} />
+          <StatTile
+            align="start"
             label="Calories moy."
-            value={n.avgKcal === null ? '—' : `${formatNumber(Math.round(n.avgKcal))} kcal`}
+            value={
+              n.avgKcal === null ? (
+                '—'
+              ) : (
+                <>
+                  {formatNumber(Math.round(n.avgKcal))}
+                  {unit('kcal')}
+                </>
+              )
+            }
           />
-          <Stat
+          <StatTile
+            align="start"
             label="Protéines moy."
-            value={n.avgProtein === null ? '—' : `${formatNumber(Math.round(n.avgProtein))} g`}
-          />
-        </dl>
-        <h3 className="mt-4 mb-1 text-base font-semibold text-zinc-300">Records</h3>
-        {review.records.length === 0 ? (
-          <p className="text-sm text-zinc-400">Pas de record cette semaine.</p>
-        ) : (
-          <ul className="m-0 list-disc pl-5 text-base">
-            {review.records.map((r) => (
-              <li key={`${r.exerciseId}-${r.kind}-${r.loadKg ?? 'bw'}`}>
-                {nameOf(r.exerciseId)} : {personalRecordText(r.kind, r.value, r.loadKg)}
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-4 rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2.5 text-base text-orange-100">
-          {review.suggestion.message}
-        </p>
-        {error ? <ErrorNote>Impossible de fermer le bilan. Réessaie.</ErrorNote> : null}
-        <div className="mt-4">
-          <AskClaudeButton
-            kind="review"
-            build={(base) => buildReviewMessage({ ...base, ...reviewData(review, nameOf) })}
+            value={
+              n.avgProtein === null ? (
+                '—'
+              ) : (
+                <>
+                  {formatNumber(Math.round(n.avgProtein))}
+                  {unit('g')}
+                </>
+              )
+            }
           />
         </div>
-        <Button className="mt-3" variant="secondary" onClick={() => void close()} disabled={busy}>
+        <div className="flex flex-col gap-1 border-t border-line pt-3">
+          <h3 className="m-0 text-label uppercase text-ink-muted">Records</h3>
+          {review.records.length === 0 ? (
+            <Note className="text-caption">Pas de record cette semaine.</Note>
+          ) : (
+            <ul className="m-0 list-disc pl-5 text-body">
+              {review.records.map((r) => (
+                <li key={`${r.exerciseId}-${r.kind}-${r.loadKg ?? 'bw'}-${r.windowSec ?? '-'}`}>
+                  {nameOf(r.exerciseId)} : {personalRecordText(r.kind, r.value, r.loadKg, r.windowSec)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <p className="m-0 rounded-ds-md bg-ember-soft px-3.5 py-3 text-body text-ink">
+          {review.suggestion.message}
+        </p>
+        {error ? (
+          <p role="alert" className="m-0 text-body font-semibold text-critical">
+            Impossible de fermer le bilan. Réessaie.
+          </p>
+        ) : null}
+        <AskClaudeButton
+          kind="review"
+          build={(base) => buildReviewMessage({ ...base, ...reviewData(review, nameOf) })}
+        />
+        <Button variant="secondary" fullWidth onClick={() => void close()} disabled={busy}>
           Fermer
         </Button>
       </Card>
-    </Section>
+    </ScreenSection>
   )
 }
