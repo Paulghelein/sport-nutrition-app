@@ -250,6 +250,7 @@ export function toRecipeInput(recipe: Recipe | LibraryRecipe): RecipeInput {
     steps: [...recipe.steps],
   }
   if (recipe.fridgeDays !== undefined) input.fridgeDays = recipe.fridgeDays
+  if (recipe.servingUnit !== undefined) input.servingUnit = recipe.servingUnit
   return input
 }
 

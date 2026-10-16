@@ -54,7 +54,7 @@ function toDraft(food: Food | undefined, pre: Prefill): Draft {
 
 type Parsed = { ok: true; input: FoodInput } | { ok: false; error: string }
 
-function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean): Parsed {
+function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean, packageG?: number): Parsed {
   const required = (text: string): number => (text.trim() === '' ? Number.NaN : parseDecimal(text))
   const kcal = required(d.kcal)
   const protein = required(d.protein)
@@ -85,6 +85,8 @@ function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean): Parsed {
   if (fiber !== undefined) input.per100g.fiber = fiber
   if (portion !== undefined) input.defaultPortionG = portion
   if (aisle !== undefined) input.aisle = aisle
+  // Contenance du paquet (scan) : pas encore de champ dans ce formulaire (R3), on la garde.
+  if (packageG !== undefined) input.packageG = packageG
   const message = checkFoodInput(input)
   return message === null ? { ok: true, input } : { ok: false, error: message }
 }
@@ -110,7 +112,7 @@ function FoodForm({
   const scanPath = `/nutrition/scanner${search}`
 
   const save = async () => {
-    const parsed = parseDraft(draft, food?.aisle, food?.ean !== undefined)
+    const parsed = parseDraft(draft, food?.aisle, food?.ean !== undefined, food?.packageG)
     if (!parsed.ok) {
       setError(parsed.error)
       return

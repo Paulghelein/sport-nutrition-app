@@ -59,6 +59,7 @@ const muscleGroup = z.enum([
   'calves',
 ])
 const feeling = z.enum(['easy', 'ok', 'hard'])
+const setType = z.enum(['reps', 'time', 'amrap', 'timedMax'])
 const sessionDuration = z.union([z.literal(20), z.literal(30), z.literal(45), z.literal(60)])
 
 export const profileSchema = z.strictObject({
@@ -153,11 +154,14 @@ export const exerciseStateSchema = z.strictObject({
   recentFeelings: z.array(feeling),
   topStreak: num.int().nonnegative().optional(),
   tempo: z.boolean().optional(),
+  timedMaxBestReps: num.int().min(0).max(1000).optional(),
+  timedMaxSec: num.min(10).max(600).optional(),
   lastPerformedOn: localDate.optional(),
   updatedAt: isoDateTime,
 }) satisfies z.ZodType<ExerciseState>
 
 const setEntry = z.strictObject({
+  setType: setType.optional(),
   targetReps: range.optional(),
   targetDurationSec: num.optional(),
   loadKg: num.optional(),
@@ -227,6 +231,8 @@ export const sessionTemplateSchema = z.strictObject({
       durationSec: num.optional(),
       loadKg: num.optional(),
       restSec: num,
+      setType: setType.optional(),
+      lastSetAmrap: z.boolean().optional(),
     }),
   ),
   createdAt: isoDateTime,
@@ -242,6 +248,7 @@ export const foodSchema = z.strictObject({
   brand: str.optional(),
   per100g,
   defaultPortionG: num.optional(),
+  packageG: num.positive().max(5000).optional(),
   aisle: aisle.optional(),
   favorite: z.boolean(),
   lastUsedAt: isoDateTime.optional(),
@@ -253,6 +260,7 @@ export const recipeSchema = z.strictObject({
   name: str,
   meal: z.array(mealSlot),
   servings: num,
+  servingUnit: str.trim().min(1).max(24).optional(),
   prepMinutes: num,
   cookMinutes: num,
   fridgeDays: num.optional(),

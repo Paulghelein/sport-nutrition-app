@@ -111,6 +111,13 @@ export interface ExerciseState {
   topStreak?: number
   /** Tempo 3-1-1 proposé et accepté (charge max atteinte sans variante disponible). */
   tempo?: boolean
+  /**
+   * F3 : meilleur nombre de répétitions en série `timedMax` à la charge actuelle (`loadKg`) et sur la fenêtre
+   * `timedMaxSec` ; remis à zéro quand la charge ou la fenêtre change. Absent = jamais fait en `timedMax`.
+   */
+  timedMaxBestReps?: number
+  /** F3 : fenêtre (secondes) du record `timedMaxBestReps`. */
+  timedMaxSec?: number
   lastPerformedOn?: LocalDate
   updatedAt: IsoDateTime
 }
@@ -119,8 +126,24 @@ export type SessionDuration = 20 | 30 | 45 | 60
 
 export type SessionStatus = 'planned' | 'in_progress' | 'done' | 'abandoned'
 
+/**
+ * Type d'une série (v2, F3) :
+ * - `reps` : répétitions dans une fourchette (`targetReps`) ;
+ * - `time` : durée tenue (`targetDurationSec`, gainage et portés) ;
+ * - `amrap` : max de répétitions à l'échec technique (`targetReps` = fourchette de référence, `actualReps` = le max) ;
+ *   poids du corps seulement (`loadType: 'bodyweight'`), dernière série d'un exercice, au plus un exercice par séance,
+ *   jamais sur un exercice balistique (`finisher`) ni `learnUnloaded` ;
+ * - `timedMax` : le plus de répétitions en `targetDurationSec` secondes (`actualReps`) ; finishers seulement.
+ * Champ optionnel : absent = `time` si `targetDurationSec` est présent sans `targetReps`, sinon `reps`
+ * (séances et sauvegardes antérieures à la v2). Lire avec `setTypeOf` (src/domain/training).
+ */
+export type SetType = 'reps' | 'time' | 'amrap' | 'timedMax'
+
 export interface SetEntry {
+  /** Absent = déduit (voir `SetType`). */
+  setType?: SetType
   targetReps?: Range
+  /** Durée visée (`time`) ou fenêtre de la série (`timedMax`). */
   targetDurationSec?: number
   loadKg?: number
   /**
@@ -220,6 +243,10 @@ export interface TemplateBlock {
   durationSec?: number
   loadKg?: number
   restSec: number
+  /** F3 : type de toutes les séries (`timedMax` pour un finisher en temps fixe) ; absent = déduit comme `SetEntry`. */
+  setType?: SetType
+  /** F3 : dernière série en `amrap` ; absent = non. */
+  lastSetAmrap?: boolean
 }
 
 export interface SessionTemplate {

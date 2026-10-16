@@ -65,6 +65,7 @@ export function isCiqualOverrideModified(food: Food, original: CiqualFood): bool
     a.fat !== b.fat ||
     a.fiber !== b.fiber ||
     food.defaultPortionG !== undefined ||
+    food.packageG !== undefined ||
     food.brand !== undefined ||
     food.aisle !== undefined
   )

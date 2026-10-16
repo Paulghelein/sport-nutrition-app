@@ -1,6 +1,6 @@
 // Tables de la base et fichier de sauvegarde (SPEC §5).
 import type { IsoDateTime } from './common'
-import type { FoodLogEntry, Food, FridgeItem, Recipe, ShoppingList } from './nutrition'
+import type { FoodLogEntry, Food, FridgeItem, PhotoMime, Recipe, ShoppingList } from './nutrition'
 import type { Equipment, Measurement, Profile, WeighIn } from './profile'
 import type { Settings } from './settings'
 import type { Exercise, ExercisePref, ExerciseState, Session, SessionTemplate } from './training'
@@ -50,6 +50,17 @@ export interface BackupFile {
   schemaVersion: number
   exportedAt: IsoDateTime
   tables: { [K in TableName]: TableRows[K][] }
+  /** v3 (F6) : photos des produits scannés, hors `tables` (un Blob n'est pas du JSON). Absent = aucune photo. */
+  photos?: BackupPhoto[]
+}
+
+/** Photo de `FoodPhoto` dans le fichier de sauvegarde. */
+export interface BackupPhoto {
+  foodId: string
+  mime: PhotoMime
+  /** Contenu en base64 (sans préfixe `data:`). */
+  base64: string
+  fetchedAt: IsoDateTime
 }
 
 /**

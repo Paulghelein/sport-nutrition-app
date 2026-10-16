@@ -1,6 +1,13 @@
 // Règles métier uniques, partagées par la saisie (UI, repositories) et l'import de sauvegarde.
 // Fonctions pures : elles renvoient un message français affichable tel quel, ou `null` si tout est valide.
 // `today` est toujours fourni par l'appelant.
+import {
+  MAX_INGREDIENT_GRAMS,
+  MAX_RECIPE_NAME_LENGTH,
+  MAX_RECIPE_SERVINGS,
+  MAX_SERVING_UNIT_LENGTH,
+  SERVING_UNIT_MESSAGE,
+} from '../domain/nutrition/limits'
 import { isAllowedCoachUrl } from '../domain/claude/coachUrl'
 import { ageOn, isValidLocalDate } from '../domain/shared/dates'
 import { FAT_SHARE_RANGE, PROTEIN_PER_KG_RANGE, SURPLUS_RANGE } from '../domain/nutrition/targets'
@@ -273,6 +280,11 @@ export function checkFoodInput(f: FoodInput): string | null {
       return `La portion habituelle doit être comprise entre 0 et ${MAX_PORTION_G} g.`
     }
   }
+  if (f.packageG !== undefined) {
+    if (!Number.isFinite(f.packageG) || f.packageG <= 0 || f.packageG > MAX_PORTION_G) {
+      return `La contenance du paquet doit être comprise entre 0 et ${MAX_PORTION_G} g.`
+    }
+  }
   if (f.ean !== undefined && f.ean.trim() !== '' && !EAN_PATTERN.test(f.ean.trim())) {
     return 'Le code-barres doit contenir 8, 12 ou 13 chiffres.'
   }
@@ -399,12 +411,9 @@ export function checkTemplate(t: Pick<SessionTemplate, 'name' | 'blocks'>): stri
 
 // ---------- Recettes, frigo, courses (J6) ----------
 
-export const MAX_RECIPE_NAME_LENGTH = 120
-export const MAX_RECIPE_SERVINGS = 50
 export const MAX_RECIPE_MINUTES = 600
 export const MIN_FRIDGE_DAYS = 1
 export const MAX_FRIDGE_DAYS = 14
-export const MAX_INGREDIENT_GRAMS = 10000
 export const MAX_FRIDGE_PORTIONS = 1000
 export const MAX_SHOPPING_GRAMS = 1000000
 
@@ -416,6 +425,12 @@ export function validateRecipeInput(r: RecipeInput): string | null {
     return `Le nom ne peut pas dépasser ${MAX_RECIPE_NAME_LENGTH} caractères.`
   }
   if (r.meal.length === 0) return 'Choisis au moins un repas pour la recette.'
+  if (r.servingUnit !== undefined) {
+    const unit = r.servingUnit.trim()
+    if (unit.length < 1 || unit.length > MAX_SERVING_UNIT_LENGTH) {
+      return SERVING_UNIT_MESSAGE
+    }
+  }
   if (!Number.isInteger(r.servings) || r.servings < 1 || r.servings > MAX_RECIPE_SERVINGS) {
     return `Le nombre de portions doit être un entier entre 1 et ${MAX_RECIPE_SERVINGS}.`
   }

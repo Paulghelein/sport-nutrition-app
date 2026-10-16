@@ -1,16 +1,20 @@
 // Export / import de la sauvegarde JSON (SPEC §5).
 import { addDays, toLocalDate } from '../domain/shared/dates'
 import { SINGLETON_ID, TABLE_NAMES } from '../types'
+import { z } from 'zod'
 import type {
   BackupFile,
+  BackupPhoto,
   ImportMode,
   ImportReport,
   IsoDateTime,
   LocalDate,
+  PhotoMime,
   TableName,
   TableRows,
 } from '../types'
 import { shoppingKey } from '../domain/nutrition/shopping'
+import { MAX_PHOTO_BYTES, PHOTO_MIMES } from '../domain/nutrition/limits'
 import { DB_SCHEMA_VERSION, applyV2SeedFlag, db } from './database'
 import { weekStartOf } from '../domain/progress/regularity'
 import { defaultSettings } from './defaults'
@@ -45,19 +49,75 @@ function emptyCounts(): TableCounts {
   return Object.fromEntries(TABLE_NAMES.map((t) => [t, 0])) as TableCounts
 }
 
-/** Lit toutes les tables dans une transaction de lecture cohérente. */
+// ---------- Photos (v3) : ArrayBuffer <-> base64 portable (navigateur, jsdom, Node) ----------
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  const CHUNK = 0x8000
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
+  }
+  return btoa(binary)
+}
+
+/** Copie dans un `ArrayBuffer` autonome (la vue peut partager un tampon plus grand). */
+function bytesToBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+const BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
+
+/** Taille décodée d'une chaîne base64 valide (sans la décoder). */
+function decodedSize(base64: string): number {
+  const pad = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0
+  return (base64.length / 4) * 3 - pad
+}
+
+const backupPhotoSchema = z.strictObject({
+  foodId: z.string().min(1),
+  mime: z.custom<PhotoMime>((v) => (PHOTO_MIMES as readonly unknown[]).includes(v), { error: 'format non pris en charge' }),
+  base64: z
+    .string()
+    .min(4)
+    .refine((b) => BASE64_PATTERN.test(b), { error: 'base64 invalide' })
+    .refine((b) => decodedSize(b) <= MAX_PHOTO_BYTES, { error: 'photo trop lourde (300 ko maximum)' }),
+  fetchedAt: z.string().refine((s) => !Number.isNaN(Date.parse(s)) && /^\d{4}-\d{2}-\d{2}T/.test(s), {
+    error: 'date-heure invalide',
+  }),
+})
+
+/**
+ * Lit toutes les tables (et les photos) dans une transaction de lecture cohérente. Seules des lectures Dexie ont lieu
+ * dans la transaction (aucun await non-Dexie) ; l'encodage base64 se fait après. Les photos dont l'aliment n'existe plus sont ignorées (le fichier reste réimportable).
+ */
 export async function exportBackup(now: IsoDateTime): Promise<BackupFile> {
-  return db.transaction('r', backupTables(), async () => {
+  const { entries, photoRows } = await db.transaction('r', [...backupTables(), db.foodPhotos], async () => {
     const entries = await Promise.all(
       TABLE_NAMES.map(async (name) => [name, await db.table(name).toArray()] as const),
     )
-    return {
-      app: 'forge',
-      schemaVersion: DB_SCHEMA_VERSION,
-      exportedAt: now,
-      tables: Object.fromEntries(entries) as BackupFile['tables'],
-    }
+    const photoRows = await db.foodPhotos.toArray()
+    return { entries, photoRows }
   })
+  const tables = Object.fromEntries(entries) as BackupFile['tables']
+  const foodIds = new Set(tables.foods.map((f) => f.id))
+  const photos: BackupPhoto[] = []
+  for (const p of photoRows) {
+    if (!foodIds.has(p.foodId)) continue
+    photos.push({
+      foodId: p.foodId,
+      mime: p.mime,
+      base64: bytesToBase64(new Uint8Array(p.bytes)),
+      fetchedAt: p.fetchedAt,
+    })
+  }
+  return { app: 'forge', schemaVersion: DB_SCHEMA_VERSION, exportedAt: now, tables, photos }
 }
 
 /** À appeler par l'UI après un partage réussi (met à jour le rappel hebdomadaire). */
@@ -76,6 +136,8 @@ export interface RawBackup {
   schemaVersion: number
   exportedAt: string
   tables: Record<string, unknown>
+  /** v3 : photos (validées par `parseBackup`). */
+  photos?: unknown
 }
 
 /**
@@ -108,6 +170,7 @@ function fillShoppingKeys(raw: RawBackup): RawBackup {
 /**
  * Point d'extension : met à niveau une sauvegarde créée par une version antérieure du schéma
  * (appelée AVANT la validation des lignes, avec `schemaVersion` = version du fichier).
+ * v2 → v3 : rien à transformer (photos optionnelles, champs optionnels) ; une v1/v2 n'a pas de `photos`.
  * v1 → v2 : pose les drapeaux `finisher` / `learnUnloaded` manquants sur les surcharges `seed` (`V2_SEED_FLAGS`) ;
  * le reste (table `ciqual` hors sauvegarde, champs optionnels) ne demande rien.
  */
@@ -124,7 +187,7 @@ export function migrateBackup(input: RawBackup): RawBackup {
 }
 
 export type ParseResult =
-  { ok: true; backup: BackupFile; summary: TableCounts } | { ok: false; errors: string[] }
+  { ok: true; backup: BackupFile; summary: TableCounts; photoCount: number } | { ok: false; errors: string[] }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -209,7 +272,16 @@ export function parseBackup(text: string, today: LocalDate = toLocalDate(new Dat
     return { ok: false, errors: ['Le champ « tables » est invalide.'] }
   }
 
-  const raw = migrateBackup({ app: 'forge', schemaVersion, exportedAt, tables: rawTables })
+  if (json.photos !== undefined && (schemaVersion < 3 || !Array.isArray(json.photos))) {
+    return { ok: false, errors: ['Le champ « photos » est invalide.'] }
+  }
+  const raw = migrateBackup({
+    app: 'forge',
+    schemaVersion,
+    exportedAt,
+    tables: rawTables,
+    ...(json.photos !== undefined ? { photos: json.photos } : {}),
+  })
 
   const errors: string[] = []
   const push = (message: string) => {
@@ -271,6 +343,31 @@ export function parseBackup(text: string, today: LocalDate = toLocalDate(new Dat
     summary[name] = valid.length
   }
 
+  // Photos : chacune doit se rattacher à un aliment du fichier (un export contient toujours tous les aliments) ;
+  // une photo orpheline est une erreur, pas ignorée en silence. Un foodId en double est refusé.
+  const photos: BackupPhoto[] = []
+  if (Array.isArray(raw.photos)) {
+    const foodIds = new Set((tables.foods ?? []).map((f) => (f as { id: string }).id))
+    const seenPhotos = new Set<string>()
+    raw.photos.forEach((p: unknown, index: number) => {
+      const parsed = backupPhotoSchema.safeParse(p)
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) push(`Photos, ligne ${index + 1}${describeIssue(issue)}.`)
+        return
+      }
+      if (!foodIds.has(parsed.data.foodId)) {
+        push(`Photos, ligne ${index + 1} : aucun aliment du fichier (« ${parsed.data.foodId} »).`)
+        return
+      }
+      if (seenPhotos.has(parsed.data.foodId)) {
+        push(`Photos, ligne ${index + 1} : photo en double (« ${parsed.data.foodId} »).`)
+        return
+      }
+      seenPhotos.add(parsed.data.foodId)
+      photos.push(parsed.data)
+    })
+  }
+
   if (errors.length > 0) return { ok: false, errors }
   return {
     ok: true,
@@ -279,8 +376,10 @@ export function parseBackup(text: string, today: LocalDate = toLocalDate(new Dat
       schemaVersion: raw.schemaVersion,
       exportedAt: raw.exportedAt,
       tables: tables as unknown as BackupFile['tables'],
+      ...(raw.photos !== undefined ? { photos } : {}),
     },
     summary,
+    photoCount: photos.length,
   }
 }
 
@@ -321,14 +420,14 @@ export async function importBackup(
   now: IsoDateTime = new Date().toISOString(),
 ): Promise<ImportReport> {
   const counts = emptyCounts()
-  await db.transaction('rw', backupTables(), async () => {
+  await db.transaction('rw', [...backupTables(), db.foodPhotos], async () => {
     // La version Ciqual locale décrit la table `ciqual` de CET appareil : jamais reprise du fichier.
     const localSettings = await db.settings.get(SINGLETON_ID)
     const localCiqualVersion = localSettings?.ciqualVersion
     const localReviewWeek = localSettings?.reviewDismissedWeek
     if (mode === 'replace') {
       // La table `ciqual` n'est pas vidée (données de référence).
-      await Promise.all(backupTables().map((t) => t.clear()))
+      await Promise.all([...backupTables(), db.foodPhotos].map((t) => t.clear()))
     } else {
       // weighIns a un index unique sur `date` : une pesée importée à une date déjà prise
       // sous un autre id remplace l'existante.
@@ -360,6 +459,18 @@ export async function importBackup(
       }
       if (rows.length > 0) await db.table(name).bulkPut(rows)
       counts[name] = rows.length
+    }
+    // Photos : un fichier sans `photos` (v1/v2) vide les photos en replace (tous les aliments sont remplacés) et n'y
+    // touche pas en merge ; avec `photos`, chaque foodId du fichier est écrit (remplace la photo locale en merge).
+    if (backup.photos && backup.photos.length > 0) {
+      await db.foodPhotos.bulkPut(
+        backup.photos.map((p) => ({
+          foodId: p.foodId,
+          mime: p.mime,
+          bytes: bytesToBuffer(base64ToBytes(p.base64)),
+          fetchedAt: p.fetchedAt,
+        })),
+      )
     }
     const hasProfile = (await db.profile.count()) > 0
     const settings = await db.settings.get(SINGLETON_ID)

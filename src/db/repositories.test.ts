@@ -51,8 +51,8 @@ afterEach(() => {
 })
 
 describe('database / defaults', () => {
-  it('déclare les 15 tables sauvegardées, la table ciqual et la version 2', () => {
-    expect(DB_SCHEMA_VERSION).toBe(2)
+  it('déclare les 15 tables sauvegardées, la table ciqual, foodPhotos et la version 3', () => {
+    expect(DB_SCHEMA_VERSION).toBe(3)
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       [
         'profile',
@@ -71,6 +71,7 @@ describe('database / defaults', () => {
         'shoppingLists',
         'settings',
         'ciqual',
+        'foodPhotos',
       ].sort(),
     )
   })

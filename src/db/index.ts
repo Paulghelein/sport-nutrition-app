@@ -75,6 +75,7 @@ export {
 export {
   commitImport,
   createRecipe,
+  createRecipeWithFridge,
   deleteFridgeItem,
   deleteRecipe,
   deleteShoppingList,
@@ -96,7 +97,15 @@ export {
 // `./claude` (applyClaudeSelection) n'est pas réexporté : importé directement par l'écran de réponse (chargé à la demande).
 export { PROGRESS_FOOD_DAYS, loadProgressData } from './progress'
 export type { ProgressData } from './progress'
-export { cacheOffFood, findFoodByEan } from './foods-off'
+export {
+  cacheOffFood,
+  cacheOffFoodWithPhoto,
+  deleteFoodPhoto,
+  findFoodByEan,
+  getFoodPhoto,
+  getFoodPhotos,
+  saveFoodPhoto,
+} from './foods-off'
 export type {
   MeasurementInput,
   MeasurementPatch,
@@ -120,9 +129,6 @@ export {
   MAX_DURATION_SEC,
   MAX_FOOD_NAME_LENGTH,
   MAX_FRIDGE_DAYS,
-  MAX_INGREDIENT_GRAMS,
-  MAX_RECIPE_NAME_LENGTH,
-  MAX_RECIPE_SERVINGS,
   MAX_TEMPLATE_NAME_LENGTH,
   MAX_TEMPLATE_SETS,
   MAX_EXERCISE_NAME_LENGTH,

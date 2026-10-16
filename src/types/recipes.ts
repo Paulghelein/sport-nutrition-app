@@ -175,3 +175,47 @@ export interface ImportOutcome {
   /** Entrées de journal créées (macros figées). */
   entries: FoodLogEntry[]
 }
+
+// ---------- F4 : recette par scan ----------
+
+/**
+ * Ingrédient en cours de saisie dans « Recette par scan » : un produit scanné (aliment `off-<ean>` ou aliment perso
+ * portant cet EAN), un aliment perso ou un aliment Ciqual cherché. Converti en `RecipeIngredient` à la création
+ * (`foodId` pour un aliment de la table `foods`, `ciqualCode` pour Ciqual ; macros jamais stockées).
+ */
+export interface ScanIngredient {
+  /** Clé locale stable dans la liste (pas un id de base). */
+  key: string
+  name: string
+  grams: number
+  /** `scan` = produit trouvé par code-barres ; `food` = aliment perso cherché ; `ciqual` = aliment Ciqual. */
+  origin: 'scan' | 'food' | 'ciqual'
+  foodId?: Id
+  ciqualCode?: string
+  aisle: Aisle
+  /** Contenance du paquet (`Food.packageG`) : propose « paquet entier ». */
+  packageG?: number
+  /** Vrai tant que `grams === packageG` après le choix « paquet entier » (affiché « scanné · paquet entier »). */
+  wholePackage?: boolean
+}
+
+/** Brouillon de l'écran « Recette par scan ». */
+export interface ScanRecipeDraft {
+  name: string
+  /** Nombre de portions que donne la recette (≥ 1, entier). */
+  servings: number
+  /** Unité libre (« muffins ») ; vide = « portions ». */
+  servingUnit: string
+  meal: MealSlot[]
+  ingredients: ScanIngredient[]
+}
+
+/**
+ * Création en une transaction (`createRecipeWithFridge`, src/db/recipes.ts) : la recette perso, puis, si
+ * `fridgePortions > 0`, une ligne frigo de `fridgePortions` portions préparée le `preparedOn`.
+ */
+export interface RecipeWithFridgeInput {
+  recipe: RecipeInput
+  fridgePortions: number
+  preparedOn: LocalDate
+}

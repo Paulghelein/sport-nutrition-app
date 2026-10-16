@@ -1,5 +1,5 @@
 // Scan de code-barres et Open Food Facts (J7, SPEC §4.4).
-import type { Per100g } from './nutrition'
+import type { Per100g, PhotoMime } from './nutrition'
 
 /** Code-barres normalisé (chiffres seuls, clé de contrôle vérifiée) : EAN-8 ou EAN-13 ; un UPC-A (12) est converti en EAN-13 (`0` + code) pour unifier le cache. */
 export type Ean = string
@@ -15,6 +15,16 @@ export interface OffProduct {
   per100g: Per100g
   /** `serving_quantity` en grammes quand il est cohérent (> 0, ≤ 1000) : portion proposée à la saisie. */
   servingG?: number
+  /** F4 : `product_quantity` en grammes quand l'unité est le gramme et la valeur cohérente (> 0, ≤ 5000). */
+  packageG?: number
+  /** F6 : `image_front_small_url`, seulement si HTTPS sur un hôte Open Food Facts (`*.openfoodfacts.org`). */
+  imageUrl?: string
+}
+
+/** Photo récupérée par `fetchOffPhoto` (image ≤ 300 ko, type `image/*` jpeg/png/webp), ou `null` en cas d'échec. */
+export interface OffPhoto {
+  mime: PhotoMime
+  blob: Blob
 }
 
 /**

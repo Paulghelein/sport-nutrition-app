@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { lookupOff, normalizeEan, offProductToFood, offProductUrl, parseOffProduct } from './off'
+import type { OffProduct } from '../../types/scan'
+import { isPhotoMime, PHOTO_MIMES } from './limits'
+import { fetchOffPhoto, lookupOff, normalizeEan, offProductToFood, offProductUrl, parseOffProduct } from './off'
 
 const EAN = '3017620422003'
 
@@ -186,5 +188,119 @@ describe('lookupOff', () => {
     const f = ((_u: unknown, init?: RequestInit) =>
       init?.signal?.aborted ? Promise.reject(new DOMException('a', 'AbortError')) : Promise.resolve(jsonResponse(full))) as typeof fetch
     expect(await lookupOff(EAN, f, { signal: ac.signal })).toMatchObject({ status: 'error', message: 'Recherche annulée.' })
+  })
+})
+
+describe('OFF : paquet et photo', () => {
+  const withProduct = (extra: Record<string, unknown>) => ({ ...full, product: { ...full.product, ...extra } })
+  const parse = (extra: Record<string, unknown>) => {
+    const r = parseOffProduct(EAN, withProduct(extra))
+    return r.status === 'found' ? r.product : null
+  }
+  it('packageG : g ou unité absente, bornes, ml ignoré', () => {
+    expect(parse({ product_quantity: '250' })?.packageG).toBe(250)
+    expect(parse({ product_quantity: 500, product_quantity_unit: 'g' })?.packageG).toBe(500)
+    expect(parse({ product_quantity: 500, product_quantity_unit: 'ml' })?.packageG).toBeUndefined()
+    expect(parse({ product_quantity: 1.5, product_quantity_unit: 'kg' })?.packageG).toBe(1500)
+    expect(parse({ product_quantity: 6, product_quantity_unit: 'kg' })?.packageG).toBeUndefined()
+    for (const u of ['cl', 'l']) expect(parse({ product_quantity: 5, product_quantity_unit: u })?.packageG).toBeUndefined()
+    expect(parse({ product_quantity: 0 })?.packageG).toBeUndefined()
+    expect(parse({ product_quantity: 5001 })?.packageG).toBeUndefined()
+    expect(parse({ product_quantity: 5000 })?.packageG).toBe(5000)
+    expect(parse({})?.packageG).toBeUndefined()
+  })
+  it('imageUrl : HTTPS sur openfoodfacts.org uniquement', () => {
+    const ok = 'https://images.openfoodfacts.org/images/products/301/front_fr.100.400.jpg'
+    expect(parse({ image_front_small_url: ok })?.imageUrl).toBe(ok)
+    expect(parse({ image_front_small_url: 'https://static.openfoodfacts.org/a.jpg' })?.imageUrl).toBeDefined()
+    for (const bad of ['http://images.openfoodfacts.org/a.jpg', 'https://evilopenfoodfacts.org/a.jpg', 'https://openfoodfacts.org.evil.com/a.jpg', 'https://images.openfoodfacts.org:8443/a.jpg', 'https://openfoodfacts.org/a.jpg', 'https://world.openfoodfacts.org/a.jpg', 'https://user@images.openfoodfacts.org/a.jpg', 'nope', 42]) {
+      expect(parse({ image_front_small_url: bad })?.imageUrl).toBeUndefined()
+    }
+  })
+  it('offProductToFood reporte packageG', () => {
+    const r = parse({ product_quantity: 250 })
+    expect(offProductToFood(r as OffProduct, 'now').packageG).toBe(250)
+  })
+  it('OFF_FIELDS demande les nouveaux champs', () => {
+    expect(offProductUrl(EAN)).toContain('product_quantity,product_quantity_unit,image_front_small_url')
+  })
+
+  const URL_OK = 'https://images.openfoodfacts.org/a.jpg'
+  const img = (size: number, type = 'image/jpeg', status = 200, headers: Record<string, string> = {}) =>
+    (async () => new Response(new Uint8Array(size), { status, headers: { 'content-type': type, ...headers } })) as typeof fetch
+  it('fetchOffPhoto : succès et options de requête', async () => {
+    let init: RequestInit | undefined
+    const f = (async (_u: unknown, i?: RequestInit) => {
+      init = i
+      return new Response(new Uint8Array(1000), { headers: { 'content-type': 'image/webp; charset=x' } })
+    }) as typeof fetch
+    const p = await fetchOffPhoto(URL_OK, f)
+    expect(p?.mime).toBe('image/webp')
+    expect(p?.blob.size).toBe(1000)
+    expect(init).toMatchObject({ credentials: 'omit', referrerPolicy: 'no-referrer' })
+  })
+  it('fetchOffPhoto : refus', async () => {
+    expect(await fetchOffPhoto('https://evil.com/a.jpg', img(10))).toBeNull()
+    expect(await fetchOffPhoto('http://images.openfoodfacts.org/a.jpg', img(10))).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, img(10, 'image/jpeg', 404))).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, img(10, 'image/svg+xml'))).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, img(10, 'text/html'))).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, img(300 * 1024 + 1))).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, img(10, 'image/png', 200, { 'content-length': '999999' }))).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, img(0))).toBeNull()
+    expect((await fetchOffPhoto(URL_OK, img(300 * 1024)))?.blob.size).toBe(300 * 1024)
+  })
+  it('packageG : kg converti, cl ignoré, unité G acceptée sans casse', () => {
+    expect(parse({ product_quantity: 1, product_quantity_unit: 'kg' })?.packageG).toBe(1000)
+    expect(parse({ product_quantity: 33, product_quantity_unit: 'cl' })?.packageG).toBeUndefined()
+    expect(parse({ product_quantity: 250, product_quantity_unit: 'G' })?.packageG).toBe(250)
+  })
+  it('fetchOffPhoto : redirection refusée (redirect error) et rejet réseau -> null', async () => {
+    let init: RequestInit | undefined
+    const f = (async (_u: unknown, i?: RequestInit) => {
+      init = i
+      throw new TypeError('redirect mode is set to error')
+    }) as typeof fetch
+    expect(await fetchOffPhoto(URL_OK, f)).toBeNull()
+    expect(init?.redirect).toBe('error')
+  })
+  it('fetchOffPhoto : abandonne le flux dès que la limite est dépassée', async () => {
+    let pulled = 0
+    let cancelled = false
+    const stream = new ReadableStream<Uint8Array>({
+      pull(c) {
+        pulled++
+        c.enqueue(new Uint8Array(100 * 1024))
+      },
+      cancel() {
+        cancelled = true
+      },
+    })
+    const f = (async () => new Response(stream, { headers: { 'content-type': 'image/png' } })) as typeof fetch
+    expect(await fetchOffPhoto(URL_OK, f)).toBeNull()
+    expect(cancelled).toBe(true)
+    expect(pulled).toBeLessThan(10)
+  })
+  it('fetchOffPhoto : sans flux, blob() seulement si Content-Length présent', async () => {
+    const mk = (headers: Record<string, string>) =>
+      (async () => {
+        const r = new Response(new Uint8Array(10), { headers: { 'content-type': 'image/png', ...headers } })
+        Object.defineProperty(r, 'body', { value: null })
+        return r
+      }) as typeof fetch
+    expect(await fetchOffPhoto(URL_OK, mk({}))).toBeNull()
+    expect((await fetchOffPhoto(URL_OK, mk({ 'content-length': '10' })))?.blob.size).toBe(10)
+  })
+  it('isPhotoMime', () => {
+    expect(PHOTO_MIMES.every(isPhotoMime)).toBe(true)
+    expect(isPhotoMime('image/gif')).toBe(false)
+    expect(isPhotoMime(3)).toBe(false)
+  })
+  it('fetchOffPhoto : réseau, délai, signal : null sans lever', async () => {
+    expect(await fetchOffPhoto(URL_OK, (async () => { throw new TypeError('x') }) as typeof fetch)).toBeNull()
+    expect(await fetchOffPhoto(URL_OK, (() => new Promise<Response>(() => undefined)) as typeof fetch, { timeoutMs: 20 })).toBeNull()
+    const ac = new AbortController()
+    ac.abort()
+    expect(await fetchOffPhoto(URL_OK, img(10), { signal: ac.signal })).toBeNull()
   })
 })

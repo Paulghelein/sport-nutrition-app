@@ -271,3 +271,14 @@ describe('recettes de départ', () => {
     expect(problems).toEqual([])
   })
 })
+
+describe('servingUnit', () => {
+  it('toRecipeInput le recopie et recipeContentEquals le voit changer', () => {
+    const base = { ...(SEED_RECIPES[0] as Recipe), servingUnit: 'muffins' }
+    const a = toRecipeInput(base)
+    expect(a.servingUnit).toBe('muffins')
+    expect(recipeContentEquals(a, toRecipeInput({ ...base, servingUnit: 'boîtes' }))).toBe(false)
+    expect(recipeContentEquals(a, toRecipeInput(base))).toBe(true)
+    expect('servingUnit' in toRecipeInput({ ...base, servingUnit: undefined })).toBe(false)
+  })
+})

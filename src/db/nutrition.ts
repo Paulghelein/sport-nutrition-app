@@ -79,6 +79,7 @@ function applyFoodInput(base: Food, input: FoodInput, now: IsoDateTime): Food {
   }
   delete row.brand
   delete row.defaultPortionG
+  delete row.packageG
   delete row.aisle
   const brand = input.brand?.trim()
   if (brand) row.brand = brand
@@ -88,6 +89,7 @@ function applyFoodInput(base: Food, input: FoodInput, now: IsoDateTime): Food {
     if (input.ean.trim()) row.ean = input.ean.trim()
   }
   if (input.defaultPortionG !== undefined) row.defaultPortionG = input.defaultPortionG
+  if (input.packageG !== undefined) row.packageG = input.packageG
   if (input.aisle !== undefined) row.aisle = input.aisle
   if (!foodSchema.safeParse(row).success)
     throw new ValidationError('Aliment invalide : vérifie les champs saisis.')
@@ -101,6 +103,7 @@ function sameFoodContent(a: Food, b: Food): boolean {
       f.brand ?? null,
       f.ean ?? null,
       f.defaultPortionG ?? null,
+      f.packageG ?? null,
       f.aisle ?? null,
       [f.per100g.kcal, f.per100g.protein, f.per100g.carbs, f.per100g.fat, f.per100g.fiber ?? null],
     ])
@@ -173,7 +176,10 @@ export async function deleteFood(food: Food): Promise<void> {
   if (food.source === 'ciqual') {
     throw new ValidationError('Un aliment Ciqual ne peut pas être supprimé ; rétablis l’original à la place.')
   }
-  await db.foods.delete(food.id)
+  await db.transaction('rw', [db.foods, db.foodPhotos], async () => {
+    await db.foods.delete(food.id)
+    await db.foodPhotos.delete(food.id)
+  })
 }
 
 /**
@@ -185,10 +191,11 @@ export async function restoreCiqualFood(
   opts: { keepFavorite?: boolean } = {},
   now: IsoDateTime = nowIso(),
 ): Promise<void> {
-  await db.transaction('rw', [db.foods, db.ciqual], async () => {
+  await db.transaction('rw', [db.foods, db.ciqual, db.foodPhotos], async () => {
     const row = await db.foods.get(id)
     if (row?.source !== 'ciqual') return
     await db.foods.delete(id)
+    await db.foodPhotos.delete(id)
     if (opts.keepFavorite === true && row.favorite) {
       const original = await db.ciqual.get(id)
       if (original) {

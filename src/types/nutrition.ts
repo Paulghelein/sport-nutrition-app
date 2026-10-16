@@ -33,6 +33,8 @@ export interface Food {
   per100g: Per100g
   /** Portion habituelle proposée à la saisie. */
   defaultPortionG?: number
+  /** F4 : contenance du paquet en grammes (OFF `product_quantity`), pour le raccourci « paquet entier ». */
+  packageG?: number
   aisle?: Aisle
   favorite: boolean
   /** Non utilisé : les récents sont dérivés du journal (`QuickItem`). Conservé pour les sauvegardes. */
@@ -55,6 +57,11 @@ export interface Recipe {
   name: string
   meal: MealSlot[]
   servings: number
+  /**
+   * F4 : unité libre d'une portion (« muffins », « boîtes ») ; absente = « portions ». Trimée, 1–24 caractères,
+   * au pluriel tel que saisi.
+   */
+  servingUnit?: string
   prepMinutes: number
   cookMinutes: number
   fridgeDays?: number
@@ -66,6 +73,26 @@ export interface Recipe {
   deleted?: boolean
   favorite?: boolean
   updatedAt: IsoDateTime
+}
+
+/** Types d'image acceptés pour une photo de produit (scan, stockage, sauvegarde). */
+export type PhotoMime = 'image/jpeg' | 'image/png' | 'image/webp'
+
+/**
+ * F6 : photo d'un produit Open Food Facts (`image_front_small_url`), récupérée au moment du scan et stockée pour
+ * l'usage hors ligne. Table Dexie `foodPhotos` (v3), hors `TableRows` : la sauvegarde l'exporte à part, en base64
+ * (`BackupFile.photos`). Supprimée avec l'aliment.
+ */
+export interface FoodPhoto {
+  /** Clé primaire : id de l'aliment (`off-<ean>`). */
+  foodId: Id
+  mime: PhotoMime
+  /**
+   * Octets de l'image. `ArrayBuffer` plutôt que `Blob` : WebKit refuse les Blob dans IndexedDB en session éphémère
+   * (navigation privée, Playwright) ; l'écran recrée un Blob (`new Blob([bytes], { type: mime })`) pour l'afficher.
+   */
+  bytes: ArrayBuffer
+  fetchedAt: IsoDateTime
 }
 
 /** Portions préparées au frigo, décrémentées quand on en logue une. */
@@ -226,5 +253,7 @@ export interface FoodInput {
   ean?: string
   per100g: Per100g
   defaultPortionG?: number
+  /** F4 : contenance du paquet en grammes (raccourci « paquet entier »). */
+  packageG?: number
   aisle?: Aisle
 }

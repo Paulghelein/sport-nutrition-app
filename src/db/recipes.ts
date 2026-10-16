@@ -9,9 +9,11 @@ import type {
   LibraryRecipe,
   Recipe,
   RecipeInput,
+  RecipeWithFridgeInput,
   ShoppingList,
 } from '../types'
-import { recipeContentEquals, toRecipeInput } from '../domain/nutrition/recipes'
+import { fridgeItemFromPrep, recipeContentEquals, toRecipeInput } from '../domain/nutrition/recipes'
+import { isValidLocalDate } from '../domain/shared/dates'
 import { db } from './database'
 import { fail, newId, nowIso } from './helpers'
 import { addLogEntries } from './nutrition'
@@ -61,6 +63,8 @@ function buildRecipeRow(
     updatedAt: now,
   }
   if (input.fridgeDays !== undefined) row.fridgeDays = input.fridgeDays
+  // Unité vide après trim : conservée telle quelle pour que la validation la refuse.
+  if (input.servingUnit !== undefined) row.servingUnit = input.servingUnit.trim()
   if (favorite !== undefined) row.favorite = favorite
   if (validate) fail(validateRecipeInput(row))
   if (!recipeSchema.safeParse(row).success) {
@@ -73,6 +77,37 @@ export async function createRecipe(input: RecipeInput, now: IsoDateTime = nowIso
   const row = buildRecipeRow(newId(), 'user', input, now, false)
   await db.recipes.add(row)
   return row
+}
+
+/**
+ * F4 : recette personnelle + ligne de frigo (`fridgePortions` portions préparées le `preparedOn`, péremption
+ * `fridgeDays ?? DEFAULT_FRIDGE_DAYS` via `fridgeItemFromPrep`) en UNE transaction : tout ou rien.
+ * `fridgePortions` = 0 : pas de ligne de frigo ; il ne peut dépasser `servings`.
+ */
+export async function createRecipeWithFridge(
+  input: RecipeWithFridgeInput,
+  now: IsoDateTime = nowIso(),
+): Promise<{ recipe: Recipe; fridgeItem?: FridgeItem }> {
+  const portions = input.fridgePortions
+  if (!Number.isInteger(portions) || portions < 0) {
+    throw new ValidationError('Le nombre de portions au frigo doit être un entier positif ou nul.')
+  }
+  if (portions > input.recipe.servings) {
+    throw new ValidationError('Le frigo ne peut pas contenir plus de portions que la recette.')
+  }
+  if (portions > 0 && !isValidLocalDate(input.preparedOn)) throw new ValidationError('Date de préparation invalide.')
+  const recipe = buildRecipeRow(newId(), 'user', input.recipe, now, false)
+  const fridgeItem =
+    portions > 0
+      ? checkFridge(
+          fridgeItemFromPrep({ recipeId: recipe.id, portions, preparedOn: input.preparedOn }, recipe, newId()),
+        )
+      : undefined
+  await db.transaction('rw', [db.recipes, db.fridge], async () => {
+    await db.recipes.add(recipe)
+    if (fridgeItem) await db.fridge.add(fridgeItem)
+  })
+  return fridgeItem ? { recipe, fridgeItem } : { recipe }
 }
 
 /**

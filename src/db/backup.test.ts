@@ -446,18 +446,19 @@ describe('sauvegarde v2 (Ciqual, bornes J4/J5)', () => {
     return r.errors.join('\n')
   }
 
-  it('exporte en schemaVersion 2 sans la table ciqual', async () => {
+  it('exporte en schemaVersion 3 sans la table ciqual', async () => {
     await db.ciqual.put(ciqualRow)
     const b = await exportBackup(NOW)
-    expect(b.schemaVersion).toBe(2)
+    expect(b.schemaVersion).toBe(3)
     expect(Object.keys(b.tables)).not.toContain('ciqual')
     expect(JSON.stringify(b)).not.toContain('ciqual-1"')
   })
 
-  it('importe une sauvegarde v1 et v2, refuse la v3', () => {
+  it('importe une sauvegarde v1, v2 et v3, refuse la v4', () => {
     expect(parseBackup(JSON.stringify(wrapV(1)), '2026-03-01').ok).toBe(true)
     expect(parseBackup(JSON.stringify(wrapV(2)), '2026-03-01').ok).toBe(true)
-    expect(errorsOf(wrapV(3))).toMatch(/plus récente/)
+    expect(parseBackup(JSON.stringify(wrapV(3)), '2026-03-01').ok).toBe(true)
+    expect(errorsOf(wrapV(4))).toMatch(/plus récente/)
   })
 
   it('migrateBackup v1 → v2 : identité sans exercices, drapeaux posés sinon', () => {

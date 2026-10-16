@@ -1,7 +1,9 @@
 // Open Food Facts (J7, SPEC §4.4) : seul appel réseau de l'app. Parsing défensif, sans dépendance lourde.
 import type { IsoDateTime } from '../../types/common'
-import type { Food, Per100g } from '../../types/nutrition'
-import type { Ean, OffLookupResult, OffProduct } from '../../types/scan'
+import type { Food, Per100g, PhotoMime } from '../../types/nutrition'
+import type { Ean, OffLookupResult, OffPhoto, OffProduct } from '../../types/scan'
+
+import { MAX_PHOTO_BYTES, isPhotoMime } from './limits'
 
 /** Limite de `checkFoodInput` (src/db/validation.ts, MAX_FOOD_NAME_LENGTH). */
 const MAX_NAME_LENGTH = 80
@@ -50,6 +52,38 @@ function text(v: unknown): string {
 
 const KJ_PER_KCAL = 4.184
 
+const MAX_PACKAGE_G = 5000
+
+/**
+ * `product_quantity` en grammes. Unité absente, `g` ou `kg` (×1000) seulement : une contenance en `ml`, `cl` ou `l` (boissons, huiles) est
+ * ignorée, car la densité est inconnue et « paquet entier » donnerait des grammes faux. 0 < v <= 5000.
+ */
+function parsePackageG(product: Json): number | undefined {
+  const unit = text(product.product_quantity_unit).toLowerCase()
+  if (unit !== '' && unit !== 'g' && unit !== 'kg') return undefined
+  const raw = toNumber(product.product_quantity)
+  const q = raw !== undefined && unit === 'kg' ? raw * 1000 : raw
+  return q !== undefined && q > 0 && q <= MAX_PACKAGE_G ? q : undefined
+}
+
+const OFF_IMAGE_HOSTS: readonly string[] = ['images.openfoodfacts.org', 'static.openfoodfacts.org']
+
+/** URL HTTPS (port par défaut, sans identifiants) sur `images.` ou `static.openfoodfacts.org` ; sinon undefined. */
+function safeOffImageUrl(v: unknown): string | undefined {
+  const raw = text(v)
+  if (raw === '') return undefined
+  let u: URL
+  try {
+    u = new URL(raw)
+  } catch {
+    return undefined
+  }
+  const host = u.hostname.toLowerCase()
+  if (u.protocol !== 'https:' || u.username !== '' || u.password !== '') return undefined
+  if (u.port !== '' || !OFF_IMAGE_HOSTS.includes(host)) return undefined
+  return u.href
+}
+
 /** Extrait un produit d'une réponse `GET /api/v2/product/{ean}.json`. Ne renvoie jamais `cached`. */
 export function parseOffProduct(ean: Ean, json: unknown): Exclude<OffLookupResult, { status: 'cached' }> {
   if (!isObject(json)) return { status: 'not_found', ean }
@@ -96,6 +130,10 @@ export function parseOffProduct(ean: Ean, json: unknown): Exclude<OffLookupResul
   if (brand) out.brand = brand
   const serving = toNumber(product.serving_quantity)
   if (serving !== undefined && serving > 0 && serving <= 1000) out.servingG = serving
+  const packageG = parsePackageG(product)
+  if (packageG !== undefined) out.packageG = packageG
+  const imageUrl = safeOffImageUrl(product.image_front_small_url)
+  if (imageUrl !== undefined) out.imageUrl = imageUrl
   return { status: 'found', product: out }
 }
 
@@ -112,10 +150,11 @@ export function offProductToFood(product: OffProduct, now: IsoDateTime): Food {
   }
   if (product.brand) food.brand = product.brand
   if (product.servingG !== undefined) food.defaultPortionG = product.servingG
+  if (product.packageG !== undefined) food.packageG = product.packageG
   return food
 }
 
-const OFF_FIELDS = 'code,product_name,product_name_fr,generic_name,brands,nutriments,serving_quantity'
+const OFF_FIELDS = 'code,product_name,product_name_fr,generic_name,brands,nutriments,serving_quantity,product_quantity,product_quantity_unit,image_front_small_url'
 
 export function offProductUrl(ean: Ean): string {
   return `https://world.openfoodfacts.org/api/v2/product/${ean}.json?fields=${OFF_FIELDS}`
@@ -177,6 +216,81 @@ export async function lookupOff(
     if (timedOut) return fail(MSG_DOWN)
     if (signal?.aborted) return fail('Recherche annulée.')
     return fail(MSG_OFFLINE)
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
+  }
+}
+
+// ---------- Photo du produit (F6) ----------
+
+/** Corps de la réponse en `Blob`, lu par morceaux : null dès que `MAX_PHOTO_BYTES` est dépassé (repli `blob()` sans body, seulement si `Content-Length` est présent). */
+async function readLimited(res: Response, mime: PhotoMime): Promise<Blob | null> {
+  if (res.body === null || typeof res.body.getReader !== 'function') {
+    // Sans flux, on ne lit le blob que si la taille est annoncée (et déjà contrôlée) : sinon rien ne borne la mémoire.
+    if (res.headers.get('content-length') === null) return null
+    const blob = await res.blob()
+    return blob.size > 0 && blob.size <= MAX_PHOTO_BYTES ? blob : null
+  }
+  const reader = res.body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > MAX_PHOTO_BYTES) {
+      await reader.cancel().catch(() => undefined)
+      return null
+    }
+    chunks.push(value)
+  }
+  return size > 0 ? new Blob(chunks as BlobPart[], { type: mime }) : null
+}
+
+/**
+ * Télécharge la photo d'un produit (`OffProduct.imageUrl`). Revérifie l'URL (HTTPS, hôte OFF), lit le corps par morceaux et abandonne au-delà de la limite, refuse un statut
+ * hors 2xx, un type hors jpeg/png/webp, plus de 300 ko (en-tête puis taille réelle) ou une redirection (qui
+ * pourrait quitter l'hôte OFF). Ne lève jamais : `null` en cas d'échec, la photo étant facultative.
+ */
+export async function fetchOffPhoto(
+  url: string,
+  fetchFn: typeof fetch,
+  opts: LookupOptions = {},
+): Promise<OffPhoto | null> {
+  const safe = safeOffImageUrl(url)
+  if (safe === undefined) return null
+  const { timeoutMs = 8000, signal } = opts
+  const controller = new AbortController()
+  const onAbort = (): void => controller.abort()
+  if (signal?.aborted) return null
+  signal?.addEventListener('abort', onAbort, { once: true })
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => {
+      controller.abort()
+      resolve(null)
+    }, timeoutMs)
+  })
+  try {
+    const work = (async (): Promise<OffPhoto | null> => {
+      const res = await fetchFn(safe, {
+        signal: controller.signal,
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+        redirect: 'error',
+      })
+      if (!res.ok) return null
+      const mime = (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? ''
+      if (!isPhotoMime(mime)) return null
+      const declared = Number(res.headers.get('content-length'))
+      if (Number.isFinite(declared) && declared > MAX_PHOTO_BYTES) return null
+      const blob = await readLimited(res, mime)
+      return blob === null ? null : { mime, blob }
+    })().catch(() => null)
+    return await Promise.race([work, timeout])
+  } catch {
+    return null
   } finally {
     clearTimeout(timer)
     signal?.removeEventListener('abort', onAbort)

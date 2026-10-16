@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-  MAX_FRIDGE_DAYS,
-  MAX_RECIPE_NAME_LENGTH,
-  createRecipe,
-  updateRecipe,
-  validateRecipeInput,
-} from '../../db'
+import { MAX_FRIDGE_DAYS, createRecipe, updateRecipe, validateRecipeInput } from '../../db'
+import { MAX_RECIPE_NAME_LENGTH } from '../../domain/nutrition/limits'
 import {
   AISLE_LABELS,
   AISLE_ORDER,

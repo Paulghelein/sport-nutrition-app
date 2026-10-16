@@ -1,11 +1,11 @@
 // Base Dexie unique de l'app (SPEC §5). Toute modification du schéma = nouvelle version + migration.
 import Dexie from 'dexie'
 import type { EntityTable } from 'dexie'
-import type { CiqualFood, TableRows } from '../types'
+import type { CiqualFood, FoodPhoto, TableRows } from '../types'
 
 export const DB_NAME = 'forge'
 /** Version courante du schéma ; écrite dans les sauvegardes (`BackupFile.schemaVersion`). */
-export const DB_SCHEMA_VERSION = 2
+export const DB_SCHEMA_VERSION = 3
 
 /**
  * Instantané de migration (v1 → v2) : exercices de départ qui portent un drapeau depuis J4. Une surcharge `seed`
@@ -51,6 +51,9 @@ export class AppDB extends Dexie {
   /** Données de référence Ciqual (v2) : hors `TableRows` / `TABLE_NAMES`, donc hors sauvegarde. */
   ciqual!: EntityTable<CiqualFood, 'id'>
 
+  /** Photos des produits Open Food Facts (v3, F6) : hors `TableRows` ; exportées à part (`BackupFile.photos`). */
+  foodPhotos!: EntityTable<FoodPhoto, 'foodId'>
+
   constructor(name: string = DB_NAME) {
     super(name)
     this.version(1).stores({
@@ -85,6 +88,11 @@ export class AppDB extends Dexie {
             applyV2SeedFlag(row)
           }),
       )
+    // Version 3 (F3, F4, F6) : ajoute la table `foodPhotos`. Les nouveaux champs (setType, timedMax*, packageG,
+    // servingUnit...) sont optionnels : aucune transformation de données.
+    this.version(3).stores({
+      foodPhotos: 'foodId',
+    })
   }
 }
 

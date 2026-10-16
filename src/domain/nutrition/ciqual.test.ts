@@ -110,6 +110,9 @@ describe('isCiqualOverrideModified', () => {
     expect(isCiqualOverrideModified(base, orig)).toBe(false)
     expect(isCiqualOverrideModified({ ...base, favorite: true }, orig)).toBe(false)
   })
+  it('packageG défini -> vrai', () => {
+    expect(isCiqualOverrideModified({ ...base, packageG: 500 }, orig)).toBe(true)
+  })
   it('chaque champ modifié -> vrai', () => {
     expect(isCiqualOverrideModified({ ...base, name: 'Poulet' }, orig)).toBe(true)
     for (const k of ['kcal', 'protein', 'carbs', 'fat', 'fiber'] as const) {
