@@ -11,7 +11,8 @@ R0 — Fondations UI : terminé le 2026-10-16 (validé sans retour, « RAS » su
 R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16**.
 Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
 (domain/nutrition, src/db) et F5 (domain/claude) — **fait le 2026-10-16** (eeb548d, afc94c4, c5a56c3) ; (2) écrans R2
-et R4 en parallèle — en cours ; (3) R3 écrans ensuite ; R5 en dernier.
+et R4 en parallèle — **faits le 2026-10-16** (R4 853e602, R2 e759e74), **à valider sur iPhone** ; (3) R3 écrans
+nutrition ensuite (session suivante) ; R5 en dernier.
 
 ## Décisions prises
 
@@ -76,6 +77,24 @@ et R4 en parallèle — en cours ; (3) R3 écrans ensuite ; R5 en dernier.
 - 2026-10-16 (F5) : `extractVideoLink` = premier lien https **valide** du texte, pistage retiré sans réencoder la query ;
   message vidéo : profil réduit aux objectifs du jour, commentaire puis un seul objet `recipe`, captures demandées plutôt
   qu'une recette inventée, fidélité à la vidéo sauf demande contraire.
+
+- 2026-10-16 (R2) : mode séance = utilitaire `ds-session` (fond inverse) ; translucides par `on-inverse/6…18` (pas de
+  nouveau jeton). Composants de séance du kit (SetPanel, RestTimer, ExerciseRow, SessionProgress, Fields, ConfirmSheet…)
+  importés par chemin direct, seuls leurs types sont dans le barrel (sinon chunk `kit` du démarrage alourdi).
+  L'interface ne crée jamais de série max : remplacer/ajouter un exercice dans l'aperçu donne des séries normales.
+  « Commencer la séance » → « Démarrer », « Difficile » → « Dur ». −15 s / +15 s / Passer inactifs 600 ms (double tap
+  sur le ressenti). Chronos en `role="timer"` silencieux, fin annoncée par `role="status"`. Compte à rebours du temps
+  fixe lancé par un tap, « Saisir sans chrono » possible ; il ne survit pas à un rechargement (comme le chrono v1).
+  Barre d'onglets gardée sous l'aperçu. Case « Peut finir par une série max » : poids du corps en reps, hors finisher.
+- 2026-10-16 (R4) : CalendarHeatmap/DaySummarySheet hors barrel (même raison). Cases ≈ 22×19 px (maquette, 84 cases) :
+  zone tactile étendue de 2 px + boutons jour précédent/suivant ≥ 44 px dans le résumé (alternative WCAG). Journée en
+  cours exclue du % nutrition et affichée « Journée en cours » (pas « Hors cible »). « Ce mois » = mois calendaire ;
+  % nutrition = jours évalués (journal non vide, objectif connu) sur 12 semaines. `loadCalendarData` ne borne que le
+  journal (séances/pesées/exercices lus en entier : records et série). Jeton `--text-micro` (10 px). WeightSheet et
+  MeasurementSheet déplacés dans `src/app/forms/` (encore v1). `PROGRESS_FOOD_DAYS` 35 → 84.
+- 2026-10-16 (process) : les agents n'utilisent plus `git add/mv/rm` (un `git mv` dans l'index partagé est parti dans le
+  commit F3 et a cassé le build de main, réparé en e0e1895 ; le site en ligne n'a pas été touché). Jalons parallèles
+  committés séparément depuis une copie de travail isolée.
 
 - 2026-10-15 : stack et architecture fixées (voir CLAUDE.md, docs/SPEC.md).
 - 2026-10-15 : utilisateur homme (formule BMR homme).
@@ -244,6 +263,11 @@ et R4 en parallèle — en cours ; (3) R3 écrans ensuite ; R5 en dernier.
 
 ## Fait
 
+- R2 Entraînement (2026-10-16) : aperçu restylé, mode séance sombre (Série, Repos), séries max et temps fixe dans
+  l'interface, écrans d'entraînement en clair. R4 Progrès (2026-10-16) : calendrier 12 semaines + résumé du jour
+  (aussi depuis Aujourd'hui), 3 chiffres, cartes restylées. Moteur F3, F4 + photo OFF (Dexie v3), F5. Total : 1963 tests
+  Vitest, 100 e2e. Entrée + chunks préchargés (js + css) : 591 kB / 181 kB gzip (180,7 kB avant R2/R4).
+
 - R1 Navigation + Aujourd'hui (2026-10-16) : routes v2 et redirections `/seance/*`, barre d'onglets flottante,
   feuille Ajouter branchée sur toutes les saisies existantes, écran Aujourd'hui (Ta semaine / Séance du jour /
   calories), WeekStrip, `sessionHeadline` (F1) et `dayActivities` (F2). Corrigé au passage : StickyStack qui montait
@@ -295,6 +319,20 @@ et R4 en parallèle — en cours ; (3) R3 écrans ensuite ; R5 en dernier.
   en chunks à la demande).
 
 ## À faire ensuite
+
+- **Valider R2 + R4 sur iPhone**, puis R3 (écrans nutrition : journal restylé, FoodRow + photos OFF, recette par scan,
+  recette d'une vidéo ; la feuille + remplace les entrées provisoires de « Créer »).
+- À vérifier sur iPhone (R2) : lisibilité à 1 m (panneaux 64 px, repos 76 px), une main, petit écran (SE) ; bip de fin
+  du temps fixe en mode silencieux ; série max avec la consigne d'arrêt ; Facile/Correct/Dur en un tap ; aperçu avec la
+  barre d'onglets sous Modifier/Démarrer ; fond sombre sans bande claire au rebond ; feuilles claires sur le mode séance.
+- À vérifier sur iPhone (R4) : cases du calendrier au doigt ; jours de « Ta semaine » ouvrant le résumé ; calendrier
+  juste sur l'historique réel (niveaux, record le bon jour, point nutrition) ; courbe de poids et couloir, toucher ;
+  chiffres de tête ; défilement sous la barre flottante.
+- Remarques reportées (R2/R4, pour R5) : AskClaudeButton et sa feuille en v1 sombre (aperçu, Progrès) ; ErrorBoundary
+  v1 ; WeightSheet/MeasurementSheet (src/app/forms) en champs v1 hors garde-fou couleurs ; tailles en dur dans
+  guidedViews (`text-[28px]`…) ; chrono de série en durée / compte à rebours non repris après rechargement ;
+  `ExerciseRecords` sans record timedMax (historique de force) ; seuil timedMax (haut de fourchette) à ajuster après
+  essai ; `dayActivities` O(R × H) (≈ 5 ms en usage réel) ; ordre des cartes de Progrès (bilan/sauvegarde en tête).
 
 - Remarques reportées (R1) : WeekCard charge tout `loadProgressData` pour 7 jours (requête limitée en R4) ;
   `dayActivities` en O(R × H) pour les records (passage chronologique unique en R4 si lent) ; pesée depuis + : si
