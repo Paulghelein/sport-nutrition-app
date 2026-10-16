@@ -1,10 +1,9 @@
 import { Suspense, lazy, useState } from 'react'
-import { listWeighIns } from '../../db'
-import { weightSummary } from '../../domain/progress/weight'
-import { formatDateFr, toLocalDate } from '../../domain/shared'
-import { Button, Card, ErrorBoundary, ErrorNote, Section, formatKg, formatSignedKg, useLiveQuery } from '../../ui'
+import { formatDateFr } from '../../domain/shared'
+import { Button, Card, ErrorBoundary, Section, formatKg, formatSignedKg } from '../../ui'
 import type { WeighIn } from '../../types'
 import { WeightSheet } from './WeightSheet'
+import type { WeightModel } from './progressModel'
 
 // Recharts est lourd : chargé seulement à l'ouverture de l'onglet Progrès.
 const WeightChart = lazy(() => import('./WeightChart').then((m) => ({ default: m.WeightChart })))
@@ -21,14 +20,10 @@ function Stat({ label, value, unit }: { label: string; value: string; unit?: str
   )
 }
 
-export function WeightSection() {
-  const { data: weighIns, error } = useLiveQuery(() => listWeighIns(), [])
+/** Affiche seulement : données et couloir viennent de `buildWeightModel` (modèle de l'écran Progrès). */
+export function WeightSection({ weight }: { weight: WeightModel }) {
   const [sheet, setSheet] = useState<{ weighIn: WeighIn | null } | null>(null)
-
-  const today = toLocalDate(new Date())
-  const rows = weighIns ?? []
-  const summary = weightSummary(rows, today)
-  const recentFirst = [...rows].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  const { summary, corridor, recent: rows } = weight
 
   return (
     <Section
@@ -39,9 +34,7 @@ export function WeightSection() {
         </Button>
       }
     >
-      {error ? <ErrorNote>Impossible de lire les pesées.</ErrorNote> : null}
-
-      {weighIns && rows.length === 0 ? (
+      {rows.length === 0 ? (
         <Card>
           <p className="text-base text-zinc-300">
             Aucune pesée pour l’instant. Ajoute ta première pesée pour voir ta courbe apparaître.
@@ -53,8 +46,16 @@ export function WeightSection() {
         <>
           <Card>
             <dl className="m-0 flex gap-3">
-              <Stat label="Dernière pesée" value={summary.latest ? formatKg(summary.latest.weightKg) : '—'} unit="kg" />
-              <Stat label="Moyenne 7 j" value={summary.avg7d !== null ? formatKg(summary.avg7d) : '—'} unit="kg" />
+              <Stat
+                label="Dernière pesée"
+                value={summary.latest ? formatKg(summary.latest.weightKg) : '—'}
+                unit="kg"
+              />
+              <Stat
+                label="Moyenne 7 j"
+                value={summary.avg7d !== null ? formatKg(summary.avg7d) : '—'}
+                unit="kg"
+              />
               <Stat
                 label="Variation 7 j"
                 value={summary.change7dKg !== null ? formatSignedKg(summary.change7dKg) : '—'}
@@ -62,14 +63,16 @@ export function WeightSection() {
               />
             </dl>
             {summary.latest ? (
-              <p className="mt-2 text-xs text-zinc-400">Dernière pesée le {formatDateFr(summary.latest.date, 'long')}</p>
+              <p className="mt-2 text-xs text-zinc-400">
+                Dernière pesée le {formatDateFr(summary.latest.date, 'long')}
+              </p>
             ) : null}
           </Card>
 
           <Card className="mt-3 px-2">
             <ErrorBoundary>
               <Suspense fallback={<div className="h-64" aria-busy="true" />}>
-                <WeightChart weighIns={rows} />
+                <WeightChart model={weight} />
               </Suspense>
             </ErrorBoundary>
             <p className="mt-1 flex items-center justify-center gap-4 text-xs text-zinc-400">
@@ -79,12 +82,24 @@ export function WeightSection() {
               <span className="flex items-center gap-1.5">
                 <span aria-hidden="true" className="h-1 w-4 rounded-full bg-orange-400" /> Moyenne 7 jours
               </span>
+              {corridor ? (
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden="true" className="h-0 w-4 border-t-2 border-dashed border-emerald-400" />{' '}
+                  Couloir cible
+                </span>
+              ) : null}
             </p>
+            {corridor ? (
+              <p className="mt-1 text-center text-xs text-zinc-400">
+                Couloir : +0,25 à +0,5 % par semaine depuis le {formatDateFr(corridor.date)} (
+                {formatKg(corridor.weightKg)} kg).
+              </p>
+            ) : null}
           </Card>
 
           <h3 className="mt-6 mb-2 text-base font-semibold text-zinc-300">Historique</h3>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
-            {recentFirst.map((w) => (
+            {rows.map((w) => (
               <li key={w.id}>
                 <button
                   type="button"
@@ -106,12 +121,17 @@ export function WeightSection() {
         </>
       ) : null}
 
-      {sheet ? <WeightSheet weighIn={sheet.weighIn} existing={rows} onClose={(deleted) => {
+      {sheet ? (
+        <WeightSheet
+          weighIn={sheet.weighIn}
+          existing={rows}
+          onClose={(deleted) => {
             setSheet(null)
             // La ligne supprimée n'existe plus : le focus va sur « Ajouter une pesée ».
             if (deleted) setTimeout(() => document.getElementById('add-weighin')?.focus(), 0)
           }}
-        /> : null}
+        />
+      ) : null}
     </Section>
   )
 }

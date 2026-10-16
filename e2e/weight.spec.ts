@@ -5,7 +5,10 @@ test('pesées : ajout, remplacement à la même date, modification, suppression'
   const errors = collectErrors(page)
   await page.goto('./')
   await completeOnboarding(page) // pesée 72,5 aujourd'hui
-  await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', { name: 'Progrès' }).click()
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Progrès' })
+    .click()
 
   const today = localDate(0)
   const yesterday = localDate(-1)
@@ -37,7 +40,7 @@ test('pesées : ajout, remplacement à la même date, modification, suppression'
   await expect(page.getByText('72,5')).toHaveCount(0)
 
   // Le résumé se met à jour : dernière pesée = 73,2
-  const stat = page.locator('dl').first()
+  const stat = page.locator('dl', { hasText: 'Dernière pesée' })
   await expect(stat).toContainText('73,2')
 
   // Modification de la pesée d'hier

@@ -5,7 +5,6 @@ import { TabBar, useLiveQuery } from '../ui'
 import { UpdatePrompt } from '../ui/UpdatePrompt'
 import { Onboarding } from './Onboarding'
 import { GUIDED_PATH } from './routes'
-import { ProgressScreen } from './screens/ProgressScreen'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 
@@ -36,6 +35,8 @@ const ShoppingScreen = lazy(() => import('./recipes/ShoppingScreen'))
 const ImportScreen = lazy(() => import('./recipes/ImportScreen'))
 // J7 — scan de code-barres.
 const ScanScreen = lazy(() => import('./scan/ScanScreen'))
+// J8 — page Progrès (Recharts et contenu embarqué hors du démarrage).
+const ProgressScreen = lazy(() => import('./progress/ProgressScreen'))
 
 function Tabs() {
   const mainRef = useRef<HTMLElement>(null)

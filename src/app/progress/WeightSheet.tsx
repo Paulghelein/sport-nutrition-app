@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import { checkWeighIn, deleteWeighIn, updateWeighIn, upsertWeighIn } from '../../db'
 import { formatDateFr, toLocalDate } from '../../domain/shared'
-import { Button, ConfirmSheet, DateField, DecimalField, ErrorNote, Sheet, TextField, errorMessage, parseDecimal, toInputNumber } from '../../ui'
+import {
+  Button,
+  ConfirmSheet,
+  DateField,
+  DecimalField,
+  ErrorNote,
+  Sheet,
+  TextField,
+  errorMessage,
+  parseDecimal,
+  toInputNumber,
+} from '../../ui'
 import type { WeighIn } from '../../types'
 
 interface Props {
@@ -52,7 +63,11 @@ export function WeightSheet({ weighIn, existing, onClose }: Props) {
             date,
             note: trimmed === '' ? undefined : trimmed,
           })
-        : upsertWeighIn({ date, weightKg: parseDecimal(weight), ...(trimmed !== '' ? { note: trimmed } : {}) }),
+        : upsertWeighIn({
+            date,
+            weightKg: parseDecimal(weight),
+            ...(trimmed !== '' ? { note: trimmed } : {}),
+          }),
     )
   }
 
@@ -75,8 +90,12 @@ export function WeightSheet({ weighIn, existing, onClose }: Props) {
         <DecimalField label="Poids" unit="kg" big value={weight} onChange={setWeight} placeholder="72,5" />
         <DateField label="Date" value={date} onChange={setDate} max={today} />
         {clash && !weighIn ? (
-          <p role="status" className="rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2.5 text-sm text-orange-200">
-            Une pesée de {toInputNumber(clash.weightKg)} kg existe déjà le {formatDateFr(date)} : elle sera remplacée.
+          <p
+            role="status"
+            className="rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2.5 text-sm text-orange-200"
+          >
+            Une pesée de {toInputNumber(clash.weightKg)} kg existe déjà le {formatDateFr(date)} : elle sera
+            remplacée.
           </p>
         ) : null}
         <TextField label="Note (facultatif)" value={note} onChange={setNote} maxLength={120} />

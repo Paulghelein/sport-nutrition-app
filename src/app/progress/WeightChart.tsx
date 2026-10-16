@@ -1,11 +1,11 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { weightSeries } from '../../domain/progress/weight'
-import { addDays, daysBetween, formatDateFr } from '../../domain/shared'
+import { addDays, formatDateFr } from '../../domain/shared'
 import { formatKg } from '../../ui'
-import type { WeighIn } from '../../types'
+import type { WeightModel } from './progressModel'
 
 const ORANGE = '#fb923c'
 const ZINC = '#a1a1aa'
+const GREEN = '#34d399'
 
 /** Quatre repères de date régulièrement espacés (jours depuis la première pesée). */
 function ticksFor(span: number): number[] {
@@ -15,18 +15,13 @@ function ticksFor(span: number): number[] {
   return [...new Set(ticks)]
 }
 
-export function WeightChart({ weighIns }: { weighIns: WeighIn[] }) {
-  const series = weightSeries(weighIns)
-  const first = series[0]
-  if (!first) return null
-  const data = series.map((p) => ({
-    day: daysBetween(first.date, p.date),
-    weight: p.weightKg,
-    avg: Math.round(p.avg7d * 100) / 100,
-  }))
+/** Affiche seulement : les données viennent de `buildWeightModel`. */
+export function WeightChart({ model }: { model: WeightModel }) {
+  const { chart: data, firstDate, corridor } = model
+  if (!firstDate) return null
   const span = data[data.length - 1]?.day ?? 0
-  const dateOf = (day: number) => formatDateFr(addDays(first.date, Math.round(day)))
-  const summary = `Courbe de poids : ${series.length} pesée${series.length > 1 ? 's' : ''}, de ${formatKg(Math.min(...data.map((d) => d.weight)))} à ${formatKg(Math.max(...data.map((d) => d.weight)))} kg.`
+  const dateOf = (day: number) => formatDateFr(addDays(firstDate, Math.round(day)))
+  const summary = `Courbe de poids : ${data.length} pesée${data.length > 1 ? 's' : ''}, de ${formatKg(Math.min(...data.map((d) => d.weight)))} à ${formatKg(Math.max(...data.map((d) => d.weight)))} kg.`
 
   return (
     <div role="img" aria-label={summary} className="h-64 w-full">
@@ -51,10 +46,46 @@ export function WeightChart({ weighIns }: { weighIns: WeighIn[] }) {
             allowDecimals={false}
           />
           <Tooltip
-            contentStyle={{ background: '#1e1e27', border: '1px solid #2c2c38', borderRadius: 12, color: '#f4f4f5' }}
+            contentStyle={{
+              background: '#1e1e27',
+              border: '1px solid #2c2c38',
+              borderRadius: 12,
+              color: '#f4f4f5',
+            }}
             labelFormatter={(label) => dateOf(Number(label))}
-            formatter={(value, name) => [`${formatKg(Number(value))} kg`, name === 'avg' ? 'Moyenne 7 j' : 'Pesée']}
+            formatter={(value, name) => [
+              `${formatKg(Number(value))} kg`,
+              name === 'avg'
+                ? 'Moyenne 7 j'
+                : name === 'low'
+                  ? 'Couloir bas'
+                  : name === 'high'
+                    ? 'Couloir haut'
+                    : 'Pesée',
+            ]}
           />
+          {corridor ? (
+            <>
+              <Line
+                dataKey="low"
+                stroke={GREEN}
+                strokeWidth={1.5}
+                strokeDasharray="5 4"
+                dot={false}
+                activeDot={false}
+                isAnimationActive={false}
+              />
+              <Line
+                dataKey="high"
+                stroke={GREEN}
+                strokeWidth={1.5}
+                strokeDasharray="5 4"
+                dot={false}
+                activeDot={false}
+                isAnimationActive={false}
+              />
+            </>
+          ) : null}
           <Line
             type="monotone"
             dataKey="avg"

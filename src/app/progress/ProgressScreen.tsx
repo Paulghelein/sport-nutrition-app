@@ -1,0 +1,46 @@
+import { ErrorNote } from '../../ui'
+import { BackupBanner } from './BackupBanner'
+import { MeasurementsSection } from './MeasurementsSection'
+import { NutritionSection } from './NutritionSection'
+import { RegularitySection } from './RegularitySection'
+import { ReviewCard } from './ReviewCard'
+import { StrengthSection } from './StrengthSection'
+import { VolumeSection } from './VolumeSection'
+import { WeightSection } from './WeightSection'
+import { useProgress } from './useProgress'
+
+/** Écran Progrès (SPEC §8). Chargé en lazy : `export default`. Les composants n'affichent que `useProgress()`. */
+export default function ProgressScreen() {
+  const { model, error } = useProgress()
+
+  return (
+    <>
+      <h1 className="text-3xl font-bold">Progrès</h1>
+      {error ? (
+        <div className="mt-4">
+          <ErrorNote>Impossible de lire tes données de progression.</ErrorNote>
+        </div>
+      ) : null}
+      {model === undefined && !error ? <div className="mt-6 h-64" aria-busy="true" /> : null}
+      {model === null ? (
+        <p className="mt-6 text-base text-zinc-300">Termine d’abord la configuration de ton profil.</p>
+      ) : null}
+      {model ? (
+        <>
+          {model.review ? <ReviewCard review={model.review} nameOf={model.nameOf} /> : null}
+          {model.backup ? <BackupBanner reminder={model.backup} /> : null}
+          <WeightSection weight={model.weight} />
+          <RegularitySection regularity={model.regularity} target={model.regularityTarget} />
+          <StrengthSection model={model} />
+          <VolumeSection volumes={model.volumes} />
+          <NutritionSection
+            week={model.nutrition}
+            hasTargets={model.hasNutritionTargets}
+            daysElapsed={model.nutritionDaysElapsed}
+          />
+          <MeasurementsSection measurements={model.measurements} />
+        </>
+      ) : null}
+    </>
+  )
+}
