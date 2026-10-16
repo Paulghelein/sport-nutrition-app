@@ -38,5 +38,5 @@ export function hidesTabBar(pathname: string): boolean {
 
 /** Seuls les écrans refaits en v2 sont en clair (canvas) ; les autres restent sombres (fond v1). */
 export function usesCanvas(pathname: string): boolean {
-  return pathname === HOME_PATH || under(pathname, PROGRESS_PATH)
+  return pathname === HOME_PATH || under(pathname, PROGRESS_PATH) || under(pathname, TRAINING_PATH)
 }

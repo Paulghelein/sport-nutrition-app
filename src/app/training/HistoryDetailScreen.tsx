@@ -1,21 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { setTypeOf, timedMaxWindowOf } from '../../domain/training'
 import { deleteSession, updateDoneSession } from '../../db'
 import { formatDateFr } from '../../domain/shared'
 import type { Equipment, Session } from '../../types'
-import {
-  Button,
-  Card,
-  ConfirmSheet,
-  DecimalField,
-  ErrorNote,
-  IntegerField,
-  Section,
-  SelectField,
-  errorMessage,
-  linkButtonClass,
-} from '../../ui'
-import { BackLink } from './parts'
+import { errorMessage } from '../../ui'
+import { Button, Card, buttonClass } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { DecimalField, IntegerField, SelectField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { HISTORY_PATH } from '../routes'
+import { BackLink, ScreenTitle, Section } from './parts'
 import { applyDrafts, byDuration, draftKey as key, toDraft } from './sessionDrafts'
 import type { SetDraft } from './sessionDrafts'
 import { SummaryView } from './SummaryView'
@@ -25,7 +20,7 @@ const feelingOptions = [
   { value: '' as const, label: 'Non précisé' },
   { value: 'easy' as const, label: 'Facile' },
   { value: 'ok' as const, label: 'Correct' },
-  { value: 'hard' as const, label: 'Difficile' },
+  { value: 'hard' as const, label: 'Dur' },
 ]
 
 const statusOptions = [
@@ -76,22 +71,23 @@ function Editor({
   }
 
   return (
-    <div className="mt-5">
-      <p className="m-0 rounded-xl border border-v1-line bg-v1-surface px-4 py-3 text-base text-zinc-300">
+    <div className="flex flex-col gap-3.5">
+      <Note tone="warning">
         La correction met à jour l’historique et les records ; elle ne modifie pas ta progression.
-      </p>
+      </Note>
       {session.blocks.map((blk, b) =>
         blk.exercises.map((se, e) => (
           <Section key={key(b, e, 0)} title={names.get(se.exerciseId) ?? se.exerciseId}>
             <div className="flex flex-col gap-3">
               {se.sets.map((set, s) => {
+                const window = timedMaxWindowOf(set)
                 const k = key(b, e, s)
                 const d = drafts[k] as SetDraft
                 const label = `Série ${s + 1}`
                 return (
                   <Card key={k}>
                     <fieldset className="m-0 min-w-0 border-0 p-0">
-                      <legend className="mb-2 p-0 text-base font-bold">
+                      <legend className="mb-2 p-0 text-headline">
                         {names.get(se.exerciseId) ?? se.exerciseId} — {label}
                       </legend>
                       <div className="grid grid-cols-2 gap-3">
@@ -112,7 +108,13 @@ function Editor({
                             />
                           ) : (
                             <IntegerField
-                              label="Répétitions"
+                              label={
+                                setTypeOf(set) === 'amrap'
+                                  ? 'Répétitions (max)'
+                                  : window !== undefined
+                                    ? `Répétitions en ${window} s`
+                                    : 'Répétitions'
+                              }
                               value={d.reps}
                               maxLength={4}
                               onChange={(reps) => patch(k, { reps })}
@@ -147,7 +149,7 @@ function Editor({
         )),
       )}
       <Section title="Notes">
-        <label htmlFor="session-notes" className="mb-1.5 block text-sm font-medium text-zinc-300">
+        <label htmlFor="session-notes" className="mb-1.5 block text-caption text-ink-muted">
           Notes sur la séance
         </label>
         <textarea
@@ -156,15 +158,15 @@ function Editor({
           maxLength={1000}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+          className="focus-ring w-full rounded-ds-md bg-surface px-3.5 py-2.5 text-body text-ink shadow-card"
         />
       </Section>
       <div className="mt-5 flex flex-col gap-3">
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button onClick={() => void save()} disabled={busy}>
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button fullWidth onClick={() => void save()} disabled={busy}>
           Enregistrer les corrections
         </Button>
-        <Button variant="secondary" onClick={onDone} disabled={busy}>
+        <Button variant="secondary" fullWidth onClick={onDone} disabled={busy}>
           Annuler
         </Button>
       </div>
@@ -181,23 +183,21 @@ export default function HistoryDetailScreen() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const back = <BackLink to="/entrainement/historique">Historique</BackLink>
+  const back = <BackLink to={HISTORY_PATH}>Historique</BackLink>
   if (error) {
     return (
-      <section>
+      <section className="flex flex-col gap-4">
         {back}
-        <div className="mt-3">
-          <ErrorNote>Impossible de lire la séance. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
+        <Note tone="error">Impossible de lire la séance. Ferme l’app puis rouvre-la.</Note>
       </section>
     )
   }
   if (notFound) {
     return (
-      <section>
+      <section className="flex flex-col gap-4">
         {back}
-        <h1 className="mt-2 text-3xl font-bold">Séance introuvable</h1>
-        <Link to="/entrainement/historique" className={`${linkButtonClass('primary')} mt-4`}>
+        <ScreenTitle>Séance introuvable</ScreenTitle>
+        <Link to={HISTORY_PATH} className={buttonClass('primary', 'normal', true)}>
           Retour à l’historique
         </Link>
       </section>
@@ -210,7 +210,7 @@ export default function HistoryDetailScreen() {
     setBusy(true)
     try {
       await deleteSession(session.id)
-      navigate('/entrainement/historique', { replace: true })
+      navigate(HISTORY_PATH, { replace: true })
     } catch (e) {
       setConfirm(false)
       setBusy(false)
@@ -219,12 +219,14 @@ export default function HistoryDetailScreen() {
   }
 
   return (
-    <section>
+    <section className="flex flex-col gap-3.5">
       {back}
-      <h1 className="mt-2 text-3xl font-bold">{formatDateFr(session.date, 'long')}</h1>
-      <p className="m-0 mt-1 text-base text-zinc-400">
-        {session.status === 'done' ? 'Séance terminée' : 'Séance abandonnée'}
-      </p>
+      <div className="flex flex-col gap-0.5">
+        <p className="m-0 text-caption text-ink-muted">
+          {session.status === 'done' ? 'Séance terminée' : 'Séance abandonnée'}
+        </p>
+        <ScreenTitle>{formatDateFr(session.date, 'long')}</ScreenTitle>
+      </div>
       {editing ? (
         <Editor session={session} names={data.names} equipment={equipment} onDone={() => setEditing(false)} />
       ) : (
@@ -233,22 +235,18 @@ export default function HistoryDetailScreen() {
           {session.notes ? (
             <Section title="Notes">
               <Card>
-                <p className="m-0 whitespace-pre-wrap text-base">{session.notes}</p>
+                <p className="m-0 whitespace-pre-wrap text-body">{session.notes}</p>
               </Card>
             </Section>
           ) : null}
-          {actionError ? (
-            <div className="mt-5">
-              <ErrorNote>{actionError}</ErrorNote>
-            </div>
-          ) : null}
-          <div className="mt-8 flex flex-col gap-3">
+          {actionError ? <Note tone="error">{actionError}</Note> : null}
+          <div className="mt-4 flex flex-col gap-3">
             {session.status === 'done' ? (
-              <Button variant="secondary" onClick={() => setEditing(true)}>
+              <Button variant="secondary" fullWidth onClick={() => setEditing(true)}>
                 Corriger les séries
               </Button>
             ) : null}
-            <Button variant="danger" onClick={() => setConfirm(true)}>
+            <Button variant="secondary" fullWidth className="text-critical!" onClick={() => setConfirm(true)}>
               Supprimer cette séance
             </Button>
           </div>

@@ -1,3 +1,4 @@
+import { ChevronRight, Plus, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { seedExercises } from '../../content'
@@ -10,14 +11,18 @@ import {
 } from '../../domain/training'
 import type { LibraryFilter } from '../../domain/training'
 import type { LibraryExercise, MovementPattern, TrainingLevel } from '../../types'
-import { Card, ChoiceGroup, ErrorNote, muscleLabel, patternLabel } from '../../ui'
-import type { Choice } from '../../ui'
-import { BackLink, LevelBadge, PreferenceIcon } from './parts'
+import { muscleLabel, patternLabel } from '../../ui'
+import { Card, ExerciseThumb, cx } from '../../ui/kit'
+import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import type { ChoiceOption } from '../../ui/kit/ChoiceGroup'
+import { Note } from '../../ui/kit/Note'
+import { LIBRARY_PATH, TRAINING_PATH } from '../routes'
+import { BackLink, LevelBadge, PreferenceIcon, ScreenTitle, Tag } from './parts'
 import { useLibrary } from './useLibrary'
 
 type LevelFilter = 'all' | TrainingLevel
 
-const levelFilterChoices: Choice<LevelFilter>[] = [
+const levelFilterChoices: ChoiceOption<LevelFilter>[] = [
   { value: 'all', label: 'Tous' },
   { value: 1, label: 'Débutant' },
   { value: 2, label: 'Intermédiaire' },
@@ -26,12 +31,10 @@ const levelFilterChoices: Choice<LevelFilter>[] = [
 
 function Switch({
   label,
-  hint,
   checked,
   onChange,
 }: {
   label: string
-  hint?: string
   checked: boolean
   onChange: (checked: boolean) => void
 }) {
@@ -41,68 +44,51 @@ function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+      className="focus-ring flex min-h-12 w-full items-center justify-between gap-3 rounded-ds-md bg-canvas px-3.5 py-2 text-left"
     >
-      <span className="flex flex-col">
-        <span className="text-base font-medium">{label}</span>
-        {hint ? <span className="text-sm text-zinc-400">{hint}</span> : null}
-      </span>
+      <span className="text-body-strong">{label}</span>
       <span
         aria-hidden="true"
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-400' : 'bg-zinc-600'}`}
+        className={cx(
+          'relative h-7 w-12 shrink-0 rounded-full transition-colors motion-reduce:transition-none',
+          checked ? 'bg-ember' : 'bg-surface-sunken',
+        )}
       >
         <span
-          className={`absolute top-0.5 size-6 rounded-full bg-white transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`}
+          className={cx(
+            'absolute top-0.5 size-6 rounded-full bg-surface-raised shadow-card transition-all motion-reduce:transition-none',
+            checked ? 'left-[22px]' : 'left-0.5',
+          )}
         />
       </span>
     </button>
   )
 }
 
-function ExerciseRow({ ex, missing }: { ex: LibraryExercise; missing: boolean }) {
+function ExerciseListRow({ ex, missing }: { ex: LibraryExercise; missing: boolean }) {
   return (
-    <li>
+    <li className="border-t border-line first:border-t-0">
       <Link
-        to={`/entrainement/exercices/${ex.id}`}
-        className="flex min-h-14 items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface px-4 py-2.5 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+        to={`${LIBRARY_PATH}/${ex.id}`}
+        className="focus-ring flex min-h-14 items-center gap-3 py-2.5 no-underline"
       >
+        <span aria-hidden="true">
+          <ExerciseThumb primary={ex.muscles.primary} size={48} background="canvas" />
+        </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-lg font-semibold leading-snug text-zinc-100">{ex.name}</span>
+          <span className="text-headline text-ink">{ex.name}</span>
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <LevelBadge level={ex.level} />
-            <span className="text-sm text-zinc-400">{ex.muscles.primary.map(muscleLabel).join(', ')}</span>
-            {ex.preference === 'hidden' ? (
-              <span className="rounded-full border border-v1-line px-2 py-0.5 text-xs font-medium text-zinc-300">
-                Masqué
-              </span>
-            ) : null}
-            {missing ? (
-              <span className="rounded-full border border-amber-400/40 px-2 py-0.5 text-xs font-medium text-amber-300">
-                Matériel manquant
-              </span>
-            ) : null}
-            {ex.source === 'user' ? (
-              <span className="rounded-full border border-v1-line px-2 py-0.5 text-xs font-medium text-zinc-300">
-                Perso
-              </span>
-            ) : null}
+            <span className="text-caption text-ink-muted">
+              {ex.muscles.primary.map(muscleLabel).join(', ')}
+            </span>
+            {ex.preference === 'hidden' ? <Tag>Masqué</Tag> : null}
+            {missing ? <Tag tone="warning">Matériel manquant</Tag> : null}
+            {ex.source === 'user' ? <Tag>Perso</Tag> : null}
           </span>
         </span>
         <PreferenceIcon preference={ex.preference} />
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="shrink-0 text-zinc-500"
-          aria-hidden="true"
-        >
-          <path d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-ink-faint" />
       </Link>
     </li>
   )
@@ -152,49 +138,30 @@ export default function LibraryScreen() {
     query.trim() !== '' || pattern !== undefined || level !== undefined || !availableOnly || includeHidden
 
   return (
-    <section>
-      <BackLink to="/entrainement">Entraînement</BackLink>
+    <section className="flex flex-col gap-3.5">
+      <BackLink to={TRAINING_PATH}>Entraînement</BackLink>
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">Exercices</h1>
+        <ScreenTitle>Exercices</ScreenTitle>
         <Link
-          to="/entrainement/exercices/nouveau"
+          to={`${LIBRARY_PATH}/nouveau`}
           aria-label="Créer un exercice"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-orange-400 text-zinc-950 no-underline active:bg-orange-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+          className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-ember text-ink no-underline active:opacity-80"
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Plus size={24} strokeWidth={2} aria-hidden="true" />
         </Link>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
           <label htmlFor="library-search" className="sr-only">
             Rechercher un exercice
           </label>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+          <Search
+            size={20}
+            strokeWidth={1.75}
             aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-4-4" />
-          </svg>
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted"
+          />
           <input
             id="library-search"
             type="text"
@@ -207,7 +174,7 @@ export default function LibraryScreen() {
               setQuery(e.target.value)
               setParam('q', e.target.value)
             }}
-            className="min-h-12 w-full rounded-xl border border-v1-line bg-v1-surface-hi pl-10 pr-11 text-base text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+            className="focus-ring min-h-12 w-full rounded-ds-pill bg-surface pl-11 pr-11 text-body text-ink shadow-card placeholder:text-ink-muted"
           />
           {query !== '' ? (
             <button
@@ -217,20 +184,9 @@ export default function LibraryScreen() {
                 setQuery('')
                 setParam('q', null)
               }}
-              className="absolute right-0 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-zinc-400"
+              className="focus-ring absolute right-0 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-ink-muted"
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
+              <X size={18} strokeWidth={2} aria-hidden="true" />
             </button>
           ) : null}
         </div>
@@ -239,17 +195,16 @@ export default function LibraryScreen() {
           aria-expanded={panelOpen}
           aria-controls="library-filters"
           onClick={() => setParam('f', panelOpen ? null : '1')}
-          className={`flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400 ${
-            activeCount > 0 || panelOpen
-              ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-              : 'border-v1-line bg-v1-surface-hi text-zinc-200'
-          }`}
+          className={cx(
+            'focus-ring flex min-h-12 shrink-0 items-center gap-1.5 rounded-ds-pill px-4 text-body-strong shadow-card',
+            activeCount > 0 || panelOpen ? 'bg-ember-soft text-ink' : 'bg-surface text-ink',
+          )}
         >
           Filtres
           {activeCount > 0 ? (
             <span
               aria-label={`${activeCount} filtre${activeCount > 1 ? 's' : ''} actif${activeCount > 1 ? 's' : ''}`}
-              className="flex size-6 items-center justify-center rounded-full bg-orange-400 text-sm font-bold text-zinc-950"
+              className="grid size-6 place-items-center rounded-full bg-ember text-caption font-bold text-ink"
             >
               {activeCount}
             </span>
@@ -257,8 +212,8 @@ export default function LibraryScreen() {
         </button>
       </div>
 
-      <div role="group" aria-label="Filtrer par schéma de mouvement" className="mt-3">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+      <div role="group" aria-label="Filtrer par schéma de mouvement">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
           {([undefined, ...PATTERN_ORDER] as (MovementPattern | undefined)[]).map((p) => {
             const active = p === pattern
             return (
@@ -267,11 +222,10 @@ export default function LibraryScreen() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setParam('p', p ?? null)}
-                className={`h-11 shrink-0 rounded-full border px-4 text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400 ${
-                  active
-                    ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-                    : 'border-v1-line bg-v1-surface-hi text-zinc-200'
-                }`}
+                className={cx(
+                  'focus-ring min-h-11 shrink-0 rounded-ds-pill px-4 text-body-strong',
+                  active ? 'bg-inverse text-on-inverse' : 'bg-surface text-ink',
+                )}
               >
                 {p ? patternLabel(p) : 'Tous'}
               </button>
@@ -281,10 +235,7 @@ export default function LibraryScreen() {
       </div>
 
       {panelOpen ? (
-        <div
-          id="library-filters"
-          className="mt-3 flex flex-col gap-3 rounded-2xl border border-v1-line bg-v1-surface p-3"
-        >
+        <Card id="library-filters" className="flex flex-col gap-3">
           <ChoiceGroup<LevelFilter>
             legend="Niveau"
             layout="grid"
@@ -302,28 +253,26 @@ export default function LibraryScreen() {
             checked={includeHidden}
             onChange={(on) => setParam('h', on ? '1' : null)}
           />
-        </div>
+        </Card>
       ) : null}
 
       {error ? (
-        <div className="mt-5">
-          <ErrorNote>Impossible de lire la bibliothèque. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
+        <Note tone="error">Impossible de lire la bibliothèque. Ferme l’app puis rouvre-la.</Note>
       ) : null}
 
       {!data ? (
-        <p className="mt-6 text-base text-zinc-400" aria-busy="true">
+        <p className="m-0 text-body text-ink-muted" aria-busy="true">
           Chargement…
         </p>
       ) : (
         <>
-          <p aria-live="polite" className="mt-3 text-sm text-zinc-400">
+          <p aria-live="polite" className="m-0 text-caption text-ink-muted">
             {filtered?.length ?? 0} exercice{(filtered?.length ?? 0) > 1 ? 's' : ''}
           </p>
           {groups.length === 0 ? (
-            <Card className="mt-3 text-center">
-              <p className="text-lg font-semibold">Aucun exercice trouvé</p>
-              <p className="mt-1 text-base text-zinc-400">
+            <Card className="flex flex-col items-center gap-2 text-center">
+              <p className="m-0 font-display text-title">Aucun exercice trouvé</p>
+              <p className="m-0 text-body text-ink-muted">
                 {availableOnly
                   ? 'Essaie un autre mot, ou coupe « Avec mon matériel » pour voir tous les exercices.'
                   : 'Essaie un autre mot ou retire un filtre.'}
@@ -332,7 +281,7 @@ export default function LibraryScreen() {
                 <button
                   type="button"
                   onClick={reset}
-                  className="mt-3 min-h-11 rounded-xl px-4 text-base font-semibold text-orange-400 active:bg-white/5"
+                  className="focus-ring min-h-11 rounded-ds-pill px-4 text-body-strong text-ember-ink active:opacity-70"
                 >
                   Réinitialiser les filtres
                 </button>
@@ -340,22 +289,28 @@ export default function LibraryScreen() {
             </Card>
           ) : (
             groups.map((g) => (
-              <section key={g.pattern} className="mt-3" aria-labelledby={`group-${g.pattern}`}>
-                <h2 id={`group-${g.pattern}`} className="mb-1.5 text-lg font-bold">
+              <section
+                key={g.pattern}
+                className="flex flex-col gap-1.5"
+                aria-labelledby={`group-${g.pattern}`}
+              >
+                <h2 id={`group-${g.pattern}`} className="m-0 mt-2 font-display text-title">
                   {patternLabel(g.pattern)}{' '}
-                  <span className="text-base font-medium text-zinc-400">({g.exercises.length})</span>
+                  <span className="text-body font-medium text-ink-muted">({g.exercises.length})</span>
                 </h2>
-                <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                  {g.exercises.map((ex) => (
-                    <ExerciseRow key={ex.id} ex={ex} missing={!isAvailable(ex, data.equipment)} />
-                  ))}
-                </ul>
+                <Card as="div" padding="none" className="px-4">
+                  <ul className="m-0 flex list-none flex-col p-0">
+                    {g.exercises.map((ex) => (
+                      <ExerciseListRow key={ex.id} ex={ex} missing={!isAvailable(ex, data.equipment)} />
+                    ))}
+                  </ul>
+                </Card>
               </section>
             ))
           )}
           <Link
-            to="/entrainement/exercices/supprimes"
-            className="mt-8 flex min-h-12 items-center justify-center rounded-xl text-base font-medium text-zinc-300 underline"
+            to={`${LIBRARY_PATH}/supprimes`}
+            className="focus-ring mt-4 flex min-h-12 items-center justify-center rounded-ds-pill text-body-strong text-ink-muted underline"
           >
             Exercices supprimés ({deletedCount})
           </Link>

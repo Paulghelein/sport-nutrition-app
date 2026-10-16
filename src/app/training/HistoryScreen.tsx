@@ -1,9 +1,13 @@
+import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { listSessions } from '../../db'
 import { historyItems } from '../../domain/training'
 import { formatDateFr } from '../../domain/shared'
-import { ErrorNote, linkButtonClass, useLiveQuery } from '../../ui'
-import { BackLink } from './parts'
+import { useLiveQuery } from '../../ui'
+import { Card, buttonClass } from '../../ui/kit'
+import { Note } from '../../ui/kit/Note'
+import { HISTORY_PATH, TRAINING_PATH } from '../routes'
+import { BackLink, ScreenTitle, Tag } from './parts'
 import { useLibrary } from './useLibrary'
 
 export default function HistoryScreen() {
@@ -14,57 +18,54 @@ export default function HistoryScreen() {
   const names = new Map((lib.data?.library ?? []).map((e) => [e.id, e.name]))
 
   return (
-    <section>
-      <BackLink to="/entrainement">Entraînement</BackLink>
-      <h1 className="mt-2 text-3xl font-bold">Historique</h1>
-      {error ? (
-        <div className="mt-4">
-          <ErrorNote>Impossible de lire l’historique. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
-      ) : null}
+    <section className="flex flex-col gap-4">
+      <BackLink to={TRAINING_PATH}>Entraînement</BackLink>
+      <ScreenTitle>Historique</ScreenTitle>
+      {error ? <Note tone="error">Impossible de lire l’historique. Ferme l’app puis rouvre-la.</Note> : null}
       {!items && !error ? <div aria-busy="true" className="min-h-40" /> : null}
       {items && items.length === 0 ? (
-        <div className="mt-5">
-          <p className="m-0 text-base text-zinc-300">
+        <div className="flex flex-col gap-4">
+          <p className="m-0 text-body text-ink-muted">
             Aucune séance terminée pour l’instant. Ta première apparaîtra ici.
           </p>
-          <Link to="/entrainement" className={`${linkButtonClass('primary')} mt-4`}>
+          <Link to={TRAINING_PATH} className={buttonClass('primary', 'normal', true)}>
             Préparer une séance
           </Link>
         </div>
       ) : null}
       {items && items.length > 0 ? (
-        <ul className="m-0 mt-5 flex list-none flex-col gap-3 p-0">
+        <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {items.map((it) => {
             const shown = it.exerciseIds.slice(0, 3).map((id) => names.get(id) ?? id)
             const more = it.exerciseIds.length - shown.length
             return (
               <li key={it.id}>
-                <Link
-                  to={`/entrainement/historique/${it.id}`}
-                  className="flex min-h-20 flex-col justify-center rounded-2xl border border-v1-line bg-v1-surface p-4 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
-                >
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="text-lg font-bold text-zinc-100">{formatDateFr(it.date, 'long')}</span>
-                    <span
-                      className={`shrink-0 rounded-full border px-2.5 py-0.5 text-sm font-semibold ${
-                        it.status === 'done'
-                          ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
-                          : 'border-zinc-500/50 bg-zinc-500/10 text-zinc-300'
-                      }`}
-                    >
-                      {it.status === 'done' ? 'Terminée' : 'Abandonnée'}
+                <Link to={`${HISTORY_PATH}/${it.id}`} className="focus-ring block no-underline">
+                  <Card className="flex items-center gap-3 active:opacity-80">
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-display text-title text-ink">
+                          {formatDateFr(it.date, 'long')}
+                        </span>
+                        <Tag>{it.status === 'done' ? 'Terminée' : 'Abandonnée'}</Tag>
+                      </span>
+                      <span className="text-body text-ink">
+                        {it.actualMin ?? it.durationMin} min · {it.setsDone} série{it.setsDone > 1 ? 's' : ''}
+                      </span>
+                      {shown.length > 0 ? (
+                        <span className="text-caption text-ink-muted">
+                          {shown.join(', ')}
+                          {more > 0 ? ` et ${more} autre${more > 1 ? 's' : ''}` : ''}
+                        </span>
+                      ) : null}
                     </span>
-                  </span>
-                  <span className="mt-1 text-base text-zinc-300">
-                    {it.actualMin ?? it.durationMin} min · {it.setsDone} série{it.setsDone > 1 ? 's' : ''}
-                  </span>
-                  {shown.length > 0 ? (
-                    <span className="text-sm text-zinc-400">
-                      {shown.join(', ')}
-                      {more > 0 ? ` et ${more} autre${more > 1 ? 's' : ''}` : ''}
-                    </span>
-                  ) : null}
+                    <ChevronRight
+                      size={20}
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                      className="shrink-0 text-ink-faint"
+                    />
+                  </Card>
                 </Link>
               </li>
             )

@@ -6,7 +6,7 @@ const SHOTS = process.env['QA_SHOTS'] ?? 'test-results'
 
 async function pick(page: Page, name: string) {
   const radio = page.getByRole('radio', { name })
-  await page.locator('label').filter({ has: radio }).click()
+  await radio.click()
 }
 
 interface Audit {
@@ -64,14 +64,14 @@ test('J4 : mise en page 390x844 (cibles, défilement horizontal, bouton principa
   const choices = page.getByRole('dialog').locator('li button')
   if ((await choices.count()) > 0) await choices.first().click()
   else await page.getByRole('button', { name: 'Annuler' }).click()
-  await expect(page.getByRole('button', { name: 'Commencer la séance' })).toBeVisible()
-  report['aperçu'] = await audit(page, ['Commencer la séance'])
+  await expect(page.getByRole('button', { name: 'Démarrer', exact: true })).toBeVisible()
+  report['aperçu'] = await audit(page, ['Démarrer'])
   await page.screenshot({ path: `${SHOTS}/qa-j4-apercu.png`, fullPage: true })
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await page.getByRole('button', { name: 'C’est parti' }).click()
 
   await expect(page.getByRole('button', { name: 'Correct', exact: true })).toBeVisible()
-  report['série'] = await audit(page, ['Facile', 'Correct', 'Difficile'])
+  report['série'] = await audit(page, ['Facile', 'Correct', 'Dur'])
   await page.screenshot({ path: `${SHOTS}/qa-j4-serie.png` })
   await page.getByRole('button', { name: 'Correct', exact: true }).click()
 

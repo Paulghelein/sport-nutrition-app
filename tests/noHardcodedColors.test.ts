@@ -14,6 +14,7 @@ const V2_DIRS = [
   '/src/app/today/',
   '/src/app/progress/',
   '/src/app/shell/',
+  '/src/app/training/',
   '/src/content/visuals/',
 ]
 const isV2 = (path: string) => V2_DIRS.some((d) => path.startsWith(d))
@@ -87,6 +88,8 @@ describe('garde-fou : jetons v2 absents des écrans v1', () => {
     '/src/app/today/',
     '/src/app/progress/',
     '/src/app/shell/',
+    '/src/app/training/',
+    '/src/app/screens/SessionScreen.tsx',
   ]
   const inV2Screen = (path: string) => V2_SCREENS.some((d) => path.startsWith(d))
   const V2_TOKEN = new RegExp(

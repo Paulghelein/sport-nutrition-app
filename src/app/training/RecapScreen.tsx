@@ -5,10 +5,13 @@ import { listExerciseStates, resolveSuggestion } from '../../db'
 import { acceptSuggestion } from '../../domain/training'
 import { formatDateFr } from '../../domain/shared'
 import type { LibraryExercise, Equipment, Session } from '../../types'
-import { Button, Card, ErrorNote, Section, errorMessage, linkButtonClass } from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button, Card, buttonClass } from '../../ui/kit'
+import { Note } from '../../ui/kit/Note'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { sessionAfterData } from '../claude/inputs'
-import { GUIDED_PATH } from '../routes'
+import { GUIDED_PATH, TRAINING_PATH } from '../routes'
+import { ScreenTitle, Section } from './parts'
 import { SaveTemplate } from './SaveTemplate'
 import { SummaryView } from './SummaryView'
 import { useSessionSummary } from './useSessionSummary'
@@ -74,18 +77,19 @@ function Suggestions({
   return (
     <Section title="Suggestions">
       <div className="flex flex-col gap-3">
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
+        {error ? <Note tone="error">{error}</Note> : null}
         {list.map((s, i) => (
           <Card key={i}>
-            <p className="m-0 text-base leading-relaxed text-zinc-100">{s.message}</p>
+            <p className="m-0 text-body">{s.message}</p>
             {s.status === 'pending' && unavailable.has(i) ? (
-              <p role="status" className="m-0 mt-2 text-sm font-semibold text-amber-300">
+              <p role="status" className="m-0 mt-2 text-caption font-semibold text-warning">
                 Cette variante n’est plus disponible.
               </p>
             ) : null}
             {s.status === 'pending' ? (
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button
+                  fullWidth
                   disabled={busy !== null || unavailable.has(i)}
                   onClick={() => void answer(i, 'accepted')}
                 >
@@ -93,6 +97,7 @@ function Suggestions({
                 </Button>
                 <Button
                   variant="secondary"
+                  fullWidth
                   disabled={busy !== null}
                   onClick={() => void answer(i, 'dismissed')}
                 >
@@ -100,7 +105,7 @@ function Suggestions({
                 </Button>
               </div>
             ) : (
-              <p className="m-0 mt-2 text-sm font-semibold text-zinc-400">
+              <p className="m-0 mt-2 text-caption font-semibold text-ink-muted">
                 {s.status === 'accepted' ? 'Acceptée' : 'Ignorée'}
               </p>
             )}
@@ -117,13 +122,13 @@ export default function RecapScreen() {
   const { data, notFound, error } = useSessionSummary(id)
 
   if (error) {
-    return <ErrorNote>Impossible de lire la séance. Ferme l’app puis rouvre-la.</ErrorNote>
+    return <Note tone="error">Impossible de lire la séance. Ferme l’app puis rouvre-la.</Note>
   }
   if (notFound) {
     return (
-      <section>
-        <h1 className="text-3xl font-bold">Séance introuvable</h1>
-        <Link to="/entrainement" className={`${linkButtonClass('primary')} mt-4`}>
+      <section className="flex flex-col gap-4">
+        <ScreenTitle>Séance introuvable</ScreenTitle>
+        <Link to={TRAINING_PATH} className={buttonClass('primary', 'normal', true)}>
           Retour à Entraînement
         </Link>
       </section>
@@ -133,9 +138,9 @@ export default function RecapScreen() {
   const { session, summary } = data
   if (session.status === 'in_progress') {
     return (
-      <section>
-        <h1 className="text-3xl font-bold">Séance en cours</h1>
-        <Link to={GUIDED_PATH} className={`${linkButtonClass('primary')} mt-4`}>
+      <section className="flex flex-col gap-4">
+        <ScreenTitle>Séance en cours</ScreenTitle>
+        <Link to={GUIDED_PATH} className={buttonClass('primary', 'normal', true)}>
           Reprendre la séance
         </Link>
       </section>
@@ -143,32 +148,45 @@ export default function RecapScreen() {
   }
 
   return (
-    <section>
-      <h1 className="text-3xl font-bold">
-        {session.status === 'done' ? 'Séance terminée' : 'Séance abandonnée'}
-      </h1>
-      <p className="m-0 mt-1 text-base text-zinc-400">{formatDateFr(session.date, 'long')}</p>
+    <section className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-0.5">
+        <p className="m-0 text-caption text-ink-muted">{formatDateFr(session.date, 'long')}</p>
+        <ScreenTitle>{session.status === 'done' ? 'Séance terminée' : 'Séance abandonnée'}</ScreenTitle>
+      </div>
       <SummaryView summary={summary} names={data.names} plannedMin={session.durationMin} />
       {session.status === 'done' ? (
         <Suggestions session={session} library={data.library} equipment={data.equipment} />
       ) : null}
       {session.status === 'done' ? (
-        <div className="mt-6">
+        <div className="mt-4">
           <AskClaudeButton
             kind="session_after"
             build={(base) =>
               buildSessionAfterMessage({ ...base, ...sessionAfterData(session, summary, data.library) })
             }
+            renderTrigger={(t) => (
+              <Button
+                variant="secondary"
+                fullWidth
+                disabled={t.disabled}
+                aria-busy={t.busy}
+                onClick={t.onClick}
+              >
+                {t.label}
+              </Button>
+            )}
           />
         </div>
       ) : null}
-      <div className="mt-8 flex flex-col gap-3">
+      <div className="mt-4 flex flex-col gap-3">
         <SaveTemplate
           source={session}
           durationMin={session.durationMin}
           defaultName={`Séance du ${formatDateFr(session.date)}`}
         />
-        <Button onClick={() => navigate('/entrainement', { replace: true })}>Terminé</Button>
+        <Button fullWidth onClick={() => navigate(TRAINING_PATH, { replace: true })}>
+          Terminé
+        </Button>
       </div>
     </section>
   )

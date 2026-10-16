@@ -24,3 +24,9 @@ export const CLAUDE_RESPONSE_PATH = '/claude/reponse'
 
 /** Page de composants v2 (outil de développement), plein écran hors de la barre d'onglets. */
 export const DEV_UI_PATH = '/dev/ui'
+
+/** Sous-sections de l'entraînement (bibliothèque, historique, modèles, récapitulatif). */
+export const LIBRARY_PATH = `${TRAINING_PATH}/exercices`
+export const HISTORY_PATH = `${TRAINING_PATH}/historique`
+export const TEMPLATES_PATH = `${TRAINING_PATH}/modeles`
+export const RECAP_PATH = `${TRAINING_PATH}/recap`

@@ -2,18 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MAX_TEMPLATE_NAME_LENGTH, deleteTemplate, listTemplates, updateTemplate } from '../../db'
 import type { SessionTemplate } from '../../types'
-import {
-  Button,
-  Card,
-  ConfirmSheet,
-  ErrorNote,
-  Sheet,
-  TextField,
-  errorMessage,
-  linkButtonClass,
-  useLiveQuery,
-} from '../../ui'
-import { BackLink } from './parts'
+import { errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card, Sheet, buttonClass } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { PREVIEW_PATH, TRAINING_PATH } from '../routes'
+import { BackLink, ScreenTitle } from './parts'
 import { useLibrary } from './useLibrary'
 
 function RenameSheet({ template, onClose }: { template: SessionTemplate; onClose: () => void }) {
@@ -38,6 +33,7 @@ function RenameSheet({ template, onClose }: { template: SessionTemplate; onClose
   return (
     <Sheet title="Renommer le modèle" onClose={onClose} busy={busy}>
       <form
+        className="flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault()
           void save()
@@ -52,16 +48,12 @@ function RenameSheet({ template, onClose }: { template: SessionTemplate; onClose
           autoComplete="off"
           autoFocus
         />
-        {error ? (
-          <div className="mt-3">
-            <ErrorNote>{error}</ErrorNote>
-          </div>
-        ) : null}
-        <div className="mt-4 flex flex-col gap-2">
-          <Button type="submit" disabled={busy}>
+        {error ? <Note tone="error">{error}</Note> : null}
+        <div className="flex flex-col gap-2">
+          <Button type="submit" fullWidth disabled={busy}>
             Enregistrer
           </Button>
-          <Button variant="secondary" onClick={onClose} disabled={busy}>
+          <Button variant="secondary" fullWidth onClick={onClose} disabled={busy}>
             Annuler
           </Button>
         </div>
@@ -93,61 +85,63 @@ export default function TemplatesScreen() {
   }
 
   return (
-    <section>
-      <BackLink to="/entrainement">Entraînement</BackLink>
-      <h1 className="mt-2 text-3xl font-bold">Modèles de séance</h1>
+    <section className="flex flex-col gap-4">
+      <BackLink to={TRAINING_PATH}>Entraînement</BackLink>
+      <ScreenTitle>Modèles de séance</ScreenTitle>
       {templates.error ? (
-        <div className="mt-4">
-          <ErrorNote>Impossible de lire les modèles. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
+        <Note tone="error">Impossible de lire les modèles. Ferme l’app puis rouvre-la.</Note>
       ) : null}
-      {error ? (
-        <div className="mt-4">
-          <ErrorNote>{error}</ErrorNote>
-        </div>
-      ) : null}
+      {error ? <Note tone="error">{error}</Note> : null}
       {!templates.data && !templates.error ? <div aria-busy="true" className="min-h-40" /> : null}
       {templates.data && templates.data.length === 0 ? (
-        <p className="mt-5 text-base text-zinc-300">
+        <p className="m-0 text-body text-ink-muted">
           Aucun modèle. Depuis l’aperçu ou le récapitulatif d’une séance, appuie sur « Enregistrer comme
           modèle » pour la refaire plus tard.
         </p>
       ) : null}
-      <ul className="m-0 mt-5 flex list-none flex-col gap-3 p-0">
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {templates.data?.map((t) => (
           <li key={t.id}>
-            <Card>
-              <h2 className="m-0 text-xl font-bold">{t.name}</h2>
-              <p className="m-0 mt-1 text-base text-zinc-300">
-                {t.durationMin} min · {t.blocks.length} exercice{t.blocks.length > 1 ? 's' : ''}
-              </p>
-              <p className="m-0 text-sm text-zinc-400">
-                {t.blocks
-                  .slice(0, 4)
-                  .map((b) => names.get(b.exerciseId) ?? b.exerciseId)
-                  .join(', ')}
-                {t.blocks.length > 4 ? '…' : ''}
-              </p>
-              <div className="mt-3 flex flex-col gap-2">
-                <Link
-                  to={`/entrainement/apercu?modele=${encodeURIComponent(t.id)}`}
-                  className={linkButtonClass('primary')}
-                  aria-label={`Démarrer ${t.name}`}
+            <Card padding="large" className="flex flex-col gap-3">
+              <div className="flex flex-col gap-0.5">
+                <h2 className="m-0 font-display text-title">{t.name}</h2>
+                <p className="m-0 text-body">
+                  {t.durationMin} min · {t.blocks.length} exercice{t.blocks.length > 1 ? 's' : ''}
+                </p>
+                <p className="m-0 text-caption text-ink-muted">
+                  {t.blocks
+                    .slice(0, 4)
+                    .map((b) => names.get(b.exerciseId) ?? b.exerciseId)
+                    .join(', ')}
+                  {t.blocks.length > 4 ? '…' : ''}
+                </p>
+              </div>
+              <Link
+                to={`${PREVIEW_PATH}?modele=${encodeURIComponent(t.id)}`}
+                className={buttonClass('primary', 'normal', true)}
+                aria-label={`Démarrer ${t.name}`}
+              >
+                Démarrer
+              </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  className="bg-canvas! shadow-none!"
+                  onClick={() => setRenaming(t)}
+                  aria-label={`Renommer ${t.name}`}
                 >
-                  Démarrer
-                </Link>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setRenaming(t)}
-                    aria-label={`Renommer ${t.name}`}
-                  >
-                    Renommer
-                  </Button>
-                  <Button variant="danger" onClick={() => setDeleting(t)} aria-label={`Supprimer ${t.name}`}>
-                    Supprimer
-                  </Button>
-                </div>
+                  Renommer
+                </Button>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  className="bg-canvas! text-critical! shadow-none!"
+                  onClick={() => setDeleting(t)}
+                  aria-label={`Supprimer ${t.name}`}
+                >
+                  Supprimer
+                </Button>
               </div>
             </Card>
           </li>

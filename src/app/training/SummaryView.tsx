@@ -1,19 +1,10 @@
+import { Star } from 'lucide-react'
 import { MUSCLE_GROUPS } from '../../domain/training'
 import type { PersonalRecord, SessionSummary } from '../../types/guided'
-import { Card, Section, muscleLabel } from '../../ui'
+import { muscleLabel } from '../../ui'
+import { Card, StatTile, cx, withUnit } from '../../ui/kit'
+import { Section } from './parts'
 import { formatSeconds, kgText } from './format'
-
-function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
-  return (
-    <div className="rounded-2xl border border-v1-line bg-v1-surface p-4">
-      <p className="m-0 text-sm text-zinc-400">{label}</p>
-      <p className="m-0 mt-1 text-4xl font-bold tabular-nums">
-        {value}
-        {unit ? <span className="ml-1 text-xl font-semibold text-zinc-400">{unit}</span> : null}
-      </p>
-    </div>
-  )
-}
 
 function recordText(r: PersonalRecord, name: string): string {
   const at = r.loadKg !== undefined ? ` à ${kgText(r.loadKg)} kg` : ''
@@ -21,6 +12,9 @@ function recordText(r: PersonalRecord, name: string): string {
     case 'load':
       return `${name} : charge max ${kgText(r.value)} kg (avant : ${kgText(r.previous)} kg)`
     case 'reps':
+      // Série en temps fixe : le record porte sur la fenêtre (« 24 reps en 45 s »).
+      if (r.windowSec !== undefined)
+        return `${name} : ${r.value} reps en ${r.windowSec} s${at} (avant : ${r.previous})`
       return `${name} : ${r.value} répétitions${at} (avant : ${r.previous})`
     case 'duration':
       return `${name} : ${formatSeconds(r.value)} tenues${at} (avant : ${formatSeconds(r.previous)})`
@@ -46,55 +40,70 @@ export function SummaryView({
   const maxVolume = Math.max(1, ...volume.map((g) => summary.volume[g]))
   return (
     <>
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Stat label="Durée" value={String(summary.actualMin ?? plannedMin)} unit="min" />
-        <Stat
-          label="Séries faites"
-          value={String(summary.setsDone)}
-          unit={
-            summary.setsSkipped > 0
-              ? `+ ${summary.setsSkipped} passée${summary.setsSkipped > 1 ? 's' : ''}`
-              : undefined
-          }
-        />
-        <Stat label="Répétitions" value={String(summary.totalReps)} />
-        <Stat
-          label="Tonnage"
-          value={summary.tonnageKg > 0 ? kgText(Math.round(summary.tonnageKg)) : '—'}
-          unit={summary.tonnageKg > 0 ? 'kg' : undefined}
-        />
-      </div>
+      <Card padding="none" className="mt-1 grid grid-cols-2 divide-x divide-line py-3.5">
+        <div className="flex flex-col gap-3.5">
+          <StatTile size="lg" label="Durée" value={withUnit(summary.actualMin ?? plannedMin, 'min')} />
+          <StatTile size="lg" label="Répétitions" value={String(summary.totalReps)} />
+        </div>
+        <div className="flex flex-col gap-3.5">
+          <StatTile
+            size="lg"
+            label="Séries faites"
+            value={
+              <>
+                {summary.setsDone}
+                {summary.setsSkipped > 0 ? (
+                  <span className="text-caption font-medium text-ink-muted">
+                    {` + ${summary.setsSkipped} passée${summary.setsSkipped > 1 ? 's' : ''}`}
+                  </span>
+                ) : null}
+              </>
+            }
+          />
+          <StatTile
+            size="lg"
+            label="Tonnage"
+            value={summary.tonnageKg > 0 ? withUnit(kgText(Math.round(summary.tonnageKg)), 'kg') : '—'}
+          />
+        </div>
+      </Card>
 
       {summary.records.length > 0 ? (
         <Section title="Records battus">
-          <div className="rounded-2xl border border-orange-400/60 bg-orange-400/10 p-4">
+          <Card padding="large" className="bg-ember-soft">
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {summary.records.map((r, i) => (
-                <li key={i} className="flex gap-2 text-lg font-semibold text-orange-100">
-                  <span aria-hidden="true">★</span>
+                <li key={i} className="flex gap-2 text-body-strong">
+                  <Star
+                    size={18}
+                    strokeWidth={1.75}
+                    fill="currentColor"
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0 text-ember-ink"
+                  />
                   <span>{recordText(r, name(r.exerciseId))}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </Card>
         </Section>
       ) : null}
 
       {volume.length > 0 ? (
         <Section title="Volume par groupe">
-          <Card>
+          <Card padding="large">
             <ul className="m-0 flex list-none flex-col gap-3 p-0">
               {volume.map((g) => (
                 <li key={g}>
-                  <div className="flex items-baseline justify-between text-base">
+                  <div className="flex items-baseline justify-between text-body">
                     <span>{muscleLabel(g)}</span>
-                    <span className="font-semibold tabular-nums">
+                    <span className="font-display font-bold tabular-nums">
                       {summary.volume[g].toLocaleString('fr-FR', { maximumFractionDigits: 1 })} séries
                     </span>
                   </div>
-                  <div aria-hidden="true" className="mt-1 h-2 overflow-hidden rounded-full bg-v1-surface-hi">
+                  <div aria-hidden="true" className="mt-1 h-2 overflow-hidden rounded-full bg-surface-sunken">
                     <div
-                      className="h-full rounded-full bg-orange-400"
+                      className={cx('h-full rounded-full bg-ember')}
                       style={{ width: `${Math.round((summary.volume[g] / maxVolume) * 100)}%` }}
                     />
                   </div>
@@ -106,12 +115,12 @@ export function SummaryView({
       ) : null}
 
       <Section title="Exercices">
-        <Card>
-          <ul className="m-0 flex list-none flex-col divide-y divide-v1-line p-0">
+        <Card padding="none" className="px-4 py-1">
+          <ul className="m-0 flex list-none flex-col p-0">
             {summary.exercises.map((e) => (
-              <li key={e.exerciseId} className="py-3 first:pt-0 last:pb-0">
-                <p className="m-0 text-lg font-semibold">{name(e.exerciseId)}</p>
-                <p className="m-0 text-base text-zinc-300">
+              <li key={e.exerciseId} className="border-t border-line py-3 first:border-t-0">
+                <p className="m-0 text-headline">{name(e.exerciseId)}</p>
+                <p className="m-0 text-caption text-ink-muted">
                   {e.setsDone === 0
                     ? 'Passé'
                     : [

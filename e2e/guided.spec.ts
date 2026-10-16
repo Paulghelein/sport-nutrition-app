@@ -4,7 +4,7 @@ import { collectErrors, completeOnboarding, openTraining } from './helpers.ts'
 
 async function pick(page: Page, name: string) {
   const radio = page.getByRole('radio', { name })
-  await page.locator('label').filter({ has: radio }).click()
+  await radio.click()
   await expect(radio).toBeChecked()
 }
 
@@ -19,12 +19,12 @@ async function boot(page: Page) {
 async function openPreview(page: Page, duration: string) {
   await pick(page, duration)
   await page.getByRole('link', { name: 'Voir la séance' }).click()
-  await expect(page.getByRole('button', { name: 'Commencer la séance' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Démarrer', exact: true })).toBeVisible()
 }
 
 async function startGuided(page: Page, duration = '20 min') {
   await openPreview(page, duration)
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await expect(page).toHaveURL(/\/entrainement\/seance$/)
   await expect(page.getByRole('heading', { name: 'Échauffement' })).toBeVisible()
   await page.getByRole('button', { name: 'C’est parti' }).click()
@@ -37,19 +37,17 @@ async function doSet(page: Page, feeling = 'Correct') {
 
 /** Monte le compteur de répétitions jusqu'au haut de la fourchette (la valeur préremplie est le bas). */
 async function raiseRepsToTop(page: Page) {
-  const target = await page
-    .getByText(/^\d+(?: à \d+)? reps/)
-    .first()
-    .innerText()
-    .catch(() => '')
-  const m = /^(\d+)(?: à (\d+))? reps/.exec(target)
+  const group = page.getByRole('group', { name: 'Répétitions', exact: true })
+  const hint = await group.innerText()
+  const m = /Objectif (\d+)(?:–(\d+))?/.exec(hint)
+  // Une série en répétitions affiche toujours son objectif : sinon l'interface a changé, le test doit échouer.
+  expect(m, `objectif de répétitions introuvable dans « ${hint} »`).not.toBeNull()
   if (!m) return
   const top = Number(m[2] ?? m[1])
-  const group = page.getByRole('group', { name: /Répétitions faites/ })
   for (let i = 0; i < 40; i++) {
     const value = Number((await group.locator('output').innerText()).trim().split(/\s/)[0])
     if (value >= top) return
-    await group.getByRole('button', { name: /Augmenter/ }).click()
+    await group.getByRole('button', { name: 'Une répétition de plus' }).click()
   }
 }
 
@@ -99,7 +97,7 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
   await page.goBack()
   expect(await links.allInnerTexts()).toEqual(names)
 
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Échauffement' })).toBeVisible()
   await page.getByRole('button', { name: 'C’est parti' }).click()
 
@@ -131,7 +129,7 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
     if (await page.getByRole('button', { name: /Passer le repos|Série suivante/ }).isVisible()) {
       await skipRest(page)
     } else {
-      await doSet(page, i % 3 === 0 ? 'Difficile' : 'Correct')
+      await doSet(page, i % 3 === 0 ? 'Dur' : 'Correct')
     }
   }
   await expect(page.getByRole('heading', { name: 'Bravo, c’est fini !' })).toBeVisible()
@@ -172,7 +170,7 @@ test('séance de 20 min de bout en bout, historique corrigé, modèle relancé',
   await expect(page.getByRole('heading', { name: 'Mon modèle test' })).toBeVisible()
   await page.getByRole('link', { name: 'Démarrer Mon modèle test' }).click()
   await expect(page).toHaveURL(/apercu\?modele=/)
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await expect(page).toHaveURL(/\/entrainement\/seance$/)
 
   expect(errors).toEqual([])
@@ -186,6 +184,9 @@ test('reprise après rechargement : même série, minuteur de repos cohérent', 
   await doSet(page)
   const timer = page.getByRole('timer', { name: 'Temps de repos restant' })
   await expect(timer).toBeVisible()
+  // Le geste de validation ne doit pas ajuster le repos (double tap) : −15 s / +15 s sont armés après 600 ms.
+  await expect(page.getByRole('button', { name: '−15 s' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '+15 s' })).toBeDisabled()
   await page.screenshot({ path: 'test-results/guided-rest.png' })
   await page.waitForLoadState('networkidle')
 
@@ -419,7 +420,7 @@ test('deuxième séance du même exercice : la charge proposée évolue après d
   await page.clock.fastForward(24 * 3600 * 1000)
   await page.goto('./entrainement/modeles')
   await page.getByRole('link', { name: 'Démarrer Même séance' }).click()
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await expect(page).toHaveURL(/\/entrainement\/seance$/)
   await page.getByRole('button', { name: 'C’est parti' }).click()
   const s2 = (await readStore<RawSession>(page, 'sessions')).find((s) => s.status === 'in_progress')

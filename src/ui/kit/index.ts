@@ -47,3 +47,14 @@ export type {
   DaySummaryView,
 } from './DaySummarySheet'
 export { calendarDayLabel, longDateLabel } from './weekDayLabel'
+// Composants propres à l'entraînement : à importer par chemin direct (`ui/kit/SetPanel`…), pas par ce barrel,
+// pour ne pas les faire entrer dans le chunk « kit » du démarrage. Seuls les types sont réexportés ici.
+export type { ExerciseRowProps } from './ExerciseRow'
+export type { SetPanelProps, SetPanelSteps } from './SetPanel'
+export type { RestTimerProps } from './RestTimer'
+export type { SessionProgressProps, SetDotsProps, SetDotState } from './SessionProgress'
+export type { SelectFieldProps, TextFieldProps } from './Fields'
+export type { ChoiceGroupProps, ChoiceOption } from './ChoiceGroup'
+export type { CheckRowProps } from './CheckRow'
+export type { NoteProps } from './Note'
+export type { ConfirmSheetProps } from './ConfirmSheet'

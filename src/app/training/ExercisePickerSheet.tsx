@@ -1,7 +1,10 @@
+import { CircleHelp } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { normalizeSearch } from '../../domain/training'
 import type { LibraryExercise } from '../../types'
-import { Button, Sheet, TextField, patternLabel } from '../../ui'
+import { patternLabel } from '../../ui'
+import { Button, Sheet } from '../../ui/kit'
+import { TextField } from '../../ui/kit/Fields'
 import { TechniqueSheet } from './TechniqueSheet'
 import { LevelBadge } from './parts'
 
@@ -42,32 +45,30 @@ export function ExercisePickerSheet({
     <>
       <Sheet title={title} onClose={onClose}>
         {searchable ? (
-          <div className="mb-3">
-            <TextField
-              label="Chercher"
-              value={query}
-              onChange={setQuery}
-              type="search"
-              autoComplete="off"
-              enterKeyHint="search"
-            />
-          </div>
+          <TextField
+            label="Chercher"
+            value={query}
+            onChange={setQuery}
+            type="search"
+            autoComplete="off"
+            enterKeyHint="search"
+          />
         ) : null}
         {shown.length === 0 ? (
-          <p className="m-0 pb-2 text-base text-zinc-300">
+          <p className="m-0 text-body text-ink-muted">
             {candidates.length === 0 ? emptyText : 'Aucun résultat.'}
           </p>
         ) : (
-          <ul className="m-0 flex list-none flex-col gap-2 p-0 pb-2">
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {shown.map((c) => (
               <li key={c.id} className="flex items-stretch gap-2">
                 <button
                   type="button"
                   onClick={() => onPick(c)}
-                  className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                  className="focus-ring flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-ds-md bg-canvas px-3.5 py-2 text-left active:opacity-70"
                 >
-                  <span className="text-base font-semibold">{c.name}</span>
-                  <span className="flex items-center gap-2 text-sm text-zinc-400">
+                  <span className="text-headline">{c.name}</span>
+                  <span className="flex items-center gap-2 text-caption text-ink-muted">
                     {patternLabel(c.pattern)} <LevelBadge level={c.level} />
                   </span>
                 </button>
@@ -75,19 +76,17 @@ export function ExercisePickerSheet({
                   type="button"
                   onClick={() => setHelp(c)}
                   aria-label={`Comment faire ? ${c.name}`}
-                  className="flex min-h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-xl font-bold text-orange-300 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                  className="focus-ring grid min-h-14 w-14 shrink-0 place-items-center rounded-ds-md bg-canvas text-ember-ink active:opacity-70"
                 >
-                  ?
+                  <CircleHelp size={22} strokeWidth={1.75} aria-hidden="true" />
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <div className="pb-1 pt-2">
-          <Button variant="secondary" onClick={onClose}>
-            Annuler
-          </Button>
-        </div>
+        <Button variant="secondary" fullWidth onClick={onClose}>
+          Annuler
+        </Button>
       </Sheet>
       {help ? <TechniqueSheet exercise={help} onClose={() => setHelp(null)} /> : null}
     </>

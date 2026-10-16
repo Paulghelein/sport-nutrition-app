@@ -1,10 +1,10 @@
-import { ChoiceGroup } from '../../ui'
 import type { SessionDuration } from '../../types'
+import { Segmented } from '../../ui/kit'
 import { DURATIONS } from './durations'
 
-const options = DURATIONS.map((d) => ({ value: d, label: `${d} min` }))
+const options = DURATIONS.map((d) => ({ value: d, label: `${d}\u00a0min` }))
 
-/** Quatre gros boutons côte à côte (48 px de haut, un pouce suffit). */
+/** Quatre durées en piste arrondie (44 px de haut, un pouce suffit). */
 export function DurationPicker({
   value,
   onChange,
@@ -14,5 +14,5 @@ export function DurationPicker({
   onChange: (d: SessionDuration) => void
   legend?: string
 }) {
-  return <ChoiceGroup legend={legend} value={value} options={options} onChange={onChange} />
+  return <Segmented ariaLabel={legend} value={value} options={options} onChange={onChange} />
 }

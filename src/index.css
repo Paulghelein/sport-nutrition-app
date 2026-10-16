@@ -129,6 +129,14 @@
   color-scheme: light;
 }
 
+/* Racine du mode séance (série, repos) : fond inverse, texte on-inverse, Figtree. */
+@utility ds-session {
+  background-color: var(--color-inverse);
+  color: var(--color-on-inverse);
+  font-family: var(--font-sans);
+  color-scheme: dark;
+}
+
 /* Transitions de 200 ms ease-out ; avec prefers-reduced-motion : fondu de 100 ms (DESIGN.md §3). */
 @keyframes ds-sheet-up {
   from {

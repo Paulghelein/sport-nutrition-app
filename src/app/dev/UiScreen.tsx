@@ -39,6 +39,7 @@ import {
 } from '../../ui/kit'
 import { CalendarHeatmap } from '../../ui/kit/CalendarHeatmap'
 import { DaySummarySheet } from '../../ui/kit/DaySummarySheet'
+import { SessionDemos } from './SessionDemos'
 import type {
   DaySummaryView,
   LogAction,
@@ -620,6 +621,7 @@ export default function UiScreen() {
           </Demo>
         </Section>
 
+        <SessionDemos />
       </div>
 
       <TabBar current={tab} hrefs={TAB_HREFS} onPlus={() => setLogOpen(true)} onSelect={setTab} />

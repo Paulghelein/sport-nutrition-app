@@ -378,6 +378,42 @@ describe('replaceExercise', () => {
     expect(must(r[0]).exercises).toHaveLength(2)
   })
 
+  it('remplacer un exercice dont la dernière série est max (AMRAP) ou en temps fixe : séries normales', () => {
+    const base = makeSession()
+    const amrapBlocks: SessionBlock[] = [
+      {
+        id: 'bx',
+        kind: 'single',
+        exercises: [
+          {
+            exerciseId: 'incline-push-up',
+            restSec: 60,
+            sets: [{ targetReps: [8, 12] }, { targetReps: [8, 12] }, { setType: 'amrap', targetReps: [8, 12] }],
+          },
+          {
+            exerciseId: 'two-hand-swing',
+            restSec: 45,
+            sets: [
+              { setType: 'timedMax', targetDurationSec: 30 },
+              { setType: 'timedMax', targetDurationSec: 30 },
+            ],
+          },
+        ],
+      },
+      ...base.blocks,
+    ]
+    const dl = byId(lib, 'kb-deadlift')
+    const r1 = replaceExercise(amrapBlocks, 0, 0, dl, ctx)
+    const sets1 = exAt(r1, 0, 0).sets
+    expect(sets1).toHaveLength(3)
+    expect(sets1.every((x) => x.setType === undefined || x.setType === 'reps')).toBe(true)
+    const r2 = replaceExercise(amrapBlocks, 0, 1, dl, ctx)
+    const sets2 = exAt(r2, 0, 1).sets
+    expect(sets2).toHaveLength(2)
+    expect(sets2.every((x) => x.setType !== 'amrap' && x.setType !== 'timedMax')).toBe(true)
+    expect(sets2.every((x) => x.targetReps !== undefined)).toBe(true)
+  })
+
   it('remplacements successifs avant départ : replacedFrom garde l’exercice proposé à l’origine', () => {
     const s = makeSession()
     const r1 = replaceExercise(s.blocks, 0, 0, byId(lib, 'kb-deadlift'), ctx)

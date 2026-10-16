@@ -1,6 +1,7 @@
 import { cx } from './cx'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'dark' | 'text'
+/** `danger` : action destructive ; `inverse` : sur fond sombre (mode séance), panneau translucide. */
+export type ButtonVariant = 'primary' | 'secondary' | 'dark' | 'text' | 'danger' | 'inverse'
 /** `normal` : 48 px ; `session` : 64 px (mode séance, collé en bas, à portée de pouce). */
 export type ButtonSize = 'normal' | 'session'
 
@@ -10,6 +11,8 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary: 'bg-surface text-ink shadow-card disabled:text-ink-muted',
   dark: 'bg-inverse text-on-inverse disabled:bg-surface-sunken disabled:text-ink-muted',
   text: 'bg-transparent text-ember-ink disabled:text-ink-muted',
+  danger: 'bg-critical text-on-inverse font-bold disabled:bg-surface-sunken disabled:text-ink-muted',
+  inverse: 'bg-on-inverse/10 text-on-inverse disabled:text-on-inverse-muted',
 }
 
 const sizeClass: Record<ButtonSize, string> = {

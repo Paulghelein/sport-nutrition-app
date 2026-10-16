@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Equipment, Session, SetEntry } from '../../types'
 import { NO_PLANNED_LOAD, plannedLoad } from '../../domain/training/guided'
-import { applyDrafts, draftKey, toDraft } from './sessionDrafts'
+import { applyDrafts, byDuration, draftKey, toDraft } from './sessionDrafts'
 import type { SetDraft } from './sessionDrafts'
 
 const equipment: Equipment = {
@@ -182,5 +182,48 @@ describe('applyDrafts', () => {
       const r = applyDrafts(s, drafts(s), '', equipment)
       expect('session' in r && r.session.blocks).toEqual(s.blocks)
     })
+  })
+})
+
+describe('byDuration (type de série via setTypeOf)', () => {
+  it('série en durée : durée ; reps : répétitions', () => {
+    expect(byDuration({ targetDurationSec: 30 })).toBe(true)
+    expect(byDuration({ targetReps: [8, 12] })).toBe(false)
+  })
+  it('timedMax (fenêtre valide) et amrap se corrigent en répétitions, malgré targetDurationSec', () => {
+    expect(byDuration({ setType: 'timedMax', targetDurationSec: 45, actualReps: 24 })).toBe(false)
+    expect(byDuration({ setType: 'amrap', targetReps: [8, 12], actualReps: 14 })).toBe(false)
+  })
+  it('correction d’une série timedMax : garde son type et sa fenêtre, écrit les répétitions', () => {
+    const s = session()
+    const set: SetEntry = {
+      setType: 'timedMax',
+      targetDurationSec: 45,
+      loadKg: 16,
+      status: 'done',
+      actualReps: 24,
+    }
+    const sess: Session = {
+      ...s,
+      blocks: [
+        {
+          id: 'b1',
+          kind: 'finisher',
+          exercises: [{ exerciseId: 'two-hand-swing', restSec: 60, sets: [set] }],
+        },
+      ],
+    }
+    const d = drafts(sess)
+    d[draftKey(0, 0, 0)] = { ...(d[draftKey(0, 0, 0)] as SetDraft), reps: '26' }
+    const r = applyDrafts(sess, d, '', equipment)
+    if (!('session' in r)) throw new Error(r.error)
+    expect(r.session.blocks[0]?.exercises[0]?.sets[0]).toMatchObject({
+      setType: 'timedMax',
+      targetDurationSec: 45,
+      actualReps: 26,
+    })
+  })
+  it('timedMax sans fenêtre valide : série normale (reps)', () => {
+    expect(byDuration({ setType: 'timedMax', targetReps: [8, 12], actualReps: 10 })).toBe(false)
   })
 })

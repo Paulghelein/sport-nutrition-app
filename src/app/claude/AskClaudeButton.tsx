@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { isAllowedCoachUrl } from '../../domain/claude/coachUrl'
 import { DEFAULT_REQUESTS } from '../../domain/claude/context'
@@ -23,6 +24,8 @@ interface Props {
   defaultOpen?: boolean
   /** Appelé une fois l'ouverture automatique faite (l'appelant nettoie son paramètre d'URL). */
   onDefaultOpened?: () => void
+  /** Bouton déclencheur propre à l'écran (écrans v2) : remplace le bouton par défaut ; la feuille reste la même. */
+  renderTrigger?: (t: { onClick: () => void; disabled: boolean; busy: boolean; label: string }) => ReactNode
 }
 
 type CopyState = 'idle' | 'copied' | 'failed'
@@ -155,6 +158,7 @@ export function AskClaudeButton({
   className = '',
   defaultOpen = false,
   onDefaultOpened,
+  renderTrigger,
 }: Props) {
   const [open, setOpen] = useState(false)
   const { base, ready } = useClaudeBase()
@@ -170,15 +174,24 @@ export function AskClaudeButton({
   }, [autoOpened, onDefaultOpened])
   return (
     <>
-      <Button
-        variant="secondary"
-        className={className}
-        disabled={build === null || !ready}
-        aria-busy={!ready}
-        onClick={() => setOpen(true)}
-      >
-        {label}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger({
+          onClick: () => setOpen(true),
+          disabled: build === null || !ready,
+          busy: !ready,
+          label,
+        })
+      ) : (
+        <Button
+          variant="secondary"
+          className={className}
+          disabled={build === null || !ready}
+          aria-busy={!ready}
+          onClick={() => setOpen(true)}
+        >
+          {label}
+        </Button>
+      )}
       {open && build ? (
         <AskSheet kind={kind} base={base} build={build} onClose={() => setOpen(false)} />
       ) : null}

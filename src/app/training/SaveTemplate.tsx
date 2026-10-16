@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { MAX_TEMPLATE_NAME_LENGTH, createTemplate } from '../../db'
 import { templateFromSession } from '../../domain/training'
 import type { Session, SessionBlock, SessionDuration } from '../../types'
-import { Button, ErrorNote, Sheet, SuccessNote, TextField, errorMessage } from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button, Sheet } from '../../ui/kit'
+import { TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
 
 interface Props {
   source: Session | readonly SessionBlock[]
@@ -38,10 +41,11 @@ export function SaveTemplate({ source, durationMin, defaultName, deload }: Props
   return (
     <div className="flex flex-col gap-2">
       {saved ? (
-        <SuccessNote>{`Modèle « ${saved} » enregistré. Tu le retrouveras dans « Modèles ».`}</SuccessNote>
+        <Note tone="success">{`Modèle « ${saved} » enregistré. Tu le retrouveras dans « Modèles ».`}</Note>
       ) : null}
       <Button
         variant="secondary"
+        fullWidth
         onClick={() => {
           setError(null)
           setOpen(true)
@@ -52,6 +56,7 @@ export function SaveTemplate({ source, durationMin, defaultName, deload }: Props
       {open ? (
         <Sheet title="Enregistrer comme modèle" onClose={() => setOpen(false)} busy={busy}>
           <form
+            className="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault()
               void save()
@@ -66,20 +71,16 @@ export function SaveTemplate({ source, durationMin, defaultName, deload }: Props
               autoComplete="off"
               autoFocus
             />
-            <p className="mb-4 mt-2 text-sm text-zinc-400">
+            <p className="m-0 text-caption text-ink-muted">
               Le modèle garde les exercices, le nombre de séries et les repos. Les charges seront recalculées
               d’après ta progression à chaque départ.
             </p>
-            {error ? (
-              <div className="mb-3">
-                <ErrorNote>{error}</ErrorNote>
-              </div>
-            ) : null}
+            {error ? <Note tone="error">{error}</Note> : null}
             <div className="flex flex-col gap-2">
-              <Button type="submit" disabled={busy}>
+              <Button type="submit" fullWidth disabled={busy}>
                 Enregistrer
               </Button>
-              <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
+              <Button variant="secondary" fullWidth onClick={() => setOpen(false)} disabled={busy}>
                 Annuler
               </Button>
             </div>

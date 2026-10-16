@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { seedExercises } from '../../content'
 import { restoreExercise } from '../../db'
 import { deletedSeedExercises } from '../../domain/training'
-import { Button, Card, ErrorNote, errorMessage, muscleLabel, patternLabel } from '../../ui'
-import { BackLink, LIBRARY_PATH, LevelBadge } from './parts'
+import { errorMessage, muscleLabel, patternLabel } from '../../ui'
+import { Button, Card } from '../../ui/kit'
+import { Note } from '../../ui/kit/Note'
+import { LIBRARY_PATH } from '../routes'
+import { BackLink, LevelBadge, ScreenTitle } from './parts'
 import { useLibrary } from './useLibrary'
 
 export default function DeletedScreen() {
@@ -25,48 +28,44 @@ export default function DeletedScreen() {
   }
 
   return (
-    <section>
+    <section className="flex flex-col gap-4">
       <BackLink to={LIBRARY_PATH}>Bibliothèque</BackLink>
-      <h1 className="mt-1 text-3xl font-bold">Exercices supprimés</h1>
-      <p className="mt-2 text-base text-zinc-400">
+      <ScreenTitle>Exercices supprimés</ScreenTitle>
+      <p className="m-0 text-body text-ink-muted">
         Seuls les exercices fournis avec l’app peuvent être restaurés. Un exercice que tu as créé ne peut pas
         être restauré.
       </p>
       {error || actionError ? (
-        <div className="mt-4">
-          <ErrorNote>{actionError ?? 'Impossible de lire la bibliothèque.'}</ErrorNote>
-        </div>
+        <Note tone="error">{actionError ?? 'Impossible de lire la bibliothèque.'}</Note>
       ) : null}
       {!data ? null : deleted.length === 0 ? (
-        <Card className="mt-5 text-center">
-          <p className="text-lg font-semibold">Aucun exercice supprimé</p>
+        <Card className="text-center">
+          <p className="m-0 font-display text-title">Aucun exercice supprimé</p>
         </Card>
       ) : (
-        <ul className="m-0 mt-5 flex list-none flex-col gap-2 p-0">
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {deleted.map((ex) => (
-            <li
-              key={ex.id}
-              className="flex items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface p-3 pl-4"
-            >
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-lg font-semibold leading-snug">{ex.name}</span>
-                <span className="text-sm text-zinc-400">
-                  {patternLabel(ex.pattern)} · {ex.muscles.primary.map(muscleLabel).join(', ')}
+            <li key={ex.id}>
+              <Card className="flex items-center gap-3">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-headline">{ex.name}</span>
+                  <span className="text-caption text-ink-muted">
+                    {patternLabel(ex.pattern)} · {ex.muscles.primary.map(muscleLabel).join(', ')}
+                  </span>
+                  <span>
+                    <LevelBadge level={ex.level} />
+                  </span>
                 </span>
-                <span>
-                  <LevelBadge level={ex.level} />
-                </span>
-              </span>
-              <Button
-                variant="secondary"
-                width="auto"
-                className="shrink-0"
-                disabled={busyId !== null}
-                aria-label={`Restaurer ${ex.name}`}
-                onClick={() => void restore(ex.id)}
-              >
-                Restaurer
-              </Button>
+                <Button
+                  variant="secondary"
+                  className="shrink-0 bg-canvas! shadow-none!"
+                  disabled={busyId !== null}
+                  aria-label={`Restaurer ${ex.name}`}
+                  onClick={() => void restore(ex.id)}
+                >
+                  Restaurer
+                </Button>
+              </Card>
             </li>
           ))}
         </ul>

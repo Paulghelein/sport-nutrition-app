@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { ArrowDown, ArrowLeftRight, ArrowUp, Play, Trash2 } from 'lucide-react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { buildSessionBeforeMessage } from '../../domain/claude/context'
 import type { ClaudeBaseInput } from '../../domain/claude/context'
@@ -16,173 +18,37 @@ import {
   replacementCandidates,
   patternLevels,
   sessionFromPlan,
+  sessionHeadline,
   templateIssues,
   templateTargetNotes,
+  volumeTargets,
+  weeklyVolume,
 } from '../../domain/training'
 import type { TemplateIssue } from '../../domain/training'
-import type { EngineInput, LibraryExercise, SessionBlock, SessionExercise, SessionPlan } from '../../types'
-import {
-  Button,
-  Card,
-  ErrorNote,
-  Section,
-  errorMessage,
-  formatKg,
-  linkButtonClass,
-  muscleLabel,
-  useLiveQuery,
-} from '../../ui'
+import type { EngineInput, LibraryExercise, SessionBlock, SessionDuration, SessionPlan } from '../../types'
+import { errorMessage, muscleLabel, useLiveQuery } from '../../ui'
+import { Button, Card, Segmented, StatTile, buttonClass, cx, formatInt, withUnit } from '../../ui/kit'
+import { ExerciseRow } from '../../ui/kit/ExerciseRow'
+import { Note } from '../../ui/kit/Note'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { PLAN_ISSUE_TEXT } from '../claude/importContext'
 import { sessionBeforeData } from '../claude/inputs'
-import { GUIDED_PATH } from '../routes'
-import { DurationPicker } from './DurationPicker'
-import { parseDuration, saveDuration } from './durations'
+import { GUIDED_PATH, LIBRARY_PATH, SETTINGS_PATH, TEMPLATES_PATH, TRAINING_PATH } from '../routes'
+import { DURATIONS, parseDuration, saveDuration } from './durations'
 import { ExercisePickerSheet } from './ExercisePickerSheet'
 import { formatSeconds } from './format'
-import { BackLink } from './parts'
+import { BackLink, ScreenTitle, Section } from './parts'
 import { planForDuration, previewKey } from './previewPlan'
 import { clearPreviewEdit, loadPreviewEdit, savePreviewEdit } from './previewDraft'
+import { exerciseText, lastLoadKg, loadIncrease, plannedTotals } from './prescription'
 import { SaveTemplate } from './SaveTemplate'
 import { useEngineInput } from './useEngineInput'
 import type { EngineBase } from './useEngineInput'
 
-function targetText(se: SessionExercise, ex: LibraryExercise | undefined): string {
-  const n = se.sets.length
-  const first = se.sets[0]
-  const side = ex?.unilateral ? ' par côté' : ''
-  if (first?.targetDurationSec !== undefined) return `${n} × ${first.targetDurationSec} s${side}`
-  const r = first?.targetReps
-  if (r) return `${n} × ${r[0] === r[1] ? r[0] : `${r[0]} à ${r[1]}`} reps${side}`
-  return `${n} séries`
-}
+const DURATION_OPTIONS = DURATIONS.map((d) => ({ value: d, label: `${d}\u00a0min` }))
 
-const iconButton =
-  'flex size-11 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-zinc-100 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
-
-const smallButton =
-  'flex min-h-11 flex-1 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-3 text-base font-semibold text-zinc-100 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
-
-function Chevron({ up }: { up: boolean }) {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'} />
-    </svg>
-  )
-}
-
-interface LineProps {
-  se: SessionExercise
-  ex: LibraryExercise | undefined
-  showRest: boolean
-  onReplace: () => void
-  onRemove: () => void
-}
-
-function ExerciseLine({ se, ex, showRest, onReplace, onRemove }: LineProps) {
-  const load = se.sets[0]?.loadKg
-  const name = ex?.name ?? se.exerciseId
-  return (
-    <div className="py-2.5">
-      <Link
-        to={`/entrainement/exercices/${se.exerciseId}`}
-        className="inline-flex min-h-11 items-center text-lg font-semibold text-zinc-100 underline decoration-zinc-600 underline-offset-4"
-      >
-        {name}
-      </Link>
-      <p className="m-0 flex flex-wrap items-baseline gap-x-3 text-base text-zinc-300">
-        <span className="text-xl font-bold tabular-nums text-zinc-100">{targetText(se, ex)}</span>
-        {load !== undefined ? (
-          <span className="font-semibold text-orange-300">{formatKg(load)} kg</span>
-        ) : null}
-        {showRest ? <span className="text-zinc-400">repos {formatSeconds(se.restSec)}</span> : null}
-        {se.tempo ? <span className="text-zinc-400">tempo {se.tempo}</span> : null}
-      </p>
-      <div className="mt-2 flex gap-2">
-        <button type="button" className={smallButton} onClick={onReplace} aria-label={`Remplacer ${name}`}>
-          Remplacer
-        </button>
-        <button type="button" className={smallButton} onClick={onRemove} aria-label={`Retirer ${name}`}>
-          Retirer
-        </button>
-      </div>
-    </div>
-  )
-}
-
-interface BlockProps {
-  block: SessionBlock
-  index: number
-  count: number
-  nextIsFinisher: boolean
-  byId: Map<string, LibraryExercise>
-  onMove: (to: number) => void
-  onReplace: (exercise: number) => void
-  onRemove: (exercise: number) => void
-}
-
-function BlockCard({ block, index, count, nextIsFinisher, byId, onMove, onReplace, onRemove }: BlockProps) {
-  const superset = block.kind === 'superset'
-  const finisher = block.kind === 'finisher'
-  const rest = block.exercises[0]?.restSec ?? 0
-  return (
-    <Card className={finisher ? 'border-orange-400/50' : superset ? 'border-sky-400/40' : ''}>
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          {superset ? (
-            <p className="m-0 mb-1 text-sm font-semibold text-sky-300">
-              Superset — repos {formatSeconds(rest)} après le tour
-            </p>
-          ) : null}
-          {finisher ? <p className="m-0 mb-1 text-sm font-semibold text-orange-300">Finisher</p> : null}
-          <ul className="m-0 list-none divide-y divide-v1-line p-0">
-            {block.exercises.map((se, i) => (
-              <li key={`${se.exerciseId}-${i}`}>
-                <ExerciseLine
-                  se={se}
-                  ex={byId.get(se.exerciseId)}
-                  showRest={!superset}
-                  onReplace={() => onReplace(i)}
-                  onRemove={() => onRemove(i)}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="flex shrink-0 flex-col gap-2" role="group" aria-label={`Bloc ${index + 1} : ordre`}>
-          <button
-            type="button"
-            className={iconButton}
-            disabled={index === 0 || block.kind === 'finisher'}
-            onClick={() => onMove(index - 1)}
-            aria-label={`Monter le bloc ${index + 1}`}
-          >
-            <Chevron up />
-          </button>
-          <button
-            type="button"
-            className={iconButton}
-            disabled={index === count - 1 || block.kind === 'finisher' || nextIsFinisher}
-            onClick={() => onMove(index + 1)}
-            aria-label={`Descendre le bloc ${index + 1}`}
-          >
-            <Chevron up={false} />
-          </button>
-        </div>
-      </div>
-    </Card>
-  )
-}
+const ROUND_BUTTON =
+  'focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-transparent text-ink-muted active:bg-canvas disabled:text-ink-faint'
 
 type Picker = { kind: 'replace'; block: number; exercise: number } | { kind: 'add' } | null
 
@@ -195,13 +61,38 @@ interface ContentProps {
   /** Écarts entre les cibles de Claude et celles retenues (séance proposée par Claude seulement). */
   notes: string[]
   defaultName: string
+  /** Sous-titre : « Séance de 30 min · proposée pour toi », « Modèle : … ». */
+  subtitle: string
+  /** Titre imposé (séance proposée par Claude) ; sinon le titre généré par le moteur. */
+  titleOverride?: string
+  /** Lien retour, affiché à gauche de « Demander à Claude ». */
+  back: ReactNode
 }
 
-function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaultName }: ContentProps) {
+/**
+ * Édition de l'aperçu (types de séries, F3) : remplacer ou ajouter un exercice reconstruit des séries NORMALES
+ * (`replaceExercise` / `addExercise` du moteur) : une série max (AMRAP) ou en temps fixe ne survit pas à un
+ * remplacement, et l'aperçu n'en pose jamais de nouvelle à la main (le moteur seul en décide, selon ses règles de
+ * sécurité). Déplacer ou retirer un AUTRE exercice ne touche pas aux séries : un exercice qui avait une série max
+ * la garde. « Revenir à la séance proposée » rend la séance du moteur.
+ */
+function PreviewContent({
+  data,
+  plan,
+  editKey,
+  templateId,
+  issues,
+  notes,
+  defaultName,
+  subtitle,
+  titleOverride,
+  back,
+}: ContentProps) {
   const navigate = useNavigate()
   const active = useLiveQuery(() => getActiveSession(), [])
   const [edited, setEdited] = useState<SessionBlock[] | null>(() => loadPreviewEdit(editKey))
   const [picker, setPicker] = useState<Picker>(null)
+  const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -223,6 +114,7 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
   const estimated = edited ? estimateMinutes(blocks, data.library, plan.warmupMin) : plan.estimatedMin
   const warmup = edited ? buildWarmup(blocks, byId, plan.warmupMin, data.equipment.kettlebell) : plan.warmup
   const presentIds = blocks.flatMap((b) => b.exercises.map((e) => e.exerciseId))
+  const totals = useMemo(() => plannedTotals(blocks, byId), [blocks, byId])
 
   const candidates = useMemo(() => {
     if (picker === null) return []
@@ -267,44 +159,87 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
     return (base: ClaudeBaseInput) => buildSessionBeforeMessage({ ...base, ...extra })
   }, [blocks, data.library, data.states, data.profileLevel, estimated, plan])
 
+  const title = useMemo(() => {
+    if (blocks.length === 0) return null
+    try {
+      return sessionHeadline(
+        { ...plan, blocks },
+        data.library,
+        weeklyVolume(data.sessions, data.library, data.date),
+        volumeTargets(data.settings, data.equipment),
+      ).title
+    } catch {
+      return null
+    }
+  }, [blocks, plan, data])
+
   const empty = blocks.length === 0
   return (
-    <div>
-      <Card className="mt-5" aria-live="polite">
+    <>
+      <div className="flex items-center justify-between gap-3">
+        {back}
         {!empty ? (
-          <>
-            <p className="m-0 text-4xl font-bold tabular-nums">≈ {estimated} min</p>
-            <p className="m-0 mt-1 text-base text-zinc-400">
-              estimées, échauffement compris, pour {plan.durationMin} min disponibles
-            </p>
-          </>
-        ) : (
-          <p className="m-0 text-base text-zinc-400">{plan.durationMin} min disponibles</p>
-        )}
-        {plan.deload ? (
-          <>
-            <p className="mt-3 inline-block rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-sm font-semibold text-amber-300">
-              Semaine allégée
-            </p>
-            <p className="m-0 mt-2 text-sm text-zinc-300">
-              {plan.deloadReason === 'scheduled'
-                ? 'Prévue : cela fait plusieurs semaines sans pause. Moitié moins de séries, même charge.'
-                : plan.deloadReason === 'fatigue'
-                  ? 'Tu as enchaîné des séances difficiles. Moitié moins de séries, même charge.'
-                  : 'Semaine allégée en cours : moitié moins de séries, même charge.'}
-            </p>
-          </>
+          <AskClaudeButton
+            kind="session_before"
+            build={buildAsk}
+            renderTrigger={(t) => (
+              <button
+                type="button"
+                onClick={t.onClick}
+                disabled={t.disabled}
+                aria-busy={t.busy}
+                className="focus-ring min-h-11 rounded-ds-pill bg-surface px-3.5 text-body-strong text-ink shadow-card disabled:text-ink-muted"
+              >
+                {t.label}
+              </button>
+            )}
+          />
         ) : null}
-        {plan.focus.length > 0 ? (
-          <p className="m-0 mt-3 text-base text-zinc-200">
-            <span className="text-zinc-400">Groupes visés : </span>
-            {plan.focus.map(muscleLabel).join(', ')}
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-caption text-ink-muted">{subtitle}</span>
+        <h1 className="m-0 font-display text-[30px] font-extrabold leading-[34px] tracking-[-0.015em]">
+          {titleOverride ?? title ?? 'Aperçu'}
+        </h1>
+      </div>
+
+      {!empty ? (
+        <Card
+          padding="none"
+          className="grid grid-cols-3 divide-x divide-line px-1.5 py-3.5"
+          aria-live="polite"
+        >
+          <StatTile label="Durée" value={`≈ ${estimated} min`} />
+          <StatTile label="Séries" value={String(totals.sets)} />
+          <StatTile
+            label="Volume"
+            value={totals.tonnageKg > 0 ? withUnit(formatInt(totals.tonnageKg), 'kg') : '—'}
+          />
+        </Card>
+      ) : (
+        <p className="m-0 text-body text-ink-muted">{plan.durationMin} min disponibles</p>
+      )}
+
+      {plan.deload ? (
+        <Note tone="warning">
+          <p className="m-0 font-semibold">Semaine allégée</p>
+          <p className="m-0 text-caption text-ink-muted">
+            {plan.deloadReason === 'scheduled'
+              ? 'Prévue : cela fait plusieurs semaines sans pause. Moitié moins de séries, même charge.'
+              : plan.deloadReason === 'fatigue'
+                ? 'Tu as enchaîné des séances difficiles. Moitié moins de séries, même charge.'
+                : 'Semaine allégée en cours : moitié moins de séries, même charge.'}
           </p>
-        ) : null}
-      </Card>
+        </Note>
+      ) : null}
+      {plan.focus.length > 0 && !empty ? (
+        <p className="m-0 text-body text-ink-muted">
+          Groupes visés : <span className="text-ink">{plan.focus.map(muscleLabel).join(', ')}</span>
+        </p>
+      ) : null}
 
       {issues.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2.5 text-base text-amber-200">
+        <Note tone="warning">
           <p className="m-0 font-semibold">Certains exercices du modèle sont ignorés :</p>
           <ul className="m-0 mt-1 list-disc pl-5">
             {issues.map((i) => (
@@ -313,42 +248,40 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
               </li>
             ))}
           </ul>
-        </div>
+        </Note>
       ) : null}
 
       {notes.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2.5 text-base text-amber-200">
+        <Note tone="warning">
           <p className="m-0 font-semibold">Cibles de Claude ajustées :</p>
           <ul className="m-0 mt-1 list-disc pl-5">
             {notes.map((n, i) => (
               <li key={i}>{n}</li>
             ))}
           </ul>
-        </div>
+        </Note>
       ) : null}
 
       {empty && !edited ? (
-        <Card className="mt-6">
-          <p className="m-0 text-lg font-semibold">Aucune séance possible avec ces réglages.</p>
-          <p className="m-0 mt-1 text-base text-zinc-300">
+        <Card padding="large" className="flex flex-col gap-3">
+          <p className="m-0 font-display text-title">Aucune séance possible avec ces réglages.</p>
+          <p className="m-0 text-body text-ink-muted">
             Il n’y a pas assez d’exercices adaptés à ton matériel et à tes préférences. Vérifie ton matériel
             dans les Réglages, ou ajoute et réactive des exercices dans la bibliothèque.
           </p>
-          <div className="mt-4 flex flex-col gap-2">
-            <Link to="/reglages" className={linkButtonClass('primary')}>
-              Ouvrir les Réglages
-            </Link>
-            <Link to="/entrainement/exercices" className={linkButtonClass('secondary')}>
-              Bibliothèque d’exercices
-            </Link>
-          </div>
+          <Link to={SETTINGS_PATH} className={buttonClass('primary', 'normal', true)}>
+            Ouvrir les Réglages
+          </Link>
+          <Link to={LIBRARY_PATH} className={buttonClass('secondary', 'normal', true)}>
+            Bibliothèque d’exercices
+          </Link>
         </Card>
       ) : (
         <>
           {!empty ? (
             <Section title={`Échauffement · ${plan.warmupMin} min`}>
               <Card>
-                <ol className="m-0 flex list-decimal flex-col gap-1.5 pl-5 text-base text-zinc-200">
+                <ol className="m-0 flex list-decimal flex-col gap-1.5 pl-5 text-body">
                   {warmup.map((w, i) => (
                     <li key={i}>{w}</li>
                   ))}
@@ -359,38 +292,132 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
 
           <Section title="Exercices">
             {empty ? (
-              <p className="m-0 mb-3 text-base text-zinc-300">Plus aucun exercice : ajoute-en au moins un.</p>
+              <p className="m-0 text-body text-ink-muted">Plus aucun exercice : ajoute-en au moins un.</p>
             ) : (
-              <div className="flex flex-col gap-3">
-                {blocks.map((b, i) => (
-                  <BlockCard
-                    key={b.id}
-                    block={b}
-                    index={i}
-                    count={blocks.length}
-                    nextIsFinisher={blocks[i + 1]?.kind === 'finisher'}
-                    byId={byId}
-                    onMove={(to) => change(moveBlock(blocks, i, to))}
-                    onReplace={(exercise) => setPicker({ kind: 'replace', block: i, exercise })}
-                    onRemove={(exercise) => change(removeExercise(blocks, i, exercise))}
-                  />
-                ))}
-              </div>
+              <Card as="section" aria-label="Exercices" padding="none" className="px-4 py-1">
+                {blocks.map((block, bi) => {
+                  const superset = block.kind === 'superset'
+                  const finisher = block.kind === 'finisher'
+                  return (
+                    <Fragment key={block.id}>
+                      {superset || finisher || editing ? (
+                        <div
+                          className={cx(
+                            'flex min-h-11 items-center justify-between gap-2 pt-2',
+                            bi > 0 && 'mt-1 border-t border-line',
+                          )}
+                        >
+                          <span className="text-label uppercase text-ember-ink">
+                            {finisher
+                              ? 'Finisher'
+                              : superset
+                                ? `Superset — repos ${formatSeconds(block.exercises[0]?.restSec ?? 0)} après le tour`
+                                : ''}
+                          </span>
+                          {editing ? (
+                            <span role="group" aria-label={`Bloc ${bi + 1} : ordre`} className="flex">
+                              <button
+                                type="button"
+                                className={ROUND_BUTTON}
+                                disabled={bi === 0 || finisher}
+                                onClick={() => change(moveBlock(blocks, bi, bi - 1))}
+                                aria-label={`Monter le bloc ${bi + 1}`}
+                              >
+                                <ArrowUp size={20} strokeWidth={1.75} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                className={ROUND_BUTTON}
+                                disabled={
+                                  bi === blocks.length - 1 || finisher || blocks[bi + 1]?.kind === 'finisher'
+                                }
+                                onClick={() => change(moveBlock(blocks, bi, bi + 1))}
+                                aria-label={`Descendre le bloc ${bi + 1}`}
+                              >
+                                <ArrowDown size={20} strokeWidth={1.75} aria-hidden="true" />
+                              </button>
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : bi > 0 ? (
+                        <div className="border-t border-line" />
+                      ) : null}
+                      {block.exercises.map((se, ei) => {
+                        const ex = byId.get(se.exerciseId)
+                        const name = ex?.name ?? se.exerciseId
+                        const text = exerciseText(se, ex, { showRest: !superset })
+                        const rise = loadIncrease(text.loadKg, lastLoadKg(data.sessions, se.exerciseId))
+                        return (
+                          <ExerciseRow
+                            key={`${se.exerciseId}-${ei}`}
+                            className="border-t-0"
+                            muscles={ex?.muscles.primary ?? []}
+                            title={
+                              <Link
+                                to={`${LIBRARY_PATH}/${se.exerciseId}`}
+                                className="focus-ring inline-flex min-h-11 items-center text-ink no-underline"
+                              >
+                                {name}
+                              </Link>
+                            }
+                            summary={text.summary}
+                            detail={
+                              <>
+                                {text.details.join(' · ')}
+                                {rise ? (
+                                  <>
+                                    {text.details.length > 0 ? ' · ' : ''}
+                                    <span className="font-semibold text-ember-ink">{rise}</span>
+                                  </>
+                                ) : null}
+                              </>
+                            }
+                            actions={
+                              <>
+                                <button
+                                  type="button"
+                                  className={ROUND_BUTTON}
+                                  onClick={() => setPicker({ kind: 'replace', block: bi, exercise: ei })}
+                                  aria-label={`Remplacer ${name}`}
+                                >
+                                  <ArrowLeftRight size={20} strokeWidth={1.75} aria-hidden="true" />
+                                </button>
+                                {editing ? (
+                                  <button
+                                    type="button"
+                                    className={ROUND_BUTTON}
+                                    onClick={() => change(removeExercise(blocks, bi, ei))}
+                                    aria-label={`Retirer ${name}`}
+                                  >
+                                    <Trash2 size={20} strokeWidth={1.75} aria-hidden="true" />
+                                  </button>
+                                ) : null}
+                              </>
+                            }
+                          />
+                        )
+                      })}
+                    </Fragment>
+                  )
+                })}
+              </Card>
             )}
-            <div className="mt-3 flex flex-col gap-2">
-              <Button variant="secondary" onClick={() => setPicker({ kind: 'add' })}>
-                Ajouter un exercice
-              </Button>
-              {edited ? (
-                <Button variant="ghost" onClick={reset}>
-                  Revenir à la séance proposée
+            {editing || empty ? (
+              <div className="flex flex-col gap-2">
+                <Button variant="secondary" fullWidth onClick={() => setPicker({ kind: 'add' })}>
+                  Ajouter un exercice
                 </Button>
-              ) : null}
-            </div>
+                {edited ? (
+                  <Button variant="text" fullWidth onClick={reset}>
+                    Revenir à la séance proposée
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
           </Section>
 
           {!empty ? (
-            <div className="mt-6">
+            <div className="mt-2">
               <SaveTemplate
                 source={blocks}
                 durationMin={plan.durationMin}
@@ -403,31 +430,37 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
       )}
 
       {!empty ? (
-        <div className="mt-4">
-          <AskClaudeButton kind="session_before" build={buildAsk} />
-        </div>
-      ) : null}
-
-      {!empty ? (
-        <div className="sticky bottom-0 mt-6 rounded-2xl border border-v1-line bg-v1-bg/95 p-3 backdrop-blur">
-          {error ? (
-            <div className="mb-2">
-              <ErrorNote>{error}</ErrorNote>
-            </div>
-          ) : null}
+        <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-col gap-2 bg-canvas px-4 pb-3 pt-3 shadow-[0_-12px_24px_var(--color-canvas)]">
+          {error ? <Note tone="error">{error}</Note> : null}
           {active.data ? (
             <>
-              <p className="m-0 mb-2 text-sm text-zinc-300">
+              <p className="m-0 text-caption text-ink-muted">
                 Une séance est déjà en cours. Reprends-la, ou abandonne-la avant d’en commencer une autre.
               </p>
-              <Link to={GUIDED_PATH} className={linkButtonClass('primary')}>
+              <Link to={GUIDED_PATH} className={buttonClass('primary', 'session', true)}>
                 Reprendre la séance en cours
               </Link>
             </>
           ) : (
-            <Button onClick={() => void start()} disabled={busy}>
-              Commencer la séance
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="session"
+                onClick={() => setEditing((v) => !v)}
+                aria-pressed={editing}
+              >
+                {editing ? 'Terminé' : 'Modifier'}
+              </Button>
+              <Button
+                size="session"
+                className="flex-1"
+                icon={<Play size={20} strokeWidth={1.75} aria-hidden="true" />}
+                onClick={() => void start()}
+                disabled={busy}
+              >
+                Démarrer
+              </Button>
+            </div>
           )}
         </div>
       ) : null}
@@ -442,7 +475,7 @@ function PreviewContent({ data, plan, editKey, templateId, issues, notes, defaul
           onClose={() => setPicker(null)}
         />
       ) : null}
-    </div>
+    </>
   )
 }
 
@@ -472,6 +505,9 @@ export default function PreviewScreen() {
           // La séance de Claude est écrasée à chaque application : une modification de l'aperçu précédent ne doit pas survivre.
           key: `modele:${template.id}:${fromClaude ? template.updatedAt + ':' : ''}${data.date}`,
           name: template.name,
+          subtitle: fromClaude
+            ? `Séance de ${template.durationMin} min`
+            : `Modèle « ${template.name} » · ${template.durationMin} min`,
         }
       }
       return {
@@ -481,6 +517,7 @@ export default function PreviewScreen() {
         notes: [] as string[],
         key: previewKey(duration, data.date),
         name: `Séance ${duration} min`,
+        subtitle: `Séance de ${duration} min · proposée pour toi`,
       }
     } catch (e) {
       console.error('Génération de séance impossible', e)
@@ -489,35 +526,35 @@ export default function PreviewScreen() {
   }, [data, duration, templateId, templates.data])
 
   const fromTemplate = templateId !== undefined
+  const back = (
+    <BackLink to={fromTemplate ? TEMPLATES_PATH : TRAINING_PATH}>
+      {fromTemplate ? 'Modèles' : 'Entraînement'}
+    </BackLink>
+  )
+  const ready = data !== undefined && result !== undefined && result !== null && !result.missing
   return (
-    <section>
-      <BackLink to={fromTemplate ? '/entrainement/modeles' : '/entrainement'}>
-        {fromTemplate ? 'Modèles' : 'Entraînement'}
-      </BackLink>
-      <h1 className="mt-2 text-3xl font-bold">
-        {templateId === CLAUDE_TEMPLATE_ID ? 'Séance proposée par Claude' : 'Aperçu'}
-      </h1>
+    <section className="flex flex-col gap-3.5">
+      {ready ? null : back}
+
       {!fromTemplate ? (
-        <div className="mt-4">
-          <DurationPicker
-            legend="Changer la durée"
-            value={duration}
-            onChange={(d) => setParams({ duree: String(d) }, { replace: true })}
-          />
-        </div>
+        <Segmented
+          ariaLabel="Changer la durée"
+          value={duration as SessionDuration}
+          options={DURATION_OPTIONS}
+          onChange={(d) => setParams({ duree: String(d) }, { replace: true })}
+        />
       ) : null}
 
       {error || result === null || templates.error ? (
-        <div className="mt-5">
-          <ErrorNote>
-            Impossible de préparer la séance. Réessaie ou vérifie ton profil et ton matériel.
-          </ErrorNote>
-        </div>
+        <Note tone="error">
+          Impossible de préparer la séance. Réessaie ou vérifie ton profil et ton matériel.
+        </Note>
       ) : null}
       {result?.missing ? (
-        <div className="mt-5">
-          <ErrorNote>Ce modèle n’existe plus.</ErrorNote>
-        </div>
+        <>
+          <ScreenTitle>Séance introuvable</ScreenTitle>
+          <Note tone="error">Ce modèle n’existe plus.</Note>
+        </>
       ) : null}
       {!data && !error ? <div aria-busy="true" className="min-h-40" /> : null}
 
@@ -531,6 +568,9 @@ export default function PreviewScreen() {
           issues={result.issues}
           notes={result.notes}
           defaultName={result.name}
+          subtitle={result.subtitle}
+          titleOverride={templateId === CLAUDE_TEMPLATE_ID ? 'Séance proposée par Claude' : undefined}
+          back={back}
         />
       ) : null}
     </section>

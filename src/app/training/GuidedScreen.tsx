@@ -28,13 +28,17 @@ import {
 } from '../../domain/training'
 import type { Session, SessionCursor } from '../../types'
 import type { RestPlan, SetInput } from '../../types/guided'
-import { Button, ConfirmSheet, ErrorNote, Sheet, errorMessage } from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button, Sheet, buttonClass } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { Note } from '../../ui/kit/Note'
+import { TRAINING_PATH } from '../routes'
 import { ExercisePickerSheet } from './ExercisePickerSheet'
-import { formatRange, kgText } from './format'
-import { clockMs, describeStep, loadSummary } from './guidedInfo'
+import { clockMs, describeStep, exerciseProgress, nextDetail } from './guidedInfo'
 import type { StepInfo } from './guidedInfo'
 import { FinishedView, RestView, SetView, WarmupView } from './guidedViews'
 import type { NextUpInfo, TopProps } from './guidedViews'
+import { doneText, lastLoadKg as findLastLoad } from './prescription'
 import { TechniqueSheet } from './TechniqueSheet'
 import { useEngineInput } from './useEngineInput'
 import type { EngineBase } from './useEngineInput'
@@ -115,7 +119,7 @@ function previousHandled(session: Session, step: Step): SessionCursor | null {
 }
 
 const menuButton =
-  'flex min-h-14 w-full items-center rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-left text-lg font-semibold text-zinc-100 active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'focus-ring flex min-h-14 w-full items-center rounded-ds-md bg-canvas px-4 text-left text-headline text-ink active:opacity-70'
 
 function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
   const navigate = useNavigate()
@@ -179,25 +183,19 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
     onQuit: () => setSheet('quit'),
     onMenu: () => setSheet('menu'),
     banner: saveError ? (
-      <div
-        role="alert"
-        className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200"
-      >
+      <Note tone="error">
         <p className="m-0">{saveError} Ta saisie est conservée à l’écran.</p>
         <button
           type="button"
-          className="mt-1 min-h-11 font-semibold text-red-100 underline"
+          className="focus-ring mt-1 min-h-11 text-body-strong text-ember-ink underline"
           onClick={() => void queueSave()}
         >
           Réessayer
         </button>
-      </div>
+      </Note>
     ) : undefined,
-    position: {
-      current: Math.min(counts.done + counts.skipped + 1, counts.total),
-      total: counts.total,
-      done: counts.done + counts.skipped,
-    },
+    progress: exerciseProgress(session.blocks, step.kind === 'set' ? step.cursor : null),
+    startedAt: session.startedAt,
   }
 
   const validate = (input: SetInput) => {
@@ -255,12 +253,12 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
         now: new Date().toISOString(),
       })
       const done = await completeSession(completion)
-      navigate(`/entrainement/recap/${done.id}`, { replace: true })
+      navigate(`${TRAINING_PATH}/recap/${done.id}`, { replace: true })
     } catch (e) {
       // Déjà terminée ailleurs (autre onglet, double appui) : on relit la base plutôt que de deviner d'après le message.
       const stored = await getSession(session.id).catch(() => undefined)
       if (stored?.status === 'done') {
-        navigate(`/entrainement/recap/${session.id}`, { replace: true })
+        navigate(`${TRAINING_PATH}/recap/${session.id}`, { replace: true })
         return
       }
       const message =
@@ -279,7 +277,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
     setBusy(true)
     try {
       await abandonSession(session.id)
-      navigate('/entrainement', { replace: true })
+      navigate(TRAINING_PATH, { replace: true })
     } catch (e) {
       setSheet(null)
       setBusy(false)
@@ -293,7 +291,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
     await chain.current
     try {
       await saveSessionProgress(sessionRef.current)
-      navigate('/entrainement')
+      navigate(TRAINING_PATH)
     } catch (e) {
       setBusy(false)
       setSaveError(errorMessage(e, 'Impossible d’enregistrer la séance sur ce téléphone.'))
@@ -303,16 +301,21 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
 
   const nextUp = (): NextUpInfo | null => {
     if (!info) return null
-    const ls = loadSummary(info)
-    const parts = [info.set.targetReps ? `${formatRange(info.set.targetReps)} reps` : null]
-    if (info.set.targetDurationSec !== undefined) parts[0] = `${info.set.targetDurationSec} s`
-    if (info.set.loadKg !== undefined) parts.push(`${kgText(info.set.loadKg)} kg`)
-    else if (ls.unit === '') parts.push(ls.big.toLowerCase())
     return {
       name: info.exercise?.name ?? info.se.exerciseId,
       setLabel: `Série ${info.cursor.set + 1} sur ${info.se.sets.length}`,
-      detail: parts.filter(Boolean).join(' · '),
+      detail: nextDetail(info),
     }
+  }
+
+  /** Rappel de la série qui vient d'être validée, affiché pendant le repos. */
+  const recap = (): string | null => {
+    if (previous === null) return null
+    const set = setAt(session, previous)
+    if (set?.status !== 'done') return null
+    const se = session.blocks[previous.block]?.exercises[previous.exercise]
+    const ex = se ? byId.get(se.exerciseId) : undefined
+    return `Série ${previous.set + 1} validée : ${doneText(set, ex)}`
   }
 
   let body: ReactNode
@@ -335,6 +338,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
         endsAt={restEnd}
         totalSec={restTotal}
         label={restLabels[restKind]}
+        recap={recap()}
         next={nextUp()}
         onAdjust={adjustRest}
         onEnd={endRest}
@@ -347,6 +351,8 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
         top={top}
         info={info}
         equipment={engine.equipment}
+        position={{ current: top.progress?.current ?? 1, total: top.progress?.fractions.length ?? 1 }}
+        lastLoadKg={findLastLoad(engine.sessions, info.se.exerciseId)}
         onValidate={validate}
         onHelp={() => setSheet('help')}
       />
@@ -358,7 +364,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
         done={counts.done}
         skipped={counts.skipped}
         busy={busy}
-        error={finishError ? <ErrorNote>{finishError}</ErrorNote> : null}
+        error={finishError ? <Note tone="error">{finishError}</Note> : null}
         onFinish={() => void finish()}
       />
     )
@@ -377,7 +383,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
       {busy && sheet === null ? (
         <div
           aria-busy="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 text-xl font-semibold"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-inverse/60 text-headline text-on-inverse"
         >
           <span role="status">Enregistrement…</span>
         </div>
@@ -427,7 +433,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
                 Terminer la séance maintenant
               </button>
             ) : null}
-            <Button variant="secondary" onClick={() => setSheet(null)}>
+            <Button variant="secondary" fullWidth onClick={() => setSheet(null)}>
               Fermer
             </Button>
           </div>
@@ -436,17 +442,17 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
 
       {sheet === 'quit' ? (
         <Sheet title="Quitter la séance" onClose={() => setSheet(null)}>
-          <p className="mb-4 mt-0 text-base text-zinc-300">
+          <p className="m-0 text-body text-ink-muted">
             En pause, la séance reste en cours : tu la reprends plus tard exactement là où tu t’es arrêté.
           </p>
           <div className="flex flex-col gap-2">
-            <Button className="min-h-14" onClick={() => void pause()}>
+            <Button fullWidth size="session" onClick={() => void pause()}>
               Mettre en pause
             </Button>
-            <Button variant="danger" className="min-h-14" onClick={() => setSheet('confirm-abandon')}>
+            <Button variant="danger" fullWidth onClick={() => setSheet('confirm-abandon')}>
               Abandonner la séance
             </Button>
-            <Button variant="secondary" onClick={() => setSheet(null)}>
+            <Button variant="secondary" fullWidth onClick={() => setSheet(null)}>
               Continuer la séance
             </Button>
           </div>
@@ -458,7 +464,7 @@ function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
           title="Quitter sans enregistrer ?"
           message="Les dernières séries n’ont pas pu être enregistrées sur ce téléphone. Si tu quittes maintenant, elles seront perdues."
           confirmLabel="Quitter quand même"
-          onConfirm={() => navigate('/entrainement')}
+          onConfirm={() => navigate(TRAINING_PATH)}
           onCancel={() => setSheet(null)}
         />
       ) : null}
@@ -555,11 +561,11 @@ export default function GuidedScreen() {
     }
   }, [])
 
-  const wrapper = 'flex min-h-0 flex-1 flex-col'
+  const wrapper = 'ds-session flex min-h-0 flex-1 flex-col'
   if (state.status === 'error' || engine.error) {
     return (
       <div className={`${wrapper} justify-center p-6`}>
-        <ErrorNote>Impossible de lire la séance. Ferme l’app puis rouvre-la.</ErrorNote>
+        <Note tone="error">Impossible de lire la séance. Ferme l’app puis rouvre-la.</Note>
       </div>
     )
   }
@@ -570,12 +576,9 @@ export default function GuidedScreen() {
         className={`${wrapper} justify-center gap-4 p-6`}
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}
       >
-        <h1 className="m-0 text-3xl font-bold">Aucune séance en cours</h1>
-        <p className="m-0 text-base text-zinc-300">Prépare une séance depuis l’écran Entraînement.</p>
-        <Link
-          to="/entrainement"
-          className="flex min-h-14 items-center justify-center rounded-xl bg-orange-400 px-4 text-lg font-semibold text-zinc-950 no-underline"
-        >
+        <h1 className="m-0 font-display text-display-l">Aucune séance en cours</h1>
+        <p className="m-0 text-body text-on-inverse-muted">Prépare une séance depuis l’écran Entraînement.</p>
+        <Link to={TRAINING_PATH} className={buttonClass('primary', 'session', true)}>
           Aller à Entraînement
         </Link>
       </div>

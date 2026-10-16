@@ -15,7 +15,7 @@ interface Props {
 }
 
 const iconButton =
-  'flex size-11 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-zinc-300 active:bg-zinc-700 disabled:text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-canvas text-ink active:opacity-70 disabled:text-ink-faint'
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -73,7 +73,7 @@ export function LineListEditor({
 
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0">
-      <legend className="mb-1.5 p-0 text-sm font-medium text-zinc-300">{legend}</legend>
+      <legend className="mb-1.5 p-0 text-caption text-ink-muted">{legend}</legend>
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {items.map((item, i) => (
           <li key={keys[i] ?? i}>
@@ -81,7 +81,7 @@ export function LineListEditor({
               {numbered ? (
                 <span
                   aria-hidden="true"
-                  className="flex h-12 w-6 shrink-0 items-center justify-center font-bold text-zinc-400"
+                  className="flex h-12 w-6 shrink-0 items-center justify-center font-display font-bold text-ink-muted"
                 >
                   {i + 1}
                 </span>
@@ -93,7 +93,7 @@ export function LineListEditor({
                 maxLength={maxLength}
                 value={item}
                 onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
-                className="min-h-12 min-w-0 flex-1 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+                className="focus-ring min-h-12 min-w-0 flex-1 rounded-ds-md bg-canvas px-3.5 py-2.5 text-body text-ink"
               />
             </div>
             <div className={`mt-1 flex justify-end gap-2 ${numbered ? 'pl-8' : ''}`}>
@@ -144,7 +144,7 @@ export function LineListEditor({
           setNextKey(nextKey + 1)
           onChange([...items, ''])
         }}
-        className="mt-2 min-h-11 rounded-xl px-3 text-base font-semibold text-orange-400 active:bg-white/5 disabled:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+        className="focus-ring mt-2 min-h-11 rounded-ds-pill px-3 text-body-strong text-ember-ink active:opacity-70 disabled:text-ink-muted"
       >
         + {addLabel}
         {full ? ` (maximum ${maxItems})` : ''}

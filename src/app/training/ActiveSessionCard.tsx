@@ -1,9 +1,11 @@
+import { History, LayoutTemplate, Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getActiveSession } from '../../db'
-import { Card, linkButtonClass, useLiveQuery } from '../../ui'
-import { GUIDED_PATH } from '../routes'
+import { useLiveQuery } from '../../ui'
+import { Card, buttonClass } from '../../ui/kit'
+import { GUIDED_PATH, HISTORY_PATH, TEMPLATES_PATH } from '../routes'
 
-/** « Séance en cours — Reprendre » : visible en tête de l'écran Séance tant qu'une séance est commencée. */
+/** « Séance en cours — Reprendre » : visible en tête de l'écran Entraînement tant qu'une séance est commencée. */
 export function ActiveSessionCard() {
   const { data } = useLiveQuery(() => getActiveSession(), [])
   if (!data) return null
@@ -16,14 +18,17 @@ export function ActiveSessionCard() {
         if (s.status !== undefined) done++
       }
   return (
-    <Card className="mt-5 border-orange-400/60 bg-orange-400/10">
-      <p className="m-0 text-xl font-bold">Séance en cours</p>
-      <p className="m-0 mt-1 text-base text-zinc-200">
-        {done === 0
-          ? 'Pas encore commencée.'
-          : `${done} série${done > 1 ? 's' : ''} sur ${total} déjà faite${done > 1 ? 's' : ''} ou passée${done > 1 ? 's' : ''}.`}
-      </p>
-      <Link to={GUIDED_PATH} className={`${linkButtonClass('primary')} mt-3`}>
+    <Card padding="large" className="flex flex-col gap-3 bg-ember-soft" aria-label="Séance en cours">
+      <div className="flex flex-col gap-1">
+        <p className="m-0 font-display text-title">Séance en cours</p>
+        <p className="m-0 text-body">
+          {done === 0
+            ? 'Pas encore commencée.'
+            : `${done} série${done > 1 ? 's' : ''} sur ${total} déjà faite${done > 1 ? 's' : ''} ou passée${done > 1 ? 's' : ''}.`}
+        </p>
+      </div>
+      <Link to={GUIDED_PATH} className={buttonClass('primary', 'normal', true)}>
+        <Play size={20} strokeWidth={1.75} aria-hidden="true" />
         Reprendre
       </Link>
     </Card>
@@ -32,14 +37,14 @@ export function ActiveSessionCard() {
 
 /** Raccourcis vers l'historique et les modèles. */
 export function SessionLinks() {
-  const cls =
-    'flex min-h-14 flex-1 items-center justify-center rounded-xl border border-v1-line bg-v1-surface px-3 text-base font-semibold text-zinc-100 no-underline active:bg-v1-surface-hi focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400'
   return (
-    <div className="mt-4 flex gap-3">
-      <Link to="/entrainement/historique" className={cls}>
+    <div className="grid grid-cols-2 gap-3">
+      <Link to={HISTORY_PATH} className={buttonClass('secondary', 'normal', true)}>
+        <History size={20} strokeWidth={1.75} aria-hidden="true" />
         Historique
       </Link>
-      <Link to="/entrainement/modeles" className={cls}>
+      <Link to={TEMPLATES_PATH} className={buttonClass('secondary', 'normal', true)}>
+        <LayoutTemplate size={20} strokeWidth={1.75} aria-hidden="true" />
         Modèles
       </Link>
     </div>

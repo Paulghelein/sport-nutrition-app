@@ -30,6 +30,8 @@ export interface ExerciseDraft {
   finisher: boolean
   /** Geste appris d'abord sans charge (kettlebell). */
   learnUnloaded: boolean
+  /** Peut finir par une série max (AMRAP) : poids du corps en répétitions seulement. */
+  amrap: boolean
   loadStepKg: 1 | 2
   /** Vrai dès que l'utilisateur a choisi lui-même le palier (le changement de schéma ne l'écrase plus). */
   loadStepTouched: boolean
@@ -62,6 +64,7 @@ export function exerciseToDraft(input: ExerciseInput): ExerciseDraft {
     unilateral: input.unilateral,
     finisher: input.finisher === true,
     learnUnloaded: input.learnUnloaded === true,
+    amrap: input.amrap === true,
     loadStepKg: input.loadStepKg,
     loadStepTouched: input.loadStepKg !== defaultLoadStep(input.pattern),
     primary: [...input.muscles.primary],
@@ -80,6 +83,11 @@ export function exerciseToDraft(input: ExerciseInput): ExerciseDraft {
 /** Timed → durée, bodyweight → répétitions, kettlebell → selon le choix. */
 export function usesDuration(draft: Pick<ExerciseDraft, 'loadType' | 'target'>): boolean {
   return draft.loadType === 'timed' || (draft.loadType === 'kettlebell' && draft.target === 'duration')
+}
+
+/** La série max (AMRAP) n'est proposée qu'au poids du corps en répétitions (jamais chargé, tenu, balistique ni finisher). */
+export function canBeAmrap(draft: Pick<ExerciseDraft, 'loadType' | 'target' | 'finisher'>): boolean {
+  return draft.loadType === 'bodyweight' && !usesDuration(draft) && !draft.finisher
 }
 
 const nonEmpty = (lines: string[]): string[] => lines.map((l) => l.trim()).filter((l) => l !== '')
@@ -108,6 +116,7 @@ export function draftToExercise(draft: ExerciseDraft): ExerciseInput {
   // Absent = non : on n'écrit les drapeaux que lorsqu'ils sont cochés.
   if (draft.finisher) input.finisher = true
   if (draft.learnUnloaded && draft.loadType === 'kettlebell') input.learnUnloaded = true
+  if (draft.amrap && canBeAmrap(draft)) input.amrap = true
   if (usesDuration(draft)) input.durationRange = [parseDecimal(draft.durMin), parseDecimal(draft.durMax)]
   else input.repRange = [parseDecimal(draft.repMin), parseDecimal(draft.repMax)]
   const video = draft.videoUrl.trim()
@@ -167,10 +176,15 @@ export function loadExerciseDraft(key: string): ExerciseDraft | null {
     const raw = sessionStorage.getItem(KEY_PREFIX + key)
     if (raw === null) return null
     const parsed: unknown = JSON.parse(raw)
-    // Les brouillons enregistrés avant l'ajout des drapeaux n'ont pas ces deux champs : absent = non.
+    // Les brouillons enregistrés avant l'ajout des drapeaux n'ont pas ces champs : absent = non.
     if (!isDraft(parsed)) return null
     const flags = parsed as unknown as Record<string, unknown>
-    return { ...parsed, finisher: flags['finisher'] === true, learnUnloaded: flags['learnUnloaded'] === true }
+    return {
+      ...parsed,
+      finisher: flags['finisher'] === true,
+      learnUnloaded: flags['learnUnloaded'] === true,
+      amrap: flags['amrap'] === true,
+    }
   } catch {
     return null
   }

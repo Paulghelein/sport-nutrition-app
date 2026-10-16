@@ -207,7 +207,7 @@ test('séance de Claude avec un nouvel exercice : aperçu plafonné, note, Comme
   await expect(sheet.getByLabel(/Message qui sera copié/)).toHaveValue(/Exercices disponibles/)
   await page.keyboard.press('Escape')
 
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await expect(page).toHaveURL(/\/entrainement\/seance/)
   expect(errors).toEqual([])
 })

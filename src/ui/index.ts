@@ -49,6 +49,7 @@ export {
 export { Stepper } from './Stepper'
 export { ErrorBoundary } from './ErrorBoundary'
 export {
+  canBeAmrap,
   clearExerciseDraft,
   draftToExercise,
   exerciseToDraft,

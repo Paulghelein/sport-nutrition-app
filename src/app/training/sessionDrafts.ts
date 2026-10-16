@@ -1,5 +1,5 @@
 // Correction d'une séance terminée (historique) : brouillon de saisie (texte) → séance corrigée. Fonctions pures.
-import { isPlausibleLoad } from '../../domain/training'
+import { isPlausibleLoad, setTypeOf, timedMaxWindowOf } from '../../domain/training'
 import { plannedLoad, setLoads } from '../../domain/training/guided'
 import type { Equipment, Feeling, Session, SetEntry } from '../../types'
 import { parseDecimal, toInputNumber } from '../../ui'
@@ -27,8 +27,17 @@ export function toDraft(set: SetEntry): SetDraft {
   }
 }
 
+/**
+ * La correction porte sur une durée (série `time`) et non sur des répétitions. Lu via `setTypeOf` : une série `timedMax`
+ * (fenêtre valide) ou `amrap` a un `targetDurationSec` / des reps mais se corrige en répétitions. Une série sans type
+ * ni cible garde la règle d'avant (durée réelle présente sans répétitions).
+ */
 export function byDuration(set: SetEntry): boolean {
-  return set.targetDurationSec !== undefined || set.actualDurationSec !== undefined
+  const type = setTypeOf(set)
+  if (type === 'amrap') return false
+  if (type === 'timedMax' && timedMaxWindowOf(set) !== undefined) return false
+  if (type === 'time') return true
+  return set.actualDurationSec !== undefined && set.actualReps === undefined
 }
 
 /** Séance corrigée d'après le brouillon, ou message d'erreur FR. */

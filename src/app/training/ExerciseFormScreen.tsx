@@ -15,14 +15,7 @@ import {
 import { defaultLoadStep, emptyExerciseInput, toExerciseInput } from '../../domain/training'
 import type { ExerciseInput, LibraryExercise, MuscleGroup } from '../../types'
 import {
-  Button,
-  Card,
-  CheckRow,
-  ChoiceGroup,
-  ErrorNote,
-  IntegerField,
-  SelectField,
-  TextField,
+  canBeAmrap,
   clearExerciseDraft,
   draftToExercise,
   equipmentChoices,
@@ -37,14 +30,20 @@ import {
   usesDuration,
 } from '../../ui'
 import type { ExerciseDraft } from '../../ui'
+import { Button, Card, cx } from '../../ui/kit'
+import { CheckRow } from '../../ui/kit/CheckRow'
+import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import { IntegerField, SelectField, TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { LIBRARY_PATH } from '../routes'
 import { LineListEditor } from './LineListEditor'
-import { BackLink, LIBRARY_PATH, NotFound } from './parts'
+import { BackLink, NotFound, ScreenTitle } from './parts'
 import { useLibrary } from './useLibrary'
 
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card>
-      <h2 className="mb-4 text-xl font-bold">{title}</h2>
+    <Card padding="large">
+      <h2 className="m-0 mb-4 font-display text-title">{title}</h2>
       <div className="flex flex-col gap-5">{children}</div>
     </Card>
   )
@@ -61,18 +60,18 @@ function MuscleChips({
 }) {
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0">
-      <legend className="mb-1.5 p-0 text-sm font-medium text-zinc-300">{legend}</legend>
+      <legend className="mb-1.5 p-0 text-caption text-ink-muted">{legend}</legend>
       <div className="flex flex-wrap gap-2">
         {muscles.map((m) => {
           const on = selected.includes(m.value)
           return (
             <label
               key={m.value}
-              className={`flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-base font-medium has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
-                on
-                  ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-                  : 'border-v1-line bg-v1-surface-hi text-zinc-200'
-              }`}
+              className={cx(
+                'flex min-h-11 cursor-pointer items-center rounded-ds-pill px-4 text-body-strong text-ink',
+                'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus',
+                on ? 'bg-ember-soft ring-2 ring-ember' : 'bg-canvas',
+              )}
             >
               <input type="checkbox" className="sr-only" checked={on} onChange={() => onToggle(m.value)} />
               {m.label}
@@ -135,7 +134,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
     // Rien n'a changé : retour à la fiche sans créer de surcharge vide.
     if (current && sameInput(input, toExerciseInput(current))) {
       clearExerciseDraft(draftKey)
-      navigate(`/entrainement/exercices/${current.id}`, { replace: true })
+      navigate(`${LIBRARY_PATH}/${current.id}`, { replace: true })
       return
     }
     setBusy(true)
@@ -143,7 +142,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
     try {
       const saved = current ? await updateExercise(current, input) : await createExercise(input)
       clearExerciseDraft(draftKey)
-      navigate(`/entrainement/exercices/${saved.id}`, { replace: true })
+      navigate(`${LIBRARY_PATH}/${saved.id}`, { replace: true })
     } catch (e) {
       setError(errorMessage(e, 'Impossible d’enregistrer l’exercice. Réessaie.'))
       setBusy(false)
@@ -162,35 +161,36 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
 
   return (
     <form
+      className="flex flex-col gap-3.5"
       onSubmit={(e) => {
         e.preventDefault()
         void save()
       }}
       noValidate
     >
-      <BackLink to={current ? `/entrainement/exercices/${current.id}` : LIBRARY_PATH}>
+      <BackLink to={current ? `${LIBRARY_PATH}/${current.id}` : LIBRARY_PATH}>
         {current ? 'Fiche' : 'Bibliothèque'}
       </BackLink>
-      <h1 className="mt-1 text-3xl font-bold">{title}</h1>
+      <ScreenTitle>{title}</ScreenTitle>
       {current?.source === 'seed' ? (
-        <p className="mt-2 text-base text-zinc-400">
+        <p className="m-0 text-body text-ink-muted">
           Ta version remplacera l’original ; tu pourras le rétablir.
         </p>
       ) : null}
       {showRestored ? (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2.5 text-base text-orange-100">
+        <div className="flex items-center justify-between gap-3 rounded-ds-md bg-ember-soft px-3.5 py-2.5 text-body text-ink">
           <span role="status">Brouillon retrouvé.</span>
           <button
             type="button"
             onClick={restart}
-            className="min-h-11 shrink-0 px-2 font-semibold text-orange-300 underline"
+            className="focus-ring min-h-11 shrink-0 px-2 text-body-strong underline"
           >
             Repartir de zéro
           </button>
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-col gap-5">
+      <div className="flex flex-col gap-3.5">
         <FormSection title="Général">
           <TextField
             label="Nom"
@@ -302,6 +302,14 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
               checked={draft.finisher}
               onChange={(finisher) => patch({ finisher })}
             />
+            {canBeAmrap(draft) ? (
+              <CheckRow
+                label="Peut finir par une série max"
+                hint="À cocher seulement si aller à l’échec est sans danger (pas de dips ni d’exercice où l’on peut tomber)."
+                checked={draft.amrap}
+                onChange={(amrap) => patch({ amrap })}
+              />
+            ) : null}
             {draft.loadType === 'kettlebell' ? (
               <CheckRow
                 label="Apprentissage sans charge"
@@ -325,7 +333,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
             onToggle={(m) => toggleMuscle('secondary', m)}
           />
           <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="mb-1.5 p-0 text-sm font-medium text-zinc-300">Matériel requis</legend>
+            <legend className="mb-1.5 p-0 text-caption text-ink-muted">Matériel requis</legend>
             <div className="flex flex-col gap-2">
               {equipmentChoices.map((e) => (
                 <CheckRow
@@ -347,7 +355,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
 
         <FormSection title="Technique">
           <div>
-            <label htmlFor="ex-setup" className="mb-1.5 block text-sm font-medium text-zinc-300">
+            <label htmlFor="ex-setup" className="mb-1.5 block text-caption text-ink-muted">
               Mise en place
             </label>
             <textarea
@@ -356,7 +364,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
               maxLength={MAX_SETUP_LENGTH}
               value={draft.setup}
               onChange={(e) => patch({ setup: e.target.value })}
-              className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+              className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-2.5 text-body text-ink"
             />
           </div>
           <LineListEditor
@@ -408,9 +416,9 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
         </FormSection>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3">
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button type="submit" disabled={busy}>
+      <div className="mt-3 flex flex-col gap-3">
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button type="submit" fullWidth disabled={busy}>
           {current ? 'Enregistrer les modifications' : 'Créer l’exercice'}
         </Button>
       </div>
@@ -424,11 +432,9 @@ export default function ExerciseFormScreen() {
 
   if (error) {
     return (
-      <section>
+      <section className="flex flex-col gap-4">
         <BackLink to={LIBRARY_PATH}>Bibliothèque</BackLink>
-        <div className="mt-3">
-          <ErrorNote>Impossible de lire la bibliothèque. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
+        <Note tone="error">Impossible de lire la bibliothèque. Ferme l’app puis rouvre-la.</Note>
       </section>
     )
   }

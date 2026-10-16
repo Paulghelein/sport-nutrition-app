@@ -64,7 +64,7 @@ async function goTab(page: Page, tab: Tab): Promise<void> {
 async function startAndPauseSession(page: Page): Promise<void> {
   await openTraining(page)
   await page.getByRole('link', { name: 'Voir la séance' }).click()
-  await page.getByRole('button', { name: 'Commencer la séance' }).click()
+  await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
   await expect(page).toHaveURL(/\/entrainement\/seance$/)
   await page.getByRole('button', { name: 'C’est parti' }).click()
   await page.getByRole('button', { name: 'Quitter' }).click()
@@ -87,7 +87,7 @@ test.describe('écran Aujourd’hui', () => {
     const count = Number(/(\d+) exercice/.exec((await cta.textContent()) ?? '')?.[1])
     await cta.click()
     await expect(page).toHaveURL(/\/entrainement\/apercu\?duree=\d+$/)
-    await expect(page.getByRole('button', { name: 'Commencer la séance' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Démarrer', exact: true })).toBeVisible()
     await expect(page.locator('a[href*="/entrainement/exercices/"]')).toHaveCount(count)
 
     await goTab(page, 'Aujourd’hui')
@@ -266,9 +266,9 @@ test.describe('feuille Ajouter', () => {
     await openSheet(page)
     await page.getByRole('button', { name: 'Démarrer une séance' }).click()
     await expect(page).toHaveURL(/\/entrainement\/apercu\?duree=\d+$/)
-    await expect(page.getByRole('heading', { name: 'Aperçu', level: 1 })).toBeVisible()
+    await expect(page.getByText(/^Séance de \d+ min · proposée pour toi$/)).toBeVisible()
 
-    await page.getByRole('button', { name: 'Commencer la séance' }).click()
+    await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
     await expect(page).toHaveURL(/\/entrainement\/seance$/)
     await page.getByRole('button', { name: 'C’est parti' }).click()
     await page.getByRole('button', { name: 'Quitter' }).click()
@@ -325,7 +325,7 @@ test.describe('barre d’onglets masquée', () => {
     await openTraining(page)
     await page.getByRole('link', { name: 'Voir la séance' }).click()
     await expect(nav(page)).toBeVisible()
-    await page.getByRole('button', { name: 'Commencer la séance' }).click()
+    await page.getByRole('button', { name: 'Démarrer', exact: true }).click()
     await expect(page).toHaveURL(/\/entrainement\/seance$/)
     await expect(page.getByRole('heading', { name: 'Échauffement' })).toBeVisible()
     await expect(nav(page)).toHaveCount(0)

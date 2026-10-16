@@ -13,7 +13,7 @@ async function start(page: Page) {
 /** Les radios sont masqués visuellement (sr-only) : on clique leur étiquette, puis on vérifie l'état du radio. */
 async function pick(page: Page, name: string) {
   const radio = page.getByRole('radio', { name })
-  await page.locator('label').filter({ has: radio }).click()
+  await radio.click()
   await expect(radio).toBeChecked()
 }
 
@@ -24,7 +24,7 @@ test('aperçu de séance : 30 puis 60 min, finisher à 60, durée retenue au ret
   await pick(page, '30 min')
   await page.getByRole('link', { name: 'Voir la séance' }).click()
   await expect(page).toHaveURL(/\/entrainement\/apercu\?duree=30$/)
-  await expect(page.getByRole('heading', { name: 'Aperçu', level: 1 })).toBeVisible()
+  await expect(page.getByText('Séance de 30 min · proposée pour toi')).toBeVisible()
   await expect(page.getByText(/^≈ \d+ min$/)).toBeVisible()
   await expect(page.locator('a[href*="/entrainement/exercices/"]').nth(2)).toBeVisible()
   await expect(page.getByText('Finisher', { exact: true })).toHaveCount(0)
