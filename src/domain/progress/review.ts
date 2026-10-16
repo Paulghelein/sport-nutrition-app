@@ -13,6 +13,7 @@ import type {
   WeeklyReview,
 } from '../../types/progress'
 import { addDays } from '../shared/dates'
+import { MUSCLE_LABELS_FR } from '../training/volume'
 import { weekStartOf } from './regularity'
 import { movingAverage7d } from './weight'
 
@@ -38,21 +39,8 @@ export const REVIEW_FAST_SHARE_PER_WEEK = 0.005
 /** Pesées minimales dans la semaine évaluée pour conclure à une prise trop rapide. */
 export const REVIEW_MIN_WEIGHINS = 3
 
-export const MUSCLE_LABELS_FR: Record<MuscleGroup, string> = {
-  chest: 'pectoraux',
-  back: 'dos',
-  shoulders: 'épaules',
-  biceps: 'biceps',
-  triceps: 'triceps',
-  forearms: 'avant-bras',
-  traps: 'trapèzes',
-  abs: 'abdominaux',
-  lower_back: 'lombaires',
-  glutes: 'fessiers',
-  quads: 'quadriceps',
-  hamstrings: 'ischio-jambiers',
-  calves: 'mollets',
-}
+// Libellés déplacés dans training/volume.ts (le moteur d'entraînement ne dépend pas de progress/) ; ré-export.
+export { MUSCLE_LABELS_FR }
 
 // ---------- Semaines ----------
 

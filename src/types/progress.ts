@@ -171,3 +171,31 @@ export interface BackupReminder {
   /** Jours calendaires depuis le dernier export ; `null` si jamais, ou si la date est illisible ou future (`due`). */
   daysSince: number | null
 }
+
+// ---------- Calendrier de régularité (v2, F2) ----------
+
+/**
+ * Niveau de séance d'un jour : 0 rien ; 1 < 25 min ; 2 de 25 à 45 min ; 3 > 45 min ; 4 record battu ce jour-là
+ * (l'emporte sur la durée). Minutes = somme des `sessionMinutes` des séances `done` du jour.
+ */
+export type DayTrainingLevel = 0 | 1 | 2 | 3 | 4
+
+/** Tolérance « jour nutrition dans la cible » du calendrier : kcal ET protéines à ±10 % de l'objectif du jour. */
+export const CALENDAR_NUTRITION_TOLERANCE = 0.1
+
+export interface DayActivity {
+  date: LocalDate
+  level: DayTrainingLevel
+  /** Séances `done` du jour. */
+  sessions: number
+  minutes: number
+  /** `true` si au moins un record a été battu ce jour-là. */
+  record: boolean
+  /**
+   * Nutrition : `true` kcal ET protéines à ±10 % de l'objectif du jour ; `false` journal non vide hors cible ;
+   * `null` rien de logué, objectifs du jour inconnus ou ≤ 0, ou jour futur.
+   */
+  nutritionOk: boolean | null
+  /** Jour postérieur à `today` (case affichée vide, jamais comptée). */
+  future: boolean
+}

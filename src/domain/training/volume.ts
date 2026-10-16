@@ -23,6 +23,23 @@ export const MUSCLE_GROUPS: readonly MuscleGroup[] = [
   'lower_back',
 ]
 
+/** Libellés français des groupes, en minuscules (« le dos », « les quadriceps »). Ré-exporté par progress/review. */
+export const MUSCLE_LABELS_FR: Record<MuscleGroup, string> = {
+  chest: 'pectoraux',
+  back: 'dos',
+  shoulders: 'épaules',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  forearms: 'avant-bras',
+  traps: 'trapèzes',
+  abs: 'abdominaux',
+  lower_back: 'lombaires',
+  glutes: 'fessiers',
+  quads: 'quadriceps',
+  hamstrings: 'ischio-jambiers',
+  calves: 'mollets',
+}
+
 /** Grands groupes (cible SPEC §3.2 : 8 à 12 séries / semaine). */
 export const MAJOR_GROUPS: readonly MuscleGroup[] = [
   'chest',

@@ -85,3 +85,19 @@ export interface ProgressionOutcome {
   change: LoadChange
   suggestion?: ProgressionSuggestion
 }
+
+// ---------- Accueil « Aujourd'hui » (v2, F1) ----------
+
+/**
+ * Titre et raison de la séance du jour (carte « Séance du jour »), produits par `sessionHeadline`
+ * (src/domain/training/headline.ts) à partir de la séance générée et du volume des 7 derniers jours.
+ * Ex. : `{ title: 'Bas du corps et tirage', reason: 'Les quadriceps et le dos sont en retard sur ta semaine.' }`.
+ */
+export interface SessionHeadline {
+  /** Court (≤ 32 caractères), sans point final, dérivé des schémas de mouvement de la séance. */
+  title: string
+  /** Une phrase terminée par un point, qui dit pourquoi cette séance aujourd'hui. */
+  reason: string
+  /** Groupes cités dans la raison (en retard sur leur cible), dans l'ordre de la phrase ; vide sinon. */
+  laggingGroups: MuscleGroup[]
+}
