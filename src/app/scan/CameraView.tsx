@@ -43,7 +43,11 @@ export function CameraView({
         <p role="status" className="absolute inset-x-0 bottom-3 text-center text-base text-white">
           Ouverture de la caméra…
         </p>
-      ) : null}
+      ) : (
+        <p className="absolute inset-x-0 bottom-3 text-center text-base text-zinc-300">
+          Tiens le code à 15–20 cm
+        </p>
+      )}
       {torchAvailable ? (
         <button
           type="button"

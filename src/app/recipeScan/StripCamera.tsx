@@ -86,7 +86,10 @@ export function StripCamera({
                 Ouverture de la caméra…
               </p>
             ) : (
-              <p className="absolute bottom-0 m-0 text-caption text-on-inverse-muted">{hint}</p>
+              <div className="absolute bottom-0 text-center text-caption text-on-inverse-muted">
+                <p className="m-0">{hint}</p>
+                <p className="m-0">Tiens le code à 15–20 cm</p>
+              </div>
             )}
           </>
         )}

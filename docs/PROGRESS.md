@@ -117,6 +117,13 @@ nutrition ensuite — **fait le 2026-10-16, à valider sur iPhone** ; R5 en dern
   Variantes `flat` et `dangerSoft` de `buttonClass`. Restent v1 : RecipeFormScreen, ImportScreen, AddFoodScreen,
   FoodScreen, FoodFormScreen, RecipePickerSheet, FoodPickerSheet, LogRecipeSheet, QuantitySheet, FreeEntrySheet.
 
+- 2026-10-16 (R3, retour iPhone « pas de mise au point au scan ») : `useBarcodeCamera` ouvre lui-même le flux
+  (1920×1080 idéal) puis zxing `decodeFromStream` ; bascule vers la caméra arrière multi-objectifs iOS (libellé
+  triple / double grand-angle / double + marqueur arrière, préférée dans cet ordre, id mémorisé en localStorage) qui
+  passe seule en macro de près ; focus continu + zoom 2× (borné) en un seul `applyConstraints`, réglages renvoyés
+  avec la lampe. Replis : toute erreur sauf un refus → caméra arrière par défaut ; id oublié seulement si l'appareil
+  a disparu. Logique pure dans `src/app/scan/cameraSetup.ts`. Indication « Tiens le code à 15–20 cm ».
+  Hypothèse à confirmer sur iPhone : zoom 1 = ultra grand-angle sur la caméra virtuelle.
 - 2026-10-16 (process) : les agents n'utilisent plus `git add/mv/rm` (un `git mv` dans l'index partagé est parti dans le
   commit F3 et a cassé le build de main, réparé en e0e1895 ; le site en ligne n'a pas été touché). Jalons parallèles
   committés séparément depuis une copie de travail isolée.
@@ -351,7 +358,8 @@ nutrition ensuite — **fait le 2026-10-16, à valider sur iPhone** ; R5 en dern
 ## À faire ensuite
 
 - **Valider R3 sur iPhone**, puis R5 (finitions).
-- À vérifier sur iPhone (R3) : scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
+- À vérifier sur iPhone (R3) : mise au point du scan à 15–20 cm (caméra multi-objectifs, zoom 2×, ouverture pas trop
+  lente, lampe) ; scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
   scan (caméra en continu, paquet entier, quantité, fermer l'app puis rouvrir : brouillon intact) puis 6 portions au
   frigo et « 6 muffins » sur la fiche ; recette depuis un vrai TikTok (« Coller le lien » et bulle iOS, copier +
   ouvrir Claude, « Coller la réponse ») ; journal lisible (pastilles sur une ligne, noms longs, photos 40 px) ; bandeau
