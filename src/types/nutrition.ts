@@ -96,11 +96,18 @@ export interface FoodLogEntry {
 
 export interface ShoppingItem {
   id: Id
+  /**
+   * Clé de fusion (J6) : `food:<foodId>`, sinon `ciqual:<code>`, sinon `name:<nom normalisé>` ; `manual:<uuid>` pour
+   * un article ajouté à la main. Régénérer la liste conserve `checked` des articles de même clé.
+   */
+  key: string
   name: string
   grams: number
   aisle: Aisle
   foodId?: Id
   checked: boolean
+  /** Article ajouté à la main (hors recettes) : conservé quand la liste est régénérée. */
+  manual?: boolean
 }
 
 export interface ShoppingList {
@@ -215,6 +222,8 @@ export type QuickItem =
 export interface FoodInput {
   name: string
   brand?: string
+  /** Code-barres (J7) : pré-rempli quand le produit scanné est introuvable sur Open Food Facts. */
+  ean?: string
   per100g: Per100g
   defaultPortionG?: number
   aisle?: Aisle

@@ -194,7 +194,7 @@ export function makeFullTables(): BackupFile['tables'] {
         name: 'Semaine',
         sources: [{ recipeId: 'r1', portions: 4 }],
         items: [
-          { id: 'i1', name: 'Riz', grams: 300, aisle: 'grocery', foodId: 'ciqual-1000', checked: false },
+          { id: 'i1', key: 'food:ciqual-1000', name: 'Riz', grams: 300, aisle: 'grocery', foodId: 'ciqual-1000', checked: false },
         ],
         createdAt: NOW,
         updatedAt: NOW,

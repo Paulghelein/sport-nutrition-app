@@ -308,11 +308,13 @@ export const shoppingListSchema = z.strictObject({
   items: z.array(
     z.strictObject({
       id,
+      key: str,
       name: str,
       grams: num,
       aisle,
       foodId: id.optional(),
       checked: z.boolean(),
+      manual: z.boolean().optional(),
     }),
   ),
   createdAt: isoDateTime,
