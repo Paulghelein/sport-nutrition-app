@@ -9,42 +9,6 @@ export const RECIPES_PATH = '/nutrition/recettes'
 export const focusRing =
   'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
-/** Interrupteur (cible 48 px), même habillage que la bibliothèque d'exercices. */
-export function Switch({
-  label,
-  hint,
-  checked,
-  onChange,
-}: {
-  label: string
-  hint?: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left ${focusRing}`}
-    >
-      <span className="flex flex-col">
-        <span className="text-base font-medium">{label}</span>
-        {hint ? <span className="text-sm text-zinc-400">{hint}</span> : null}
-      </span>
-      <span
-        aria-hidden="true"
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-400' : 'bg-zinc-600'}`}
-      >
-        <span
-          className={`absolute top-0.5 size-6 rounded-full bg-white transition-all ${checked ? 'left-[22px]' : 'left-0.5'}`}
-        />
-      </span>
-    </button>
-  )
-}
-
 const stepButton = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
 
 const round2 = (n: number): number => Math.round(n * 100) / 100
@@ -155,33 +119,6 @@ export function Badge({
   )
 }
 
-export function Star({ on, className = '' }: { on: boolean; className?: string }) {
-  return (
-    <span aria-hidden="true" className={`${on ? 'text-orange-400' : 'text-zinc-500'} ${className}`}>
-      {on ? '★' : '☆'}
-    </span>
-  )
-}
-
-export function Chevron() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="shrink-0 text-zinc-500"
-      aria-hidden="true"
-    >
-      <path d="M9 5l7 7-7 7" />
-    </svg>
-  )
-}
-
 export function Loading() {
   return (
     <p className="mt-6 text-base text-zinc-400" aria-busy="true">
@@ -203,30 +140,6 @@ export function NotFound({ message }: { message: string }) {
         Voir toutes les recettes
       </Link>
     </section>
-  )
-}
-
-export interface NoticeState {
-  message: string
-  to?: string
-  linkLabel?: string
-}
-
-/** Message de confirmation (role=status), avec lien facultatif. */
-export function Notice({ notice }: { notice: NoticeState | null }) {
-  return (
-    <div role="status" aria-live="polite">
-      {notice ? (
-        <p className="flex flex-wrap items-center justify-between gap-x-3 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2.5 text-base text-emerald-100">
-          <span>{notice.message}</span>
-          {notice.to ? (
-            <Link to={notice.to} className="flex min-h-11 items-center font-semibold text-orange-300">
-              {notice.linkLabel ?? 'Voir'}
-            </Link>
-          ) : null}
-        </p>
-      ) : null}
-    </div>
   )
 }
 

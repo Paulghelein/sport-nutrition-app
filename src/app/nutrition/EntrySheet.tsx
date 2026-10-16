@@ -2,18 +2,12 @@ import { useState } from 'react'
 import { deleteLogEntry, updateLogEntry } from '../../db'
 import { regrams, roundMacros } from '../../domain/nutrition'
 import type { FoodLogEntry, MealSlot } from '../../types'
-import {
-  Button,
-  ChoiceGroup,
-  ConfirmSheet,
-  DecimalField,
-  ErrorNote,
-  Sheet,
-  errorMessage,
-  parseDecimal,
-  toInputNumber,
-} from '../../ui'
-import { FreeFields } from './freeEntry'
+import { errorMessage, parseDecimal, toInputNumber } from '../../ui/format'
+import { Button, Sheet } from '../../ui/kit'
+import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { DecimalField, TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
 import { parseFreeDraft } from './freeDraft'
 import type { FreeDraft } from './freeDraft'
 import { macroLine, slotChoices } from './format'
@@ -27,6 +21,22 @@ function initialDraft(entry: FoodLogEntry): FreeDraft {
     carbs: toInputNumber(m.carbs),
     fat: toInputNumber(m.fat),
   }
+}
+
+/** Champs d'une entrée qui n'est pas un aliment pesé (saisie libre, recette, import). */
+function FreeFields({ draft, onChange }: { draft: FreeDraft; onChange: (next: FreeDraft) => void }) {
+  const set = (key: keyof FreeDraft) => (value: string) => onChange({ ...draft, [key]: value })
+  return (
+    <div className="flex flex-col gap-3">
+      <TextField label="Nom" value={draft.name} onChange={set('name')} maxLength={80} autoComplete="off" />
+      <DecimalField label="Calories" value={draft.kcal} onChange={set('kcal')} unit="kcal" />
+      <div className="grid grid-cols-3 gap-2">
+        <DecimalField label="Protéines" value={draft.protein} onChange={set('protein')} unit="g" />
+        <DecimalField label="Glucides" value={draft.carbs} onChange={set('carbs')} unit="g" />
+        <DecimalField label="Lipides" value={draft.fat} onChange={set('fat')} unit="g" />
+      </div>
+    </div>
+  )
 }
 
 /** Modification d'une entrée du journal : quantité (aliment) ou valeurs (autres), repas, suppression. */
@@ -112,20 +122,27 @@ export function EntrySheet({
         <div className="flex flex-col gap-4">
           {origin.kind === 'food' ? (
             <>
-              <DecimalField label="Quantité" big unit="g" value={grams} onChange={setGrams} />
-              <p aria-live="polite" className="min-h-6 text-base text-zinc-300">
+              <DecimalField label="Quantité" unit="g" value={grams} onChange={setGrams} />
+              <p aria-live="polite" className="m-0 min-h-[22px] text-body text-ink-muted">
                 {preview}
               </p>
             </>
           ) : (
-            <FreeFields draft={draft} onChange={setDraft} />
+            <>
+              <FreeFields draft={draft} onChange={setDraft} />
+              {origin.kind === 'free' ? null : (
+                <p className="-mt-1 mb-0 text-caption text-ink-muted">
+                  Modifier ces valeurs en fait une saisie libre.
+                </p>
+              )}
+            </>
           )}
           <ChoiceGroup legend="Repas" layout="grid" value={slot} options={slotChoices} onChange={setSlot} />
-          {error ? <ErrorNote>{error}</ErrorNote> : null}
-          <Button onClick={() => void save()} disabled={busy}>
+          {error ? <Note tone="error">{error}</Note> : null}
+          <Button fullWidth onClick={() => void save()} disabled={busy}>
             Enregistrer
           </Button>
-          <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
+          <Button variant="danger" fullWidth onClick={() => setConfirmDelete(true)} disabled={busy}>
             Supprimer
           </Button>
         </div>

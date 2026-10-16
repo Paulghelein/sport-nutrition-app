@@ -1,27 +1,26 @@
+import { AlertTriangle, Minus, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteFridgeItem, updateFridgeItem } from '../../db'
 import { fridgeViews, recipeNutrition } from '../../domain/nutrition'
 import { formatDateFr, toLocalDate } from '../../domain/shared/dates'
 import type { FridgeView } from '../../types'
-import {
-  Button,
-  Card,
-  ConfirmSheet,
-  DateField,
-  ErrorNote,
-  Sheet,
-  errorMessage,
-  linkButtonClass,
-} from '../../ui'
-import { BackLink } from '../nutrition/parts'
-import { expiryLabel, fmtPortions, portionsWord } from './format'
-import { LogRecipeSheet } from './LogRecipeSheet'
-import { Loading, Notice, RECIPES_PATH, focusRing } from './parts'
-import type { NoticeState } from './parts'
+import { errorMessage } from '../../ui'
+import { Button, Card, FoodTile, Sheet, cx } from '../../ui/kit'
+import { buttonClass } from '../../ui/kit/buttonClass'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { NutritionTabs } from '../nutrition/NutritionTabs'
+import { expiryLabel, fmtPortions, portionUnit, portionsText } from './format'
+import { Loading, Notice, RECIPES_PATH } from './partsV2'
+import type { NoticeState } from './partsV2'
+import { loggedNotice } from './loggedNotice'
+import { RecipeLogSheet } from './RecipeLogSheet'
 import { useFridge, useRecipeLibrary } from './useRecipes'
 
-const roundBtn = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
+const roundBtn =
+  'focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-canvas text-ink active:opacity-70 disabled:text-ink-faint'
 
 function ExpirySheet({ view, onClose }: { view: FridgeView; onClose: () => void }) {
   const [date, setDate] = useState<string>(view.item.expiresOn)
@@ -39,12 +38,16 @@ function ExpirySheet({ view, onClose }: { view: FridgeView; onClose: () => void 
     }
   }
   return (
-    <Sheet title="Date limite" onClose={onClose} busy={busy}>
+    <Sheet
+      title="Date limite"
+      description={view.recipe?.name ?? 'Recette supprimée'}
+      onClose={onClose}
+      busy={busy}
+    >
       <div className="flex flex-col gap-4">
-        <p className="-mt-2 text-base text-zinc-300">{view.recipe?.name ?? 'Recette supprimée'}</p>
-        <DateField label="À consommer avant le" value={date} onChange={setDate} />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button onClick={() => void save()} disabled={busy}>
+        <TextField label="À consommer avant le" type="date" value={date} onChange={setDate} />
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button fullWidth onClick={() => void save()} disabled={busy}>
           Enregistrer
         </Button>
       </div>
@@ -83,55 +86,63 @@ export default function FridgeScreen() {
   const loggingNutrition = logging?.recipe && lib ? recipeNutrition(logging.recipe, lib.lookup) : null
 
   return (
-    <section>
-      <BackLink to={RECIPES_PATH}>Recettes</BackLink>
-      <h1 className="mt-1 text-3xl font-bold">Frigo</h1>
-      <p className="mt-2 text-base text-zinc-400">
+    <div className="flex flex-col gap-3.5">
+      <header>
+        <h1 className="m-0 font-display text-display-l">Frigo</h1>
+      </header>
+      <NutritionTabs current="fridge" />
+      <p className="m-0 text-body text-ink-muted">
         Les portions préparées à l’avance. Loguer une portion depuis ici la retire du frigo.
       </p>
 
       {libError || fridgeError || error ? (
-        <div className="mt-4">
-          <ErrorNote>{error ?? 'Impossible de lire le frigo. Ferme l’app puis rouvre-la.'}</ErrorNote>
-        </div>
+        <Note tone="error">{error ?? 'Impossible de lire le frigo. Ferme l’app puis rouvre-la.'}</Note>
       ) : null}
-      <div className="mt-3">
-        <Notice notice={notice} />
-      </div>
+      <Notice notice={notice} />
 
       {!views ? (
         <Loading />
       ) : views.length === 0 ? (
-        <Card className="mt-5 text-center">
-          <p className="text-lg font-semibold">Le frigo est vide</p>
-          <p className="mt-1 text-base text-zinc-400">
+        <Card padding="large" className="flex flex-col items-center gap-1 text-center">
+          <p className="m-0 font-display text-title">Le frigo est vide</p>
+          <p className="m-0 text-body text-ink-muted">
             Ouvre une recette et choisis « Préparer pour le frigo » après avoir cuisiné un batch.
           </p>
-          <Link to={RECIPES_PATH} className={`${linkButtonClass('secondary')} mt-4`}>
+          <Link to={RECIPES_PATH} className={cx(buttonClass('flat'), 'mt-3')}>
             Voir les recettes
           </Link>
         </Card>
       ) : (
-        <ul className="m-0 mt-5 flex list-none flex-col gap-3 p-0">
+        <ul className="m-0 flex list-none flex-col gap-3.5 p-0">
           {views.map((v) => {
             const left = v.item.portionsLeft
             const busy = busyId === v.item.id
+            const name = v.recipe?.name ?? 'Recette supprimée'
             return (
               <li key={v.item.id}>
-                <Card className={v.expired ? 'border-red-400/50' : ''}>
-                  <h2 className="text-xl font-bold leading-snug">{v.recipe?.name ?? 'Recette supprimée'}</h2>
+                <Card padding="large" className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <FoodTile category="dish" fromFridge size={48} />
+                    <h2 className="m-0 min-w-0 flex-1 font-display text-title">{name}</h2>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setExpiry(v)}
                     aria-label={`Changer la date limite de ${v.recipe?.name ?? 'cette ligne'}`}
-                    className={`mt-1 flex min-h-11 w-full items-center justify-between gap-2 rounded-lg text-left text-base ${focusRing} ${
-                      v.expired ? 'font-semibold text-red-300' : 'text-zinc-300'
-                    }`}
+                    className={cx(
+                      'focus-ring -my-1 flex min-h-11 w-full items-center justify-between gap-2 rounded-ds-sm text-left text-body',
+                      v.expired ? 'font-bold text-critical' : 'text-ink',
+                    )}
                   >
-                    <span>{expiryLabel(v.daysLeft)}</span>
-                    <span className="text-sm text-zinc-400">{formatDateFr(v.item.expiresOn)}</span>
+                    <span className="flex items-center gap-1.5">
+                      {v.expired ? <AlertTriangle size={18} strokeWidth={1.75} aria-hidden="true" /> : null}
+                      {expiryLabel(v.daysLeft)}
+                    </span>
+                    <span className="text-caption font-medium text-ink-muted">
+                      {formatDateFr(v.item.expiresOn)}
+                    </span>
                   </button>
-                  <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <button
                       type="button"
                       className={roundBtn}
@@ -143,16 +154,16 @@ export default function FridgeScreen() {
                           void run(v.item.id, () => updateFridgeItem(v.item.id, { portionsLeft: left - 1 }))
                       }}
                     >
-                      −
+                      <Minus size={24} strokeWidth={1.75} aria-hidden="true" />
                     </button>
                     <output
                       aria-live="polite"
-                      className="text-center text-4xl font-bold tabular-nums"
+                      className="text-center font-display text-display-l tabular-nums"
                       data-testid="fridge-left"
                     >
                       {fmtPortions(left)}
-                      <span className="block text-sm font-medium text-zinc-400">
-                        {portionsWord(left)} restante{left >= 2 ? 's' : ''}
+                      <span className="block font-sans text-caption font-medium text-ink-muted">
+                        {portionUnit(left, v.recipe?.servingUnit)} au frigo
                       </span>
                     </output>
                     <button
@@ -164,23 +175,21 @@ export default function FridgeScreen() {
                         void run(v.item.id, () => updateFridgeItem(v.item.id, { portionsLeft: left + 1 }))
                       }
                     >
-                      +
+                      <Plus size={24} strokeWidth={1.75} aria-hidden="true" />
                     </button>
                   </div>
-                  <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                  <div className="flex gap-2">
                     {v.recipe ? (
                       <Button
+                        className="flex-1"
                         onClick={() => setLogging(v)}
                         aria-label={`Loguer une portion de ${v.recipe.name}`}
                       >
                         Loguer une portion
                       </Button>
-                    ) : (
-                      <span />
-                    )}
+                    ) : null}
                     <Button
-                      variant="danger"
-                      width="auto"
+                      variant="dangerSoft"
                       onClick={() => setRemoving(v)}
                       aria-label={`Retirer ${v.recipe?.name ?? 'cette ligne'} du frigo`}
                     >
@@ -195,23 +204,15 @@ export default function FridgeScreen() {
       )}
 
       {logging?.recipe && loggingNutrition && items ? (
-        <LogRecipeSheet
+        <RecipeLogSheet
           recipe={logging.recipe}
           nutrition={loggingNutrition}
           ciqualFailed={lib?.ciqualFailed ?? false}
           fridge={items}
           initialFridgeItemId={logging.item.id}
           onClose={() => setLogging(null)}
-          onLogged={(entries) =>
-            setNotice({
-              message: (() => {
-                const o = entries[0]?.origin
-                const n = o?.kind === 'recipe' ? o.portions : 1
-                return `${fmtPortions(n)} ${portionsWord(n)} ajoutée${n >= 2 ? 's' : ''} au journal.`
-              })(),
-              to: `/nutrition?date=${entries[0]?.date ?? ''}`,
-              linkLabel: 'Journal',
-            })
+          onLogged={(entries, fridgeBefore) =>
+            setNotice(loggedNotice(entries, fridgeBefore, logging.recipe?.servingUnit))
           }
         />
       ) : null}
@@ -219,13 +220,13 @@ export default function FridgeScreen() {
       {removing ? (
         <ConfirmSheet
           title="Retirer du frigo ?"
-          message={`Retirer ${fmtPortions(removing.item.portionsLeft)} ${portionsWord(removing.item.portionsLeft)} de « ${removing.recipe?.name ?? 'cette recette'} » du frigo, sans rien ajouter au journal ?`}
+          message={`Retirer ${portionsText(removing.item.portionsLeft, removing.recipe?.servingUnit)} de « ${removing.recipe?.name ?? 'cette recette'} » du frigo, sans rien ajouter au journal ?`}
           confirmLabel="Retirer"
           busy={busyId !== null}
           onCancel={() => setRemoving(null)}
           onConfirm={() => void run(removing.item.id, () => deleteFridgeItem(removing.item.id))}
         />
       ) : null}
-    </section>
+    </div>
   )
 }

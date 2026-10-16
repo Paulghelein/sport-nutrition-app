@@ -31,14 +31,14 @@ export interface OffPhoto {
  * Résultat d'une recherche de code-barres :
  * - `cached` : déjà en base (table `foods`, n'importe quelle source avec ce `ean`) — aucun appel réseau ;
  * - `found` : trouvé sur OFF avec kcal + 3 macros ; l'appelant l'enregistre en cache (`off-<ean>`) ;
- * - `incomplete` : produit OFF sans valeurs exploitables → formulaire de création pré-rempli (EAN, nom, marque) ;
+ * - `incomplete` : produit OFF sans valeurs exploitables → formulaire de création pré-rempli (EAN, nom, marque, contenance `packageG` comme `OffProduct.packageG`) ;
  * - `not_found` : inconnu d'OFF (statut 0 ou HTTP 404) → formulaire pré-rempli avec l'EAN ;
  * - `error` : réseau absent, délai dépassé, réponse illisible → réessayer ou saisir à la main.
  */
 export type OffLookupResult =
   | { status: 'cached'; foodId: string }
   | { status: 'found'; product: OffProduct }
-  | { status: 'incomplete'; ean: Ean; name?: string; brand?: string }
+  | { status: 'incomplete'; ean: Ean; name?: string; brand?: string; packageG?: number }
   | { status: 'not_found'; ean: Ean }
   | { status: 'error'; ean: Ean; message: string }
 

@@ -1,16 +1,23 @@
+import { Check } from 'lucide-react'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { recipeNutrition, scaleIngredients } from '../../domain/nutrition'
-import type { LibraryRecipe } from '../../types'
-import { Button, ChoiceGroup, ErrorNote, linkButtonClass } from '../../ui'
-import { BackLink, StickyStack } from '../nutrition/parts'
-import { useWakeLock } from '../training/useWakeLock'
 import { formatDateFr } from '../../domain/shared/dates'
-import { fmtGrams, fmtPortions, portionsWord } from './format'
-import { LogRecipeSheet } from './LogRecipeSheet'
-import { Loading, Notice, NotFound, PortionsStepper, RECIPES_PATH, focusRing } from './parts'
-import type { NoticeState } from './parts'
+import type { LibraryRecipe } from '../../types'
+import { Button, Stepper, cx } from '../../ui/kit'
+import { buttonClass } from '../../ui/kit/buttonClass'
+import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import { Note } from '../../ui/kit/Note'
+import { MAX_RECIPE_SERVINGS } from '../../domain/nutrition/limits'
+import { FRIDGE_PATH, recipePath } from '../routes'
+import { useWakeLock } from '../training/useWakeLock'
+import { fmtGrams, portionsText } from './format'
+import { BackLink, Loading, Notice, NotFound, RECIPES_PATH } from './partsV2'
+import type { NoticeState } from './partsV2'
+import { loggedNotice } from './loggedNotice'
 import { PrepareFridgeSheet } from './PrepareFridgeSheet'
+import { RecipeLogSheet } from './RecipeLogSheet'
 import { useFridge, useRecipeLibrary } from './useRecipes'
 import type { RecipeLibraryData } from './useRecipes'
 
@@ -42,7 +49,9 @@ function loadState(id: string, fallbackPortions: number, stepCount: number): Coo
     const nums = (v: unknown): number[] =>
       Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number') : []
     const portions =
-      typeof o['portions'] === 'number' && o['portions'] >= 1 ? o['portions'] : fallbackPortions
+      typeof o['portions'] === 'number' && o['portions'] >= 1
+        ? Math.min(o['portions'], MAX_RECIPE_SERVINGS)
+        : fallbackPortions
     const step =
       typeof o['step'] === 'number'
         ? Math.min(Math.max(0, Math.floor(o['step'])), Math.max(0, stepCount - 1))
@@ -65,6 +74,15 @@ function saveState(id: string, state: CookState): void {
   } catch {
     // Stockage indisponible : la progression n'est simplement pas conservée.
   }
+}
+
+/** Zone collée en bas de <main> (jamais `fixed`) : boutons de 64 px à portée de pouce, fondu sur le fond. */
+function BottomActions({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-col gap-2 bg-canvas px-4 pb-3 pt-3 shadow-[0_-12px_24px_var(--color-canvas)]">
+      {children}
+    </div>
+  )
 }
 
 function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }) {
@@ -100,11 +118,13 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
   }
 
   return (
-    <section>
-      <BackLink to={`/nutrition/recettes/${recipe.id}`}>Fiche</BackLink>
-      <h1 className="mt-1 text-2xl font-bold leading-tight">{recipe.name}</h1>
+    <section className="flex flex-col">
+      <div>
+        <BackLink to={recipePath(recipe.id)}>Fiche</BackLink>
+      </div>
+      <h1 className="m-0 mt-1 font-display text-title leading-tight">{recipe.name}</h1>
 
-      <div className="mt-4">
+      <div className="mt-3 rounded-ds-lg bg-surface p-3 shadow-card">
         <ChoiceGroup<View>
           legend="Affichage"
           value={state.view}
@@ -119,21 +139,26 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
         />
       </div>
 
+      <div className="mt-3">
+        <Notice notice={notice} />
+      </div>
+
       {state.view === 'ingredients' ? (
-        <div className="mt-5">
-          <PortionsStepper
-            legend="Portions à cuisiner"
-            value={state.portions}
-            min={1}
-            max={50}
-            step={1}
-            onChange={(portions) => update({ portions })}
-          />
-          <p className="mt-2 text-sm text-zinc-400">
-            Recette de base : {recipe.servings} {portionsWord(recipe.servings)}. Les quantités sont
-            recalculées.
-          </p>
-          <ul className="m-0 mt-4 flex list-none flex-col gap-2 p-0">
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="rounded-ds-lg bg-surface p-4 shadow-card">
+            <Stepper
+              label="Portions à cuisiner"
+              value={state.portions}
+              min={1}
+              max={MAX_RECIPE_SERVINGS}
+              onChange={(portions) => update({ portions })}
+            />
+            <p className="m-0 mt-2 text-caption text-ink-muted">
+              Recette de base : {portionsText(recipe.servings, recipe.servingUnit)}. Les quantités sont
+              recalculées.
+            </p>
+          </div>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {scaled.map((ing, i) => {
               const got = state.gathered.includes(i)
               return (
@@ -147,22 +172,29 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
                         gathered: got ? state.gathered.filter((x) => x !== i) : [...state.gathered, i],
                       })
                     }
-                    className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border border-v1-line px-3 py-2 text-left active:bg-v1-surface-hi ${focusRing} ${got ? 'bg-v1-surface/60' : 'bg-v1-surface'}`}
+                    className={cx(
+                      'focus-ring flex min-h-16 w-full items-center gap-3 rounded-ds-md px-4 py-2 text-left text-ink shadow-card active:opacity-70',
+                      got ? 'bg-surface-sunken' : 'bg-surface',
+                    )}
                   >
                     <span
                       aria-hidden="true"
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-lg border-2 text-xl font-bold ${
-                        got ? 'border-orange-400 bg-orange-400 text-zinc-950' : 'border-zinc-500'
-                      }`}
+                      className={cx(
+                        'grid size-8 shrink-0 place-items-center rounded-ds-sm border-2',
+                        got ? 'border-ember bg-ember text-ink' : 'border-ink-muted',
+                      )}
                     >
-                      {got ? '✓' : ''}
+                      {got ? <Check size={20} strokeWidth={2.5} /> : null}
                     </span>
-                    <span
-                      className={`min-w-0 flex-1 text-xl leading-snug ${got ? 'text-zinc-500 line-through' : ''}`}
-                    >
+                    <span className={cx('min-w-0 flex-1 text-title', got && 'text-ink-muted line-through')}>
                       {ing.name}
                     </span>
-                    <span className={`shrink-0 text-xl font-bold tabular-nums ${got ? 'text-zinc-500' : ''}`}>
+                    <span
+                      className={cx(
+                        'shrink-0 font-display text-title font-extrabold tabular-nums',
+                        got && 'text-ink-muted',
+                      )}
+                    >
                       {fmtGrams(ing.grams)}
                     </span>
                   </button>
@@ -170,38 +202,44 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
               )
             })}
           </ul>
-          <StickyStack>
-            <Button onClick={() => update({ view: 'steps' })}>Voir les étapes</Button>
-          </StickyStack>
+          <BottomActions>
+            <Button size="session" fullWidth onClick={() => update({ view: 'steps' })}>
+              Voir les étapes
+            </Button>
+          </BottomActions>
         </div>
       ) : finished ? (
-        <div className="mt-5 flex flex-col gap-3">
-          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
-            <p className="text-2xl font-bold text-emerald-100">C’est prêt !</p>
-            <p className="mt-1 text-base text-emerald-100">
-              {fmtPortions(state.portions)} {portionsWord(state.portions)} cuisinée
-              {state.portions >= 2 ? 's' : ''}.
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="rounded-ds-lg bg-surface p-5 shadow-card">
+            <p className="m-0 font-display text-display-l">C’est prêt !</p>
+            <p className="m-0 mt-1 text-headline">
+              Tu as cuisiné {portionsText(state.portions, recipe.servingUnit)}.
             </p>
           </div>
-          <Notice notice={notice} />
-          <Button onClick={() => setSheet('fridge')}>Mettre au frigo</Button>
-          <Button variant="secondary" disabled={!nutrition} onClick={() => setSheet('log')}>
-            Loguer une portion
-          </Button>
-          <Button variant="ghost" onClick={() => setFinished(false)}>
-            Revoir les étapes
-          </Button>
-          <Link to={`/nutrition/recettes/${recipe.id}`} className={linkButtonClass('secondary')}>
-            Retour à la fiche
-          </Link>
+          <BottomActions>
+            <Button size="session" fullWidth onClick={() => setSheet('fridge')}>
+              Mettre au frigo
+            </Button>
+            <Button variant="secondary" size="session" fullWidth onClick={() => setSheet('log')}>
+              Loguer une portion
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="text" size="session" onClick={() => setFinished(false)}>
+                Revoir les étapes
+              </Button>
+              <Link to={recipePath(recipe.id)} className={buttonClass('secondary', 'session')}>
+                Retour à la fiche
+              </Link>
+            </div>
+          </BottomActions>
         </div>
       ) : (
-        <div className="mt-5">
+        <div className="mt-4 flex flex-col">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-lg font-semibold text-zinc-300" aria-live="polite">
+            <p className="m-0 font-display text-title" aria-live="polite">
               Étape {step + 1} sur {total}
             </p>
-            <p className="text-sm text-zinc-400">
+            <p className="m-0 text-caption text-ink-muted">
               {state.doneSteps.length} faite{state.doneSteps.length > 1 ? 's' : ''}
             </p>
           </div>
@@ -213,40 +251,49 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
                 aria-label={`Étape ${i + 1}${state.doneSteps.includes(i) ? ' (faite)' : ''}`}
                 aria-current={i === step ? 'step' : undefined}
                 onClick={() => update({ step: i })}
-                className={`flex size-11 items-center justify-center rounded-full border text-base font-bold ${focusRing} ${
+                className={cx(
+                  'focus-ring grid size-11 place-items-center rounded-full font-display text-body-strong font-bold',
                   i === step
-                    ? 'border-orange-400 bg-orange-400 text-zinc-950'
+                    ? 'bg-ember text-ink'
                     : state.doneSteps.includes(i)
-                      ? 'border-orange-400/50 bg-orange-400/15 text-orange-300'
-                      : 'border-v1-line bg-v1-surface-hi text-zinc-300'
-                }`}
+                      ? 'bg-ember-soft text-ink'
+                      : 'bg-surface text-ink shadow-card',
+                )}
               >
-                {state.doneSteps.includes(i) && i !== step ? '✓' : i + 1}
+                {state.doneSteps.includes(i) && i !== step ? (
+                  <Check size={18} strokeWidth={2.5} aria-hidden="true" />
+                ) : (
+                  i + 1
+                )}
               </button>
             ))}
           </div>
-          <p className="mt-5 text-3xl font-semibold leading-snug" data-testid="cook-step">
+          <p className="m-0 mt-5 text-number-l font-semibold" data-testid="cook-step">
             {recipe.steps[step]}
           </p>
-          <StickyStack>
-            <div className="flex flex-col gap-2 rounded-2xl bg-v1-bg/90 pt-2 backdrop-blur">
-              <Button className="min-h-16 text-xl" onClick={markAndNext}>
-                {step >= total - 1 ? 'Fait, terminer' : 'Fait, étape suivante'}
+          <BottomActions>
+            <Button size="session" fullWidth onClick={markAndNext}>
+              {step >= total - 1 ? 'Fait, terminer' : 'Fait, étape suivante'}
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="secondary"
+                size="session"
+                disabled={step === 0}
+                onClick={() => update({ step: step - 1 })}
+              >
+                Précédente
               </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" disabled={step === 0} onClick={() => update({ step: step - 1 })}>
-                  Précédente
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={step >= total - 1}
-                  onClick={() => update({ step: step + 1 })}
-                >
-                  Suivante
-                </Button>
-              </div>
+              <Button
+                variant="secondary"
+                size="session"
+                disabled={step >= total - 1}
+                onClick={() => update({ step: step + 1 })}
+              >
+                Suivante
+              </Button>
             </div>
-          </StickyStack>
+          </BottomActions>
         </div>
       )}
 
@@ -257,20 +304,23 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
           onClose={() => setSheet(null)}
           onDone={(item) =>
             setNotice({
-              message: `${fmtPortions(item.portionsLeft)} ${portionsWord(item.portionsLeft)} au frigo jusqu’au ${formatDateFr(item.expiresOn)}.`,
-              to: '/nutrition/frigo',
+              message: `${portionsText(item.portionsLeft, recipe.servingUnit)} au frigo jusqu’au ${formatDateFr(item.expiresOn)}.`,
+              to: FRIDGE_PATH,
               linkLabel: 'Frigo',
             })
           }
         />
       ) : null}
-      {sheet === 'log' && nutrition ? (
-        <LogRecipeSheet
+      {sheet === 'log' ? (
+        <RecipeLogSheet
           recipe={recipe}
           nutrition={nutrition}
           ciqualFailed={lib.ciqualFailed}
           fridge={fridge ?? []}
           onClose={() => setSheet(null)}
+          onLogged={(entries, fridgeBefore) =>
+            setNotice(loggedNotice(entries, fridgeBefore, recipe.servingUnit))
+          }
         />
       ) : null}
     </section>
@@ -282,11 +332,11 @@ export default function CookScreen() {
   const { data, error } = useRecipeLibrary()
   if (error) {
     return (
-      <section>
-        <BackLink to={RECIPES_PATH}>Recettes</BackLink>
-        <div className="mt-3">
-          <ErrorNote>Impossible de lire les recettes. Ferme l’app puis rouvre-la.</ErrorNote>
+      <section className="flex flex-col gap-3">
+        <div>
+          <BackLink to={RECIPES_PATH}>Recettes</BackLink>
         </div>
+        <Note tone="error">Impossible de lire les recettes. Ferme l’app puis rouvre-la.</Note>
       </section>
     )
   }

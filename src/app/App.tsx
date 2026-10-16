@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { getSettings, requestPersistentStorage } from '../db'
 import { useLiveQuery } from '../ui'
 import { Onboarding } from './Onboarding'
-import { DEV_UI_PATH, GUIDED_PATH, HOME_PATH } from './routes'
+import { DEV_UI_PATH, GUIDED_PATH, HOME_PATH, RECIPE_SCAN_PATH, VIDEO_RECIPE_PATH } from './routes'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { TabsLayout } from './shell/TabsLayout'
@@ -41,6 +41,9 @@ const ScanScreen = lazy(() => import('./scan/ScanScreen'))
 const ProgressScreen = lazy(() => import('./progress/ProgressScreen'))
 // J9 — bouton Claude : coller et appliquer la réponse.
 const ClaudeResponseScreen = lazy(() => import('./claude/ClaudeResponseScreen'))
+const VideoRecipeScreen = lazy(() => import('./claude/VideoRecipeScreen'))
+// v2 (R3) — F4 : recette par scan (caméra en bandeau, brouillon conservé).
+const RecipeScanScreen = lazy(() => import('./recipeScan/RecipeScanScreen'))
 // v2 (R0) — page de démonstration du kit de composants.
 const UiScreen = lazy(() => import('./dev/UiScreen'))
 
@@ -78,6 +81,8 @@ function Tabs() {
           <Route path="/reglages" element={<SettingsScreen />} />
           <Route path="/reglages/importer" element={<ImportScreen />} />
           <Route path="/claude/reponse" element={<ClaudeResponseScreen />} />
+          <Route path={VIDEO_RECIPE_PATH} element={<VideoRecipeScreen />} />
+          <Route path={RECIPE_SCAN_PATH} element={<RecipeScanScreen />} />
           <Route path="*" element={<Navigate to={HOME_PATH} replace />} />
         </Routes>
       </Suspense>

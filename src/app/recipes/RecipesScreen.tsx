@@ -1,46 +1,35 @@
+import { Clapperboard, Plus, ScanLine, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { restoreRecipe } from '../../db'
 import { deletedSeedRecipes, filterRecipes, recipeListItems, roundMacros } from '../../domain/nutrition'
 import type { MealSlot, RecipeFilter, RecipeListItem } from '../../types'
-import {
-  Button,
-  Card,
-  ChoiceGroup,
-  ErrorNote,
-  Sheet,
-  TextField,
-  errorMessage,
-  linkButtonClass,
-} from '../../ui'
-import type { Choice } from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button, Card, FoodTile, Sheet, cx } from '../../ui/kit'
+import { buttonClass } from '../../ui/kit/buttonClass'
+import { CheckRow } from '../../ui/kit/CheckRow'
+import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import type { ChoiceOption } from '../../ui/kit'
+import { TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { NutritionTabs } from '../nutrition/NutritionTabs'
 import { SLOT_LABEL, fmtG, fmtInt, isMealSlot, slotChoices } from '../nutrition/format'
-import { BackLink } from '../nutrition/parts'
+import { NEW_RECIPE_PATH, RECIPE_SCAN_PATH, SETTINGS_PATH, VIDEO_RECIPE_PATH, recipePath } from '../routes'
 import { fmtMinutes } from './format'
-import {
-  Badge,
-  Chevron,
-  CiqualBanner,
-  Loading,
-  SearchIcon,
-  Star,
-  Switch,
-  focusRing,
-  searchInputClass,
-} from './parts'
+import { Badge, CiqualBanner, FilterChip, Loading, SearchBox } from './partsV2'
 import { recipesWithMissingData, useRecipeLibrary } from './useRecipes'
 
 type TimeFilter = 'all' | 15 | 30 | 45 | 60
 type ProteinFilter = 'all' | 20 | 30 | 40
 
-const timeChoices: Choice<TimeFilter>[] = [
+const timeChoices: ChoiceOption<TimeFilter>[] = [
   { value: 'all', label: 'Tous' },
   { value: 15, label: '15 min' },
   { value: 30, label: '30 min' },
   { value: 45, label: '45 min' },
   { value: 60, label: '1 h' },
 ]
-const proteinChoices: Choice<ProteinFilter>[] = [
+const proteinChoices: ChoiceOption<ProteinFilter>[] = [
   { value: 'all', label: 'Tous' },
   { value: 20, label: '20 g' },
   { value: 30, label: '30 g' },
@@ -51,38 +40,48 @@ function RecipeRow({ item, approx }: { item: RecipeListItem; approx: boolean }) 
   const { recipe } = item
   const m = roundMacros(item.perServing)
   return (
-    <li>
+    <li className="border-t border-line first:border-t-0">
       <Link
-        to={`/nutrition/recettes/${recipe.id}`}
-        className={`flex min-h-14 items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface px-4 py-3 no-underline active:bg-v1-surface-hi ${focusRing}`}
+        to={recipePath(recipe.id)}
+        className="focus-ring flex min-h-14 items-center gap-3 py-2.5 text-ink no-underline active:opacity-70"
       >
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-lg font-semibold leading-snug text-zinc-100">
-            {recipe.favorite === true ? <Star on className="mr-1" /> : null}
-            {recipe.favorite === true ? <span className="sr-only">Favori. </span> : null}
+        <FoodTile category="dish" size={48} />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="line-clamp-2 text-headline">
+            {recipe.favorite === true ? (
+              <>
+                <Star
+                  size={16}
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                  className="mr-1 inline fill-ember text-ember-ink"
+                />
+                <span className="sr-only">Favori. </span>
+              </>
+            ) : null}
             {recipe.name}
           </span>
-          <span className="text-base text-zinc-200">
-            <span className="font-semibold tabular-nums">
+          <span className="text-caption text-ink">
+            <span className="font-display font-bold tabular-nums">
               {approx ? (
-                <span title="Macros incomplètes" aria-label="Macros incomplètes, environ ">
-                  ≈{' '}
-                </span>
+                <>
+                  <span aria-hidden="true">≈ </span>
+                  <span className="sr-only">Macros incomplètes, environ </span>
+                </>
               ) : null}
               {fmtInt(m.kcal)} kcal
             </span>
-            <span className="text-zinc-400"> · </span>
-            <span className="font-semibold tabular-nums">P {fmtG(m.protein)} g</span>
-            <span className="text-sm text-zinc-400"> par portion</span>
+            {' · '}
+            <span className="font-display font-bold tabular-nums">{`P\u00a0${fmtG(m.protein)}\u00a0g`}</span>
+            <span className="text-ink-muted"> par portion</span>
           </span>
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-400">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-muted">
             <span>{fmtMinutes(item.totalMinutes)}</span>
             <span aria-hidden="true">·</span>
             <span>{recipe.meal.map((s) => SLOT_LABEL[s]).join(', ')}</span>
             {recipe.source === 'user' ? <Badge>Perso</Badge> : null}
           </span>
         </span>
-        <Chevron />
       </Link>
     </li>
   )
@@ -109,25 +108,21 @@ function DeletedSheet({
     }
   }
   return (
-    <Sheet title="Recettes supprimées" onClose={onClose}>
-      <p className="-mt-2 mb-4 text-base text-zinc-400">
-        Seules les recettes fournies avec l’app peuvent être restaurées. Une recette que tu as créée est
-        supprimée pour de bon.
-      </p>
-      {error ? <ErrorNote>{error}</ErrorNote> : null}
+    <Sheet
+      title="Recettes supprimées"
+      description="Seules les recettes fournies avec l’app peuvent être restaurées. Une recette que tu as créée est supprimée pour de bon."
+      onClose={onClose}
+    >
+      {error ? <Note tone="error">{error}</Note> : null}
       {deleted.length === 0 ? (
-        <p className="text-base font-semibold">Aucune recette supprimée.</p>
+        <p className="m-0 text-body-strong">Aucune recette supprimée.</p>
       ) : (
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        <ul className="m-0 flex list-none flex-col p-0">
           {deleted.map((r) => (
-            <li
-              key={r.id}
-              className="flex items-center gap-3 rounded-2xl border border-v1-line bg-v1-surface-hi p-3 pl-4"
-            >
-              <span className="min-w-0 flex-1 text-base font-semibold leading-snug">{r.name}</span>
+            <li key={r.id} className="flex items-center gap-3 border-t border-line py-2 first:border-t-0">
+              <span className="min-w-0 flex-1 text-body-strong">{r.name}</span>
               <Button
                 variant="secondary"
-                width="auto"
                 className="shrink-0"
                 disabled={busyId !== null}
                 aria-label={`Restaurer ${r.name}`}
@@ -196,135 +191,94 @@ export default function RecipesScreen() {
   const filtersActive = query.trim() !== '' || meal !== undefined || activeCount > 0
 
   return (
-    <section>
-      <BackLink to="/nutrition">Nutrition</BackLink>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">Recettes</h1>
+    <div className="flex flex-col gap-3.5">
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="m-0 font-display text-display-l">Recettes</h1>
         <Link
-          to="/nutrition/recettes/nouvelle"
+          to={NEW_RECIPE_PATH}
           aria-label="Créer une recette"
-          className={`flex size-11 shrink-0 items-center justify-center rounded-full bg-orange-400 text-zinc-950 no-underline active:bg-orange-300 ${focusRing}`}
+          className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-ember text-ink no-underline shadow-card active:opacity-80"
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Plus size={24} strokeWidth={2} aria-hidden="true" />
         </Link>
-      </div>
+      </header>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Link to="/nutrition/frigo" className={linkButtonClass('secondary')}>
-          Frigo
-        </Link>
-        <Link to="/nutrition/courses" className={linkButtonClass('secondary')}>
-          Courses
-        </Link>
-      </div>
+      <NutritionTabs current="recipes" />
 
-      <div className="mt-3 flex items-center gap-2">
-        <div className="relative min-w-0 flex-1">
-          <label htmlFor="recipe-search" className="sr-only">
-            Rechercher une recette
-          </label>
-          <SearchIcon />
-          <input
-            id="recipe-search"
-            type="text"
-            inputMode="search"
-            enterKeyHint="search"
-            autoComplete="off"
-            placeholder="Rechercher une recette"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setParam('q', e.target.value)
-            }}
-            className={searchInputClass}
-          />
-          {query !== '' ? (
-            <button
-              type="button"
-              aria-label="Effacer la recherche"
-              onClick={() => {
-                setQuery('')
-                setParam('q', null)
-              }}
-              className="absolute right-0 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-zinc-400"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          ) : null}
+      <div className="flex flex-col gap-1.5">
+        <p className="m-0 text-label uppercase text-ink-muted">Créer à partir de…</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Link to={RECIPE_SCAN_PATH} className={cx(buttonClass('secondary'), 'px-3')}>
+            <ScanLine size={20} strokeWidth={1.75} aria-hidden="true" />
+            <span className="sr-only">Recette </span>
+            Par scan
+          </Link>
+          <Link to={VIDEO_RECIPE_PATH} className={cx(buttonClass('secondary'), 'px-3')}>
+            <Clapperboard size={20} strokeWidth={1.75} aria-hidden="true" />
+            <span className="sr-only">Recette </span>
+            D’une vidéo
+          </Link>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <SearchBox
+          id="recipe-search"
+          label="Rechercher une recette"
+          value={query}
+          onChange={(v) => {
+            setQuery(v)
+            setParam('q', v)
+          }}
+          onClear={() => {
+            setQuery('')
+            setParam('q', null)
+          }}
+        />
         <button
           type="button"
           aria-expanded={panelOpen}
           aria-controls="recipe-filters"
           onClick={() => setParam('f', panelOpen ? null : '1')}
-          className={`flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-base font-semibold ${focusRing} ${
+          className={cx(
+            'focus-ring flex min-h-12 shrink-0 items-center gap-1.5 rounded-ds-pill px-4 text-body-strong',
             activeCount > 0 || panelOpen
-              ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-              : 'border-v1-line bg-v1-surface-hi text-zinc-200'
-          }`}
+              ? 'bg-ember-soft font-bold text-ink ring-2 ring-ember'
+              : 'bg-surface text-ink shadow-card',
+          )}
         >
           Filtres
           {activeCount > 0 ? (
-            <span
-              aria-label={`${activeCount} filtre${activeCount > 1 ? 's' : ''} actif${activeCount > 1 ? 's' : ''}`}
-              className="flex size-6 items-center justify-center rounded-full bg-orange-400 text-sm font-bold text-zinc-950"
-            >
-              {activeCount}
-            </span>
+            <>
+              <span
+                aria-hidden="true"
+                className="grid size-6 place-items-center rounded-full bg-inverse font-display text-caption text-on-inverse"
+              >
+                {activeCount}
+              </span>
+              <span className="sr-only">
+                {`${activeCount} filtre${activeCount > 1 ? 's' : ''} actif${activeCount > 1 ? 's' : ''}`}
+              </span>
+            </>
           ) : null}
         </button>
       </div>
 
-      <div role="group" aria-label="Filtrer par repas" className="mt-3">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
-          {([undefined, 'breakfast', 'lunch', 'dinner', 'snack'] as (MealSlot | undefined)[]).map((s) => {
-            const active = s === meal
-            return (
-              <button
-                key={s ?? 'all'}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setParam('m', s ?? null)}
-                className={`h-11 shrink-0 rounded-full border px-4 text-base font-medium ${focusRing} ${
-                  active
-                    ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-                    : 'border-v1-line bg-v1-surface-hi text-zinc-200'
-                }`}
-              >
-                {s ? (slotChoices.find((c) => c.value === s)?.label ?? s) : 'Tous'}
-              </button>
-            )
-          })}
+      <div role="group" aria-label="Filtrer par repas">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          {([undefined, 'breakfast', 'lunch', 'dinner', 'snack'] as (MealSlot | undefined)[]).map((s) => (
+            <FilterChip
+              key={s ?? 'all'}
+              label={s ? (slotChoices.find((c) => c.value === s)?.label ?? s) : 'Tous'}
+              pressed={s === meal}
+              onClick={() => setParam('m', s ?? null)}
+            />
+          ))}
         </div>
       </div>
 
       {panelOpen ? (
-        <div
-          id="recipe-filters"
-          className="mt-3 flex flex-col gap-4 rounded-2xl border border-v1-line bg-v1-surface p-3"
-        >
+        <Card id="recipe-filters" padding="large" className="flex flex-col gap-4">
           <ChoiceGroup<TimeFilter>
             legend="Temps total maximum"
             layout="grid"
@@ -346,67 +300,54 @@ export default function RecipesScreen() {
             value={ingredient}
             onChange={(v) => setParam('i', v)}
           />
-          <Switch
+          <CheckRow
             label="Favoris seulement"
             checked={favoritesOnly}
             onChange={(on) => setParam('fav', on ? '1' : null)}
           />
-        </div>
+        </Card>
       ) : null}
 
       {data ? <CiqualBanner failed={data.ciqualFailed} onRetry={data.retry} /> : null}
-      {error ? (
-        <div className="mt-5">
-          <ErrorNote>Impossible de lire les recettes. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
-      ) : null}
+      {error ? <Note tone="error">Impossible de lire les recettes. Ferme l’app puis rouvre-la.</Note> : null}
 
       {!data ? (
         <Loading />
       ) : (
         <>
-          <p aria-live="polite" className="mt-3 text-sm text-zinc-400">
+          <p aria-live="polite" className="m-0 text-caption text-ink-muted">
             {filtered.length} recette{filtered.length > 1 ? 's' : ''}
           </p>
           {filtered.length === 0 ? (
-            <Card className="mt-3 text-center">
-              <p className="text-lg font-semibold">Aucune recette trouvée</p>
-              <p className="mt-1 text-base text-zinc-400">Essaie un autre mot ou retire un filtre.</p>
+            <Card padding="large" className="flex flex-col items-center gap-1 text-center">
+              <p className="m-0 font-display text-title">Aucune recette trouvée</p>
+              <p className="m-0 text-body text-ink-muted">Essaie un autre mot ou retire un filtre.</p>
               {filtersActive ? (
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="mt-3 min-h-11 rounded-xl px-4 text-base font-semibold text-orange-400 active:bg-white/5"
-                >
+                <Button variant="text" onClick={reset}>
                   Réinitialiser les filtres
-                </button>
+                </Button>
               ) : null}
             </Card>
           ) : (
-            <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
-              {filtered.map((item) => (
-                <RecipeRow key={item.recipe.id} item={item} approx={approx.has(item.recipe.id)} />
-              ))}
-            </ul>
+            <Card padding="none" className="px-4 py-1">
+              <ul className="m-0 list-none p-0">
+                {filtered.map((item) => (
+                  <RecipeRow key={item.recipe.id} item={item} approx={approx.has(item.recipe.id)} />
+                ))}
+              </ul>
+            </Card>
           )}
-          <div className="mt-8 flex flex-col">
-            <Link
-              to="/reglages/importer"
-              className="flex min-h-12 items-center justify-center rounded-xl text-base font-medium text-zinc-300 underline"
-            >
+          <div className="flex flex-col items-center">
+            <Link to={`${SETTINGS_PATH}/importer`} className={buttonClass('text')}>
               Importer des recettes
             </Link>
-            <button
-              type="button"
-              onClick={() => setDeletedOpen(true)}
-              className="flex min-h-12 items-center justify-center rounded-xl text-base font-medium text-zinc-300 underline"
-            >
+            <Button variant="text" onClick={() => setDeletedOpen(true)}>
               Recettes supprimées ({deleted.length})
-            </button>
+            </Button>
           </div>
           {deletedOpen ? <DeletedSheet deleted={deleted} onClose={() => setDeletedOpen(false)} /> : null}
         </>
       )}
-    </section>
+    </div>
   )
 }

@@ -1,5 +1,5 @@
+import { Check, Minus, Plus, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { deleteShoppingList, saveShoppingList, setShoppingItemChecked } from '../../db'
 import {
   AISLE_LABELS,
@@ -8,27 +8,24 @@ import {
   manualShoppingItem,
   normalizeFoodSearch,
 } from '../../domain/nutrition'
+import { foodCategory, isScannedFood } from '../../domain/nutrition/category'
 import type { Aisle, LibraryRecipe, ShoppingItem, ShoppingList } from '../../types'
-import {
-  Button,
-  Card,
-  ConfirmSheet,
-  DecimalField,
-  ErrorNote,
-  Sheet,
-  SelectField,
-  TextField,
-  errorMessage,
-  parseDecimal,
-  useLiveQuery,
-} from '../../ui'
-import { BackLink } from '../nutrition/parts'
-import { fmtGrams, fmtPortions, portionsWord } from './format'
-import { Loading, RECIPES_PATH, SearchIcon, focusRing, iconButtonClass, searchInputClass } from './parts'
+import { errorMessage, parseDecimal, useLiveQuery } from '../../ui'
+import { Button, Card, FoodTile, Sheet, cx } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { DecimalField, SelectField, TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { NutritionTabs } from '../nutrition/NutritionTabs'
+import { usePhotoUrls } from '../nutrition/usePhotoUrls'
+import { fmtGrams, fmtPortions, portionsText } from './format'
+import { Loading, SearchBox } from './partsV2'
 import { addManualItem, loadCurrentList, rebuildList } from './shoppingList'
 import { useRecipeLibrary } from './useRecipes'
 
 const aisleOptions = AISLE_ORDER.map((a) => ({ value: a, label: AISLE_LABELS[a] }))
+
+const smallStep =
+  'focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-canvas text-ink active:opacity-70'
 
 function PickRecipesSheet({
   recipes,
@@ -70,35 +67,27 @@ function PickRecipesSheet({
 
   return (
     <Sheet title="Recettes de la liste" onClose={onClose} busy={busy}>
-      <div className="relative">
-        <label htmlFor="shopping-search" className="sr-only">
-          Rechercher une recette
-        </label>
-        <SearchIcon />
-        <input
+      <div className="flex">
+        <SearchBox
           id="shopping-search"
-          type="text"
-          inputMode="search"
-          autoComplete="off"
-          placeholder="Rechercher une recette"
+          label="Rechercher une recette"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className={searchInputClass}
+          onChange={setQuery}
+          onClear={() => setQuery('')}
         />
       </div>
-      <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
+      <ul className="m-0 flex list-none flex-col p-0">
         {shown.map((r) => {
           const portions = picked.get(r.id)
           return (
             <li
               key={r.id}
-              className="flex items-center justify-between gap-2 rounded-xl border border-v1-line bg-v1-surface-hi py-2 pl-3 pr-2"
+              className="flex items-center justify-between gap-2 border-t border-line py-2 first:border-t-0"
             >
-              <span className="min-w-0 text-base font-medium leading-snug">{r.name}</span>
+              <span className="min-w-0 text-body-strong">{r.name}</span>
               {portions === undefined ? (
                 <Button
-                  variant="secondary"
-                  width="auto"
+                  variant="flat"
                   className="shrink-0"
                   aria-label={`Ajouter ${r.name}`}
                   onClick={() => setPortions(r.id, r.servings)}
@@ -109,36 +98,36 @@ function PickRecipesSheet({
                 <span className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    className={iconButtonClass}
+                    className={smallStep}
                     aria-label={`Une portion de moins : ${r.name}`}
                     onClick={() => setPortions(r.id, portions - 1)}
                   >
-                    −
+                    <Minus size={20} strokeWidth={1.75} aria-hidden="true" />
                   </button>
-                  <span
-                    className="min-w-9 text-center text-lg font-bold tabular-nums"
-                    aria-label={`${fmtPortions(portions)} ${portionsWord(portions)} de ${r.name}`}
-                  >
-                    {fmtPortions(portions)}
+                  <span className="min-w-9 text-center font-display text-title tabular-nums">
+                    <span aria-hidden="true">{fmtPortions(portions)}</span>
+                    <span className="sr-only">{`${portionsText(portions, r.servingUnit)} de ${r.name}`}</span>
                   </span>
                   <button
                     type="button"
-                    className={iconButtonClass}
+                    className={smallStep}
                     aria-label={`Une portion de plus : ${r.name}`}
                     onClick={() => setPortions(r.id, portions + 1)}
                   >
-                    +
+                    <Plus size={20} strokeWidth={1.75} aria-hidden="true" />
                   </button>
                 </span>
               )}
             </li>
           )
         })}
-        {shown.length === 0 ? <li className="text-base text-zinc-400">Aucune recette trouvée.</li> : null}
+        {shown.length === 0 ? (
+          <li className="py-2 text-body text-ink-muted">Aucune recette trouvée.</li>
+        ) : null}
       </ul>
-      <div className="sticky bottom-0 -mx-4 mt-3 flex flex-col gap-2 bg-v1-surface px-4 pb-1 pt-2">
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button onClick={() => void apply()} disabled={busy}>
+      <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 bg-surface-raised px-4 pb-1 pt-2">
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button fullWidth onClick={() => void apply()} disabled={busy}>
           {picked.size === 0
             ? 'Vider les recettes'
             : `Générer la liste (${picked.size} recette${picked.size > 1 ? 's' : ''})`}
@@ -188,8 +177,8 @@ function ManualItemSheet({
         <TextField label="Article" value={name} onChange={setName} autoComplete="off" />
         <DecimalField label="Quantité (facultatif)" unit="g" value={grams} onChange={setGrams} />
         <SelectField label="Rayon" value={aisle} options={aisleOptions} onChange={setAisle} />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button onClick={() => void submit()} disabled={busy}>
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button fullWidth onClick={() => void submit()} disabled={busy}>
           Ajouter
         </Button>
       </div>
@@ -206,9 +195,20 @@ export default function ShoppingScreen() {
   const [error, setError] = useState<string | null>(null)
 
   const list: ShoppingList | undefined = live.data
-  const groups = useMemo(() => (list ? groupShoppingItems(list.items) : []), [list])
-  const names = useMemo(() => new Map((lib?.recipes ?? []).map((r) => [r.id, r.name])), [lib])
+  const groups = useMemo(
+    () => (list ? groupShoppingItems(list.items).filter((g) => g.items.length > 0) : []),
+    [list],
+  )
+  const byId = useMemo(() => new Map((lib?.recipes ?? []).map((r) => [r.id, r])), [lib])
   const checked = list ? list.items.filter((i) => i.checked).length : 0
+  // Produit scanné = aliment relié à un code-barres / Open Food Facts : photo hors ligne (Dexie) et badge.
+  const isScanned = (item: ShoppingItem): boolean => {
+    const food = item.foodId !== undefined ? lib?.lookup(item.foodId) : undefined
+    return food !== undefined && isScannedFood(food)
+  }
+  const photoUrls = usePhotoUrls(
+    (list?.items ?? []).flatMap((i) => (isScanned(i) && i.foodId !== undefined ? [i.foodId] : [])),
+  )
 
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true)
@@ -229,154 +229,178 @@ export default function ShoppingScreen() {
   }
 
   return (
-    <section>
-      <BackLink to={RECIPES_PATH}>Recettes</BackLink>
-      <h1 className="mt-1 text-3xl font-bold">Courses</h1>
+    <div className="flex flex-col gap-3.5">
+      <header>
+        <h1 className="m-0 font-display text-display-l">Courses</h1>
+      </header>
+      <NutritionTabs current="shopping" />
 
       {live.error || libError ? (
-        <div className="mt-4">
-          <ErrorNote>Impossible de lire la liste. Ferme l’app puis rouvre-la.</ErrorNote>
-        </div>
+        <Note tone="error">Impossible de lire la liste. Ferme l’app puis rouvre-la.</Note>
       ) : null}
-      {error ? (
-        <div className="mt-4">
-          <ErrorNote>{error}</ErrorNote>
-        </div>
-      ) : null}
+      {error ? <Note tone="error">{error}</Note> : null}
 
       {live.loading && !list ? (
         <Loading />
       ) : (
         <>
-          <Card className="mt-4">
-            <h2 className="text-lg font-bold">Recettes de la liste</h2>
+          <Card padding="large" className="flex flex-col gap-3">
+            <h2 className="m-0 font-display text-title">Recettes de la liste</h2>
             {list && list.sources.length > 0 ? (
-              <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0 text-base text-zinc-200">
+              <ul className="m-0 flex list-none flex-col gap-1 p-0 text-body">
                 {list.sources.map((s) => (
                   <li key={s.recipeId} className="flex justify-between gap-3">
-                    <span className="min-w-0">{names.get(s.recipeId) ?? 'Recette supprimée'}</span>
-                    <span className="shrink-0 tabular-nums text-zinc-400">
-                      {fmtPortions(s.portions)} {portionsWord(s.portions)}
+                    <span className="min-w-0">{byId.get(s.recipeId)?.name ?? 'Recette supprimée'}</span>
+                    <span className="shrink-0 font-display font-bold tabular-nums">
+                      {portionsText(s.portions, byId.get(s.recipeId)?.servingUnit)}
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-base text-zinc-400">Aucune recette pour l’instant.</p>
+              <p className="m-0 text-body text-ink-muted">Aucune recette pour l’instant.</p>
             )}
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button variant="secondary" disabled={!lib || busy} onClick={() => setSheet('recipes')}>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="flat" disabled={!lib || busy} onClick={() => setSheet('recipes')}>
                 Choisir les recettes
               </Button>
               <Button
-                variant="secondary"
+                variant="flat"
                 disabled={!lib || busy || !list || list.sources.length === 0}
                 onClick={() => list && void run(() => apply(list.sources))}
               >
                 Régénérer
               </Button>
             </div>
-            <p className="mt-2 text-sm text-zinc-400">
+            <p className="m-0 text-caption text-ink-muted">
               Régénérer recalcule les quantités (recette modifiée) et garde ce que tu as déjà coché.
             </p>
           </Card>
 
           {!list || list.items.length === 0 ? (
-            <Card className="mt-4 text-center">
-              <p className="text-lg font-semibold">Liste vide</p>
-              <p className="mt-1 text-base text-zinc-400">
+            <Card padding="large" className="flex flex-col items-center gap-1 text-center">
+              <p className="m-0 font-display text-title">Liste vide</p>
+              <p className="m-0 text-body text-ink-muted">
                 Choisis des recettes : les ingrédients sont additionnés et rangés par rayon.
               </p>
             </Card>
           ) : (
             <>
-              <p aria-live="polite" className="mt-5 text-sm text-zinc-400" data-testid="shopping-progress">
-                {checked} / {list.items.length} dans le panier
-              </p>
+              <div className="flex flex-col gap-1.5">
+                <p
+                  aria-live="polite"
+                  className="m-0 text-caption text-ink-muted"
+                  data-testid="shopping-progress"
+                >
+                  {checked} / {list.items.length} dans le panier
+                </p>
+                <div
+                  role="progressbar"
+                  aria-label="Panier"
+                  aria-valuemin={0}
+                  aria-valuemax={list.items.length}
+                  aria-valuenow={checked}
+                  className="h-1.5 rounded-full bg-surface-sunken"
+                >
+                  <div
+                    className="h-1.5 rounded-full bg-ember"
+                    style={{ width: `${(checked / list.items.length) * 100}%` }}
+                  />
+                </div>
+              </div>
               {groups.map((g) => (
-                <section key={g.aisle} className="mt-3" aria-labelledby={`aisle-${g.aisle}`}>
-                  <h2 id={`aisle-${g.aisle}`} className="mb-1.5 text-lg font-bold">
+                <section key={g.aisle} aria-labelledby={`aisle-${g.aisle}`} className="flex flex-col gap-1.5">
+                  <h2 id={`aisle-${g.aisle}`} className="m-0 font-display text-title">
                     {AISLE_LABELS[g.aisle]}
                   </h2>
-                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                    {g.items.map((item) => (
-                      <li key={item.id} className="flex items-stretch gap-2">
-                        <button
-                          type="button"
-                          role="checkbox"
-                          aria-checked={item.checked}
-                          disabled={busy}
-                          onClick={() =>
-                            void run(() => setShoppingItemChecked(list.id, item.id, !item.checked))
-                          }
-                          className={`flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-2xl border px-3 py-2 text-left active:bg-v1-surface-hi ${focusRing} ${
-                            item.checked ? 'border-v1-line bg-v1-surface/60' : 'border-v1-line bg-v1-surface'
-                          }`}
+                  <Card padding="none" className="px-3">
+                    <ul className="m-0 list-none p-0">
+                      {g.items.map((item) => (
+                        <li
+                          key={item.id}
+                          className="flex items-stretch gap-1 border-t border-line first:border-t-0"
                         >
-                          <span
-                            aria-hidden="true"
-                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg border-2 text-xl font-bold ${
-                              item.checked
-                                ? 'border-orange-400 bg-orange-400 text-zinc-950'
-                                : 'border-zinc-500'
-                            }`}
-                          >
-                            {item.checked ? '✓' : ''}
-                          </span>
-                          <span
-                            className={`min-w-0 flex-1 text-lg leading-snug ${item.checked ? 'text-zinc-500 line-through' : 'font-medium'}`}
-                          >
-                            {item.name}
-                          </span>
-                          {item.grams > 0 ? (
-                            <span
-                              className={`shrink-0 text-lg font-semibold tabular-nums ${item.checked ? 'text-zinc-500' : 'text-zinc-200'}`}
-                            >
-                              {fmtGrams(item.grams)}
-                            </span>
-                          ) : null}
-                        </button>
-                        {item.manual === true ? (
                           <button
                             type="button"
-                            className={`${iconButtonClass} h-auto w-12`}
-                            aria-label={`Supprimer ${item.name}`}
+                            role="checkbox"
+                            aria-checked={item.checked}
                             disabled={busy}
                             onClick={() =>
-                              void run(() =>
-                                saveShoppingList({
-                                  ...list,
-                                  items: list.items.filter((x) => x.id !== item.id),
-                                }),
-                              )
+                              void run(() => setShoppingItemChecked(list.id, item.id, !item.checked))
                             }
+                            className="focus-ring flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-ds-sm py-2 text-left text-ink active:opacity-70"
                           >
-                            ✕
+                            <span
+                              aria-hidden="true"
+                              className={cx(
+                                'grid size-8 shrink-0 place-items-center rounded-ds-sm border-2',
+                                item.checked ? 'border-ember bg-ember text-ink' : 'border-ink-muted',
+                              )}
+                            >
+                              {item.checked ? <Check size={20} strokeWidth={2.5} /> : null}
+                            </span>
+                            <FoodTile
+                              category={foodCategory({ name: item.name })}
+                              photoUrl={item.foodId !== undefined ? photoUrls.get(item.foodId) : undefined}
+                              badge={isScanned(item) ? 'barcode' : undefined}
+                              size={40}
+                              className={item.checked ? 'opacity-50' : undefined}
+                            />
+                            <span
+                              className={cx(
+                                'min-w-0 flex-1 text-headline',
+                                item.checked && 'text-ink-muted line-through',
+                              )}
+                            >
+                              {item.name}
+                            </span>
+                            {item.grams > 0 ? (
+                              <span
+                                className={cx(
+                                  'shrink-0 font-display text-body-strong font-bold tabular-nums',
+                                  item.checked && 'text-ink-muted',
+                                )}
+                              >
+                                {fmtGrams(item.grams)}
+                              </span>
+                            ) : null}
                           </button>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
+                          {item.manual === true ? (
+                            <button
+                              type="button"
+                              className="focus-ring grid min-h-16 w-12 shrink-0 place-items-center rounded-ds-sm text-ink-muted active:opacity-70"
+                              aria-label={`Supprimer ${item.name}`}
+                              disabled={busy}
+                              onClick={() =>
+                                void run(() =>
+                                  saveShoppingList({
+                                    ...list,
+                                    items: list.items.filter((x) => x.id !== item.id),
+                                  }),
+                                )
+                              }
+                            >
+                              <X size={20} strokeWidth={1.75} aria-hidden="true" />
+                            </button>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
                 </section>
               ))}
             </>
           )}
 
-          <div className="mt-6 flex flex-col gap-2">
-            <Button variant="secondary" onClick={() => setSheet('manual')} disabled={busy}>
+          <div className="flex flex-col gap-2">
+            <Button variant="secondary" fullWidth onClick={() => setSheet('manual')} disabled={busy}>
               Ajouter un article
             </Button>
             {list && (list.items.length > 0 || list.sources.length > 0) ? (
-              <Button variant="danger" onClick={() => setConfirmClear(true)} disabled={busy}>
+              <Button variant="danger" fullWidth onClick={() => setConfirmClear(true)} disabled={busy}>
                 Vider la liste
               </Button>
             ) : null}
-            <Link
-              to={RECIPES_PATH}
-              className="flex min-h-12 items-center justify-center text-base font-medium text-zinc-300 underline"
-            >
-              Voir les recettes
-            </Link>
           </div>
         </>
       )}
@@ -407,6 +431,6 @@ export default function ShoppingScreen() {
           onConfirm={() => void run(() => deleteShoppingList(list.id))}
         />
       ) : null}
-    </section>
+    </div>
   )
 }

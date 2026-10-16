@@ -13,6 +13,7 @@ import {
   parseDecimal,
   toInputNumber,
 } from '../../ui'
+import { allowedReturn, returnTarget } from './formReturn'
 import { BackLink } from './parts'
 import { setSearchSeed, useAddContext, useGoBack } from './navContext'
 import { useFood } from './useFoods'
@@ -26,6 +27,7 @@ interface Draft {
   fat: string
   fiber: string
   portion: string
+  packageG: string
   ean: string
 }
 
@@ -36,6 +38,13 @@ interface Prefill {
   name: string
   brand: string
   ean: string
+  packageG: string
+}
+
+/** Contenance venue de l'URL (scan) : gardée seulement si c'est un entier > 0. */
+function prefillPackage(raw: string | null): string {
+  const n = raw === null ? Number.NaN : Math.round(Number(raw))
+  return Number.isFinite(n) && n > 0 ? String(n) : ''
 }
 
 function toDraft(food: Food | undefined, pre: Prefill): Draft {
@@ -49,12 +58,13 @@ function toDraft(food: Food | undefined, pre: Prefill): Draft {
     fat: num(food?.per100g.fat),
     fiber: num(food?.per100g.fiber),
     portion: num(food?.defaultPortionG),
+    packageG: food ? num(food.packageG === undefined ? undefined : Math.round(food.packageG)) : pre.packageG,
   }
 }
 
 type Parsed = { ok: true; input: FoodInput } | { ok: false; error: string }
 
-function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean, packageG?: number): Parsed {
+function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean): Parsed {
   const required = (text: string): number => (text.trim() === '' ? Number.NaN : parseDecimal(text))
   const kcal = required(d.kcal)
   const protein = required(d.protein)
@@ -68,8 +78,12 @@ function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean, packageG?: 
   }
   const fiber = d.fiber.trim() === '' ? undefined : parseDecimal(d.fiber)
   const portion = d.portion.trim() === '' ? undefined : parseDecimal(d.portion)
+  const packageG = d.packageG.trim() === '' ? undefined : parseDecimal(d.packageG)
   if (Number.isNaN(fiber) || Number.isNaN(portion)) {
     return { ok: false, error: 'Les fibres et la portion doivent être des nombres (ou rester vides).' }
+  }
+  if (packageG !== undefined && Number.isNaN(packageG)) {
+    return { ok: false, error: 'La contenance du paquet doit être un nombre de grammes (ou rester vide).' }
   }
   const rawEan = d.ean.trim()
   const ean = rawEan === '' ? '' : normalizeEan(rawEan)
@@ -85,7 +99,6 @@ function parseDraft(d: Draft, aisle: Food['aisle'], hadEan: boolean, packageG?: 
   if (fiber !== undefined) input.per100g.fiber = fiber
   if (portion !== undefined) input.defaultPortionG = portion
   if (aisle !== undefined) input.aisle = aisle
-  // Contenance du paquet (scan) : pas encore de champ dans ce formulaire (R3), on la garde.
   if (packageG !== undefined) input.packageG = packageG
   const message = checkFoodInput(input)
   return message === null ? { ok: true, input } : { ok: false, error: message }
@@ -95,10 +108,13 @@ function FoodForm({
   food,
   prefill,
   origin,
+  returnPath,
 }: {
   food: Food | undefined
   prefill: Prefill
   origin: string | null
+  /** Écran d'origine autorisé (liste blanche) : l'aliment créé lui est rendu. */
+  returnPath: string | null
 }) {
   const goBack = useGoBack()
   const navigate = useNavigate()
@@ -112,7 +128,7 @@ function FoodForm({
   const scanPath = `/nutrition/scanner${search}`
 
   const save = async () => {
-    const parsed = parseDraft(draft, food?.aisle, food?.ean !== undefined, food?.packageG)
+    const parsed = parseDraft(draft, food?.aisle, food?.ean !== undefined)
     if (!parsed.ok) {
       setError(parsed.error)
       return
@@ -127,7 +143,9 @@ function FoodForm({
         const created = await createFood(parsed.input)
         // Venu de l'écran Ajouter : on y revient (sans doublon d'historique) avec le nouvel aliment cherché ;
         // les ajouts déjà faits sont conservés (sessionStorage de l'écran Ajouter).
-        if (fromScan) {
+        if (returnPath !== null) {
+          navigate(returnTarget(returnPath, created.id), { replace: true })
+        } else if (fromScan) {
           // Retour au scan : l'aliment créé passe directement à la quantité, puis au journal.
           navigate(`${scanPath}${search ? '&' : '?'}ajout=${encodeURIComponent(created.id)}`, {
             replace: true,
@@ -145,7 +163,14 @@ function FoodForm({
     }
   }
 
-  const cancelTo = food ? `/nutrition/aliments/${food.id}${search}` : fromScan ? scanPath : addPath
+  const cancelTo =
+    returnPath !== null && !food
+      ? returnTarget(returnPath)
+      : food
+        ? `/nutrition/aliments/${food.id}${search}`
+        : fromScan
+          ? scanPath
+          : addPath
 
   return (
     <>
@@ -201,6 +226,13 @@ function FoodForm({
           unit="g"
           hint="Proposée en raccourci quand tu ajoutes cet aliment."
         />
+        <DecimalField
+          label="Contenance du paquet (facultatif)"
+          value={draft.packageG}
+          onChange={set('packageG')}
+          unit="g"
+          hint="Poids du paquet entier : permet d’ajouter « paquet entier » en un geste."
+        />
         {error ? <ErrorNote>{error}</ErrorNote> : null}
         <Button type="submit" disabled={busy}>
           Enregistrer
@@ -226,8 +258,10 @@ export default function FoodFormScreen() {
           name: params.get('nom') ?? '',
           brand: params.get('marque') ?? '',
           ean: params.get('ean') ?? '',
+          packageG: prefillPackage(params.get('paquet')),
         }}
         origin={params.get('origine')}
+        returnPath={allowedReturn(params.get('retour'))}
       />
     )
   if (!data && loading) return <div aria-busy="true" className="min-h-40" />
@@ -239,5 +273,13 @@ export default function FoodFormScreen() {
       </>
     )
   }
-  return <FoodForm key={data.id} food={data} prefill={{ name: '', brand: '', ean: '' }} origin={null} />
+  return (
+    <FoodForm
+      key={data.id}
+      food={data}
+      prefill={{ name: '', brand: '', ean: '', packageG: '' }}
+      origin={null}
+      returnPath={null}
+    />
+  )
 }

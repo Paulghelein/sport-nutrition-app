@@ -1,3 +1,5 @@
+// v1 (sombre) : ne sert plus que le sélecteur de recettes du journal (RecipePickerSheet). Les écrans Recettes, Frigo,
+// fiche et mode cuisine utilisent RecipeLogSheet (v2). À supprimer en R5 avec RecipePickerSheet.
 import { useState } from 'react'
 import { logRecipeEntries } from '../../db'
 import { recipeLogEntry, roundMacros } from '../../domain/nutrition'

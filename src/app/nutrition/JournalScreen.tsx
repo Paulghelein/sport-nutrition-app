@@ -1,126 +1,127 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { buildJournalMessage } from '../../domain/claude/context'
 import {
   acceptKcalSuggestion,
   addLogEntries,
   deleteLogEntry,
+  getCiqualFoodsByIds,
+  getFoodRowsByIds,
   getProfile,
-  listFridge,
   listLogForDate,
   listWeighIns,
 } from '../../db'
-import {
-  copyMeal,
-  dayLog,
-  kcalSuggestion,
-  nutritionTargets,
-  roundMacros,
-  targetWeight,
-} from '../../domain/nutrition'
-import { addDays, formatDateFr, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
-import type { FoodLogEntry, KcalSuggestion, LocalDate, MealTotals, NutritionTargets } from '../../types'
-import { Button, Card, ErrorNote, errorMessage, linkButtonClass, useLiveQuery } from '../../ui'
+import { addDays, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
+import type { FoodLogEntry, Id, LocalDate, MealSlot } from '../../types'
+import { errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card, cx } from '../../ui/kit'
+import { FoodRow } from '../../ui/kit/FoodRow'
+import { Note } from '../../ui/kit/Note'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
-import { fmtPortions, portionsWord } from '../recipes/format'
 import { DaySummary } from './DaySummary'
 import { EntrySheet } from './EntrySheet'
-import { SLOT_LABEL, fmtG, fmtInt } from './format'
-import { StickyStack, Toast } from './parts'
-import type { ToastState } from './parts'
+import { Toast } from './JournalToast'
+import type { ToastState } from './JournalToast'
+import { NutritionTabs } from './NutritionTabs'
+import { SLOT_LABEL, fmtInt } from './format'
+import { buildJournalModel, dayLabel, mealCopies } from './journalModel'
+import type { JournalMealModel } from './journalModel'
+import { usePhotoUrls } from './usePhotoUrls'
 
 /** « Plus tard » : masque la carte pour la session (jusqu'au rechargement de l'app). */
 let suggestionHidden = false
 
-const navButton =
-  'flex size-12 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-2xl active:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
-
-function dayLabel(date: LocalDate, today: LocalDate): string {
-  if (date === today) return 'Aujourd’hui'
-  if (date === addDays(today, -1)) return 'Hier'
-  if (date === addDays(today, 1)) return 'Demain'
-  return formatDateFr(date, 'long')
-}
-
-function quantity(entry: FoodLogEntry): string {
-  const o = entry.origin
-  if (o.kind === 'food') return `${fmtG(o.grams)} g`
-  if (o.kind === 'recipe') return `${fmtG(o.portions)} portion${o.portions > 1 ? 's' : ''}`
-  return o.kind === 'import' ? 'Importé' : 'Saisie libre'
-}
+const dayButton =
+  'focus-ring grid size-11 shrink-0 place-items-center rounded-full text-ink disabled:text-ink-faint'
+const textAction =
+  'focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-ds-pill px-3 text-body-strong no-underline active:opacity-70'
 
 function MealCard({
   meal,
   date,
-  canCopy,
+  photoUrls,
   onOpen,
   onCopy,
 }: {
-  meal: MealTotals
+  meal: JournalMealModel
   date: LocalDate
-  canCopy: boolean
+  photoUrls: ReadonlyMap<Id, string>
   onOpen: (entry: FoodLogEntry) => void
   onCopy: () => void
 }) {
-  const label = SLOT_LABEL[meal.slot]
+  const addTo = `/nutrition/ajouter?repas=${meal.slot}&date=${date}`
+  const copy = meal.canCopy ? (
+    <button
+      type="button"
+      aria-label={`Copier d’hier : ${meal.label}`}
+      onClick={onCopy}
+      className={cx(textAction, 'text-ink')}
+    >
+      Copier d’hier
+    </button>
+  ) : null
+
+  // Repas vide : pastille « Dîner  + Ajouter » (maquette), la copie d'hier à côté si la veille a ce repas.
+  if (meal.rows.length === 0) {
+    return (
+      <div
+        role="group"
+        aria-label={meal.label}
+        className="flex items-center gap-1 rounded-ds-pill bg-surface pr-2 shadow-card"
+      >
+        <Link
+          to={addTo}
+          aria-label={`Ajouter au repas : ${meal.label}`}
+          className="focus-ring flex min-h-[52px] min-w-0 flex-1 items-center justify-between gap-3 rounded-ds-pill pl-[18px] pr-2 text-body-strong text-ink no-underline active:opacity-70"
+        >
+          <span>{meal.label}</span>
+          <span className="text-ember-ink">+ Ajouter</span>
+        </Link>
+        {copy}
+      </div>
+    )
+  }
+
   return (
-    <Card aria-label={label} role="group" className="mt-4 !p-0">
-      <div className="flex items-baseline justify-between gap-3 px-4 pt-4">
-        <h2 className="text-xl font-bold">{label}</h2>
-        <p className="text-base tabular-nums text-zinc-300">
-          <span className="font-semibold text-zinc-100">{fmtInt(meal.totals.kcal)}</span> kcal
+    <Card aria-label={meal.label} role="group" padding="none" className="px-4 pb-1.5 pt-3">
+      <div className="flex items-baseline justify-between gap-3 pb-1.5">
+        <h2 className="m-0 font-display text-title">{meal.label}</h2>
+        <p className="m-0 font-display text-body-strong tabular-nums">
+          {fmtInt(meal.kcal)}
+          <span className="font-sans text-caption font-medium text-ink-muted">{' kcal'}</span>
         </p>
       </div>
-      {meal.entries.length > 0 ? (
-        <>
-          <ul className="m-0 mt-2 list-none p-0">
-            {meal.entries.map((entry) => {
-              const kcal = roundMacros(entry.macros).kcal
-              return (
-                <li key={entry.id} className="border-t border-v1-line">
-                  <button
-                    type="button"
-                    aria-label={`Modifier ${entry.name}, ${fmtInt(kcal)} kcal`}
-                    onClick={() => onOpen(entry)}
-                    className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-left active:bg-v1-surface-hi"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-base font-medium leading-snug">{entry.name}</span>
-                      <span className="block text-sm text-zinc-400">{quantity(entry)}</span>
-                    </span>
-                    <span className="shrink-0 text-base font-semibold tabular-nums">
-                      {fmtInt(kcal)} <span className="text-sm font-normal text-zinc-400">kcal</span>
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-          <p className="m-0 border-t border-v1-line px-4 py-2 text-sm tabular-nums text-zinc-400">
-            P {fmtG(roundMacros(meal.totals).protein)} g · G {fmtG(roundMacros(meal.totals).carbs)} g · L{' '}
-            {fmtG(roundMacros(meal.totals).fat)} g
-          </p>
-        </>
-      ) : null}
-      <div className="flex gap-2 p-3">
+      <ul className="m-0 list-none p-0">
+        {meal.rows.map((row) => (
+          <li key={row.entry.id} className="border-t border-line first:border-t-0">
+            <FoodRow
+              name={row.entry.name}
+              quantity={row.quantity}
+              protein={row.macros.protein}
+              carbs={row.macros.carbs}
+              fat={row.macros.fat}
+              kcal={row.macros.kcal}
+              category={row.visual.category}
+              photoUrl={row.visual.photoFoodId ? photoUrls.get(row.visual.photoFoodId) : undefined}
+              scanned={row.visual.scanned}
+              fromFridge={row.visual.fromFridge}
+              ariaLabel={row.ariaLabel}
+              onPress={() => onOpen(row.entry)}
+            />
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center justify-between border-t border-line">
         <Link
-          to={`/nutrition/ajouter?repas=${meal.slot}&date=${date}`}
-          aria-label={`Ajouter au repas : ${label}`}
-          className={linkButtonClass('secondary', 'full')}
+          to={addTo}
+          aria-label={`Ajouter au repas : ${meal.label}`}
+          className={cx(textAction, 'text-ember-ink')}
         >
+          <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
           Ajouter
         </Link>
-        {canCopy ? (
-          <Button
-            variant="ghost"
-            width="auto"
-            className="shrink-0"
-            aria-label={`Copier d’hier : ${label}`}
-            onClick={onCopy}
-          >
-            Copier d’hier
-          </Button>
-        ) : null}
+        {copy}
       </div>
     </Card>
   )
@@ -173,35 +174,33 @@ export default function JournalScreen() {
       getProfile(),
       listWeighIns(),
     ])
-    return { entries, yesterday, profile, weighIns }
+    // Seuls les aliments du jour sont lus (lignes `foods` et groupes Ciqual), pas les tables entières.
+    const foodIds = entries.flatMap((e) => (e.origin.kind === 'food' ? [e.origin.foodId] : []))
+    const [foods, ciqual] = await Promise.all([getFoodRowsByIds(foodIds), getCiqualFoodsByIds(foodIds)])
+    const ciqualGroups = new Map<Id, string>()
+    for (const [id, c] of ciqual) ciqualGroups.set(id, c.group)
+    return { date, entries, yesterday, profile, weighIns, foods, ciqualGroups }
   }, [date])
 
-  const fridge = useLiveQuery(() => listFridge(), [])
-  const fridgePortions = (fridge.data ?? []).reduce((sum, f) => sum + f.portionsLeft, 0)
+  // Pendant un changement de jour, les données de l'ancien jour sont ignorées (pas d'affichage du mauvais jour).
+  const model = useMemo(
+    () => (data && data.date === date ? buildJournalModel({ ...data, today }) : undefined),
+    [data, date, today],
+  )
+  const photoUrls = usePhotoUrls(model?.photoFoodIds ?? [])
 
   const go = (target: LocalDate) => setParams(target === today ? {} : { date: target }, { replace: true })
 
-  const log = data ? dayLog(data.entries, date) : undefined
-  const yesterdayLog = data ? dayLog(data.yesterday, addDays(date, -1)) : undefined
-
-  let targets: NutritionTargets | undefined
-  let suggestion: KcalSuggestion | undefined
-  if (data?.profile) {
-    const weight = targetWeight(data.weighIns, date) ?? targetWeight(data.weighIns, today)
-    if (weight !== undefined) targets = nutritionTargets(data.profile, weight, date)
-    if (date === today) suggestion = kcalSuggestion(data.profile, data.weighIns, today)
-  }
-
-  const copy = async (slot: MealTotals['slot']) => {
-    const source = yesterdayLog?.meals.find((m) => m.slot === slot)
-    if (!source || source.entries.length === 0 || busy.current) return
+  const copy = async (slot: MealSlot) => {
+    if (!data || data.date !== date || busy.current) return
+    const copies = mealCopies({ date, yesterday: data.yesterday }, slot, {
+      newId: () => crypto.randomUUID(),
+      now: new Date().toISOString(),
+    })
+    if (copies.length === 0) return
     busy.current = true
     setError(null)
     try {
-      const copies = copyMeal(source.entries, date, slot, {
-        newId: () => crypto.randomUUID(),
-        now: new Date().toISOString(),
-      })
       await addLogEntries(copies)
       const ids = copies.map((c) => c.id)
       setToast({
@@ -217,6 +216,7 @@ export default function JournalScreen() {
     }
   }
 
+  const suggestion = model?.suggestion
   const accept = async () => {
     if (!suggestion || accepting) return
     setAccepting(true)
@@ -232,72 +232,53 @@ export default function JournalScreen() {
   }
 
   return (
-    <>
-      <h1 className="text-3xl font-bold">Nutrition</h1>
-      <nav aria-label="Recettes, frigo et courses" className="mt-2 grid grid-cols-3 gap-2">
-        {[
-          { to: '/nutrition/recettes', label: 'Recettes', aria: 'Recettes' },
-          {
-            to: '/nutrition/frigo',
-            label: fridgePortions > 0 ? `Frigo (${fmtPortions(fridgePortions)})` : 'Frigo',
-            aria:
-              fridgePortions > 0
-                ? `Frigo, ${fmtPortions(fridgePortions)} ${portionsWord(fridgePortions)}`
-                : 'Frigo',
-          },
-          { to: '/nutrition/courses', label: 'Courses', aria: 'Courses' },
-        ].map((l) => (
-          <Link
-            key={l.to}
-            to={l.to}
-            aria-label={l.aria}
-            className="flex min-h-11 items-center justify-center rounded-xl border border-v1-line px-2 text-center text-base font-medium text-zinc-200 no-underline active:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+    <div className="flex flex-col gap-3.5">
+      <header className="flex flex-wrap items-end justify-between gap-x-3">
+        <h1 className="m-0 font-display text-display-l">Nutrition</h1>
+        <div className="flex items-center">
+          <button
+            type="button"
+            className={dayButton}
+            aria-label="Jour précédent"
+            onClick={() => go(addDays(date, -1))}
           >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="mt-4 flex items-center gap-2">
-        <button
-          type="button"
-          className={navButton}
-          aria-label="Jour précédent"
-          onClick={() => go(addDays(date, -1))}
-        >
-          ‹
-        </button>
-        <p
-          aria-live="polite"
-          className="m-0 min-w-0 flex-1 text-center text-lg font-semibold capitalize leading-tight"
-        >
-          {dayLabel(date, today)}
-        </p>
-        <button
-          type="button"
-          className={navButton}
-          aria-label="Jour suivant"
-          onClick={() => go(addDays(date, 1))}
-        >
-          ›
-        </button>
-      </div>
+            <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+          <p aria-live="polite" className="m-0 text-body-strong first-letter:uppercase">
+            {dayLabel(date, today)}
+          </p>
+          <button
+            type="button"
+            className={dayButton}
+            aria-label="Jour suivant"
+            onClick={() => go(addDays(date, 1))}
+          >
+            <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+
+      <NutritionTabs current="journal" />
+
       {date !== today ? (
-        <Button variant="ghost" className="mt-1" onClick={() => go(today)}>
-          Aujourd’hui
-        </Button>
+        <div className="flex justify-center">
+          <Button variant="text" onClick={() => go(today)}>
+            Revenir à aujourd’hui
+          </Button>
+        </div>
       ) : null}
 
-      {loadError ? <ErrorNote>Impossible de lire le journal.</ErrorNote> : null}
-      {error ? <ErrorNote>{error}</ErrorNote> : null}
+      {loadError ? <Note tone="error">Impossible de lire le journal.</Note> : null}
+      {error ? <Note tone="error">{error}</Note> : null}
 
-      {log ? (
-        <div className="mt-4">
-          <DaySummary totals={log.totals} targets={targets} />
+      {model ? (
+        <>
+          <DaySummary bilan={model.bilan} />
           {suggestion && !hidden ? (
-            <Card className="mt-4 border-orange-400/40">
-              <h2 className="text-lg font-bold">Ajuster tes calories ?</h2>
-              <p className="mb-3 mt-1 text-base text-zinc-300">{suggestion.message}</p>
-              <div className="flex gap-2">
+            <Card padding="large" className="flex flex-col gap-3">
+              <h2 className="m-0 font-display text-title">Ajuster tes calories ?</h2>
+              <p className="m-0 text-body text-ink-muted">{suggestion.message}</p>
+              <div className="flex flex-wrap gap-2">
                 <Button onClick={() => void accept()} disabled={accepting}>
                   Ajouter {suggestion.kcal} kcal
                 </Button>
@@ -313,34 +294,37 @@ export default function JournalScreen() {
               </div>
             </Card>
           ) : null}
-          {log.meals.map((meal) => (
+          {model.meals.map((meal) => (
             <MealCard
               key={meal.slot}
               meal={meal}
               date={date}
-              canCopy={(yesterdayLog?.meals.find((m) => m.slot === meal.slot)?.entries.length ?? 0) > 0}
+              photoUrls={photoUrls}
               onOpen={setOpenEntry}
               onCopy={() => void copy(meal.slot)}
             />
           ))}
-        </div>
-      ) : null}
-
-      {log ? (
-        <div className="mt-4">
           <AskClaudeButton
             kind="journal"
             defaultOpen={openClaude}
             onDefaultOpened={claudeOpened}
             // Objectifs du jour affiché (affichés à l'écran) ; repli sur ceux d'aujourd'hui si le jour consulté n'a pas de poids de référence.
-            build={(base) => buildJournalMessage({ ...base, targets: targets ?? base.targets, day: log })}
+            build={(base) =>
+              buildJournalMessage({ ...base, targets: model.bilan.targets ?? base.targets, day: model.log })
+            }
+            renderTrigger={({ onClick, disabled, busy: waiting, label }) => (
+              <Button variant="secondary" fullWidth onClick={onClick} disabled={disabled} aria-busy={waiting}>
+                {label}
+              </Button>
+            )}
           />
-        </div>
+        </>
       ) : null}
 
-      <StickyStack>
+      {/* Zone collante en bas de <main> (jamais `fixed`) : au-dessus de la barre d'onglets flottante. */}
+      <div className="sticky bottom-2 z-10">
         <Toast toast={toast} onDismiss={dismissToast} />
-      </StickyStack>
+      </div>
       {openEntry ? (
         <EntrySheet
           key={openEntry.id}
@@ -356,6 +340,6 @@ export default function JournalScreen() {
           }}
         />
       ) : null}
-    </>
+    </div>
   )
 }

@@ -49,11 +49,33 @@ describe('mise en page', () => {
     expect(usesCanvas('/progres')).toBe(true)
     expect(usesCanvas('/entrainement')).toBe(true)
     expect(usesCanvas('/entrainement/apercu')).toBe(true)
-    expect(usesCanvas('/nutrition')).toBe(false)
+    expect(usesCanvas('/nutrition')).toBe(true)
+    expect(usesCanvas('/nutrition/recette-scan')).toBe(true)
+    expect(hidesTabBar('/nutrition/recette-scan')).toBe(true)
+    expect(hidesTabBar('/nutrition/recette-video')).toBe(false)
+    expect(usesCanvas('/nutrition/recette-video')).toBe(true)
+    for (const p of [
+      '/nutrition/recettes',
+      '/nutrition/recettes/poulet-riz',
+      '/nutrition/recettes/poulet-riz/cuisine',
+      '/nutrition/frigo',
+      '/nutrition/courses',
+    ])
+      expect(usesCanvas(p), p).toBe(true)
+    // Formulaire de recette et import : encore en v1 (R5).
+    expect(usesCanvas('/nutrition/recettes/nouvelle')).toBe(false)
+    expect(usesCanvas('/nutrition/recettes/poulet-riz/modifier')).toBe(false)
+    expect(usesCanvas('/reglages/importer')).toBe(false)
+    expect(usesCanvas('/nutrition/ajouter')).toBe(false)
+    expect(usesCanvas('/nutrition/scanner')).toBe(false)
   })
 })
 
 describe('destinationFor (feuille Ajouter)', () => {
+  it('ouvre la recette par scan et la recette d’une vidéo (R3)', () => {
+    expect(destinationFor('recipe-from-scan', 'lunch')).toBe('/nutrition/recette-scan')
+    expect(destinationFor('recipe-from-video', 'lunch')).toBe('/nutrition/recette-video')
+  })
   it('transmet le repas ciblé', () => {
     expect(destinationFor('scan', 'dinner')).toBe('/nutrition/scanner?repas=dinner')
     expect(destinationFor('search', 'lunch')).toBe('/nutrition/ajouter?repas=lunch')

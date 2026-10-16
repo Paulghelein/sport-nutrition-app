@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { isAllowedCoachUrl } from '../../domain/claude/coachUrl'
 import { DEFAULT_REQUESTS } from '../../domain/claude/context'
-import { CLAUDE_DEFAULT_URL } from '../../types/claude'
 import type { ClaudeContextKind, ClaudeMessage } from '../../types/claude'
 import type { ClaudeBaseInput } from '../../domain/claude/context'
 import { Button, ErrorNote, Sheet, SuccessNote } from '../../ui'
 import { CLAUDE_RESPONSE_PATH } from '../routes'
-import { copyToClipboard } from './clipboard'
 import type { ClaudeBase } from './inputs'
-import { useClaudeBase, useCoachUrl } from './useClaudeBase'
+import { useClaudeBase } from './useClaudeBase'
+import { useClaudeBridge } from './useClaudeBridge'
 
 // Boutons d'envoi (SPEC §10.1). Importe `domain/claude/context` directement, jamais le barrel (Zod).
 
@@ -28,8 +26,6 @@ interface Props {
   renderTrigger?: (t: { onClick: () => void; disabled: boolean; busy: boolean; label: string }) => ReactNode
 }
 
-type CopyState = 'idle' | 'copied' | 'failed'
-
 const linkClass =
   'flex min-h-11 items-center justify-center rounded-xl text-base font-semibold text-orange-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
 
@@ -44,42 +40,9 @@ function AskSheet({
   build: (base: ClaudeBaseInput) => ClaudeMessage
   onClose: () => void
 }) {
-  const { coachUrl } = useCoachUrl()
   const [request, setRequest] = useState('')
-  const [copy, setCopy] = useState<CopyState>('idle')
-  const [opened, setOpened] = useState<boolean | null>(null)
-  // Revérifié à l'ouverture : une valeur venue d'ailleurs (sauvegarde ancienne) ne doit jamais ouvrir un autre site.
-  const url = coachUrl !== null && isAllowedCoachUrl(coachUrl) ? coachUrl : CLAUDE_DEFAULT_URL
-
   const message = useMemo(() => (base ? build({ ...base, request }) : null), [base, build, request])
-
-  const copyAndOpen = async () => {
-    if (!message) return
-    // Le geste de l'utilisateur est celui de ce clic : `writeText` est lancé tout de suite (sans rien attendre
-    // avant), puis la fenêtre s'ouvre juste après la copie. Voir le rapport J9 sur iOS.
-    const ok = await copyToClipboard(message.text)
-    if (!ok) {
-      setCopy('failed')
-      return
-    }
-    setCopy('copied')
-    // Pas de 'noopener' : il ferait renvoyer toujours `null`, et on ne saurait plus si Safari a bloqué l'ouverture
-    // (dans ce cas on affiche le lien « Ouvrir Claude »). Le lien avec l'ouvreur est coupé à la main.
-    const win = window.open(url, '_blank')
-    try {
-      if (win) win.opener = null
-    } catch {
-      // fenêtre déjà passée sur un autre domaine : rien à couper
-    }
-    setOpened(win !== null)
-  }
-
-  const copyOnly = async () => {
-    if (!message) return
-    const ok = await copyToClipboard(message.text)
-    setCopy(ok ? 'copied' : 'failed')
-    setOpened(false)
-  }
+  const { url, copy, opened, copyAndOpen, copyOnly } = useClaudeBridge(message?.text ?? null)
 
   return (
     <Sheet title="Demander à Claude" onClose={onClose}>

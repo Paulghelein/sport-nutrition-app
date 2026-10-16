@@ -285,20 +285,29 @@ test.describe('feuille Ajouter', () => {
 
   test('Créer et Autres : chaque entrée mène au bon écran', async ({ page }) => {
     const errors = await boot(page)
-    const entries: [Tab, string | RegExp, RegExp, string | RegExp][] = [
-      ['Aujourd’hui', 'Nouvelle recette', /\/nutrition\/recettes\/nouvelle$/, 'Nouvelle recette'],
-      ['Entraînement', 'Nouvel aliment', /\/nutrition\/aliments\/nouveau$/, 'Créer un aliment'],
-      ['Nutrition', /Réponse de Claude/, /\/claude\/reponse$/, 'Réponse de Claude'],
-      ['Progrès', /^Importer/, /\/reglages\/importer$/, 'Importer'],
+    // Dernier champ : barre d'onglets visible (la recette par scan est plein écran, comme le mode cuisine).
+    const entries: [Tab, string | RegExp, RegExp, string | RegExp, boolean][] = [
+      ['Aujourd’hui', 'Recette par scan', /\/nutrition\/recette-scan$/, 'Recette par scan', false],
+      ['Entraînement', 'Recette d’une vidéo', /\/nutrition\/recette-video$/, 'Recette d’une vidéo', true],
+      ['Nutrition', /Réponse de Claude/, /\/claude\/reponse$/, 'Réponse de Claude', true],
+      ['Progrès', /^Importer/, /\/reglages\/importer$/, 'Importer', true],
     ]
-    for (const [tab, label, url, h1] of entries) {
+    for (const [tab, label, url, h1, withNav] of entries) {
       await goTab(page, tab)
       await openSheet(page)
       await tapSheet(page, label)
       await expect(page).toHaveURL(url)
       await expect(page.getByRole('heading', { level: 1, name: h1 })).toBeVisible()
-      await expect(nav(page)).toBeVisible()
+      if (withNav) await expect(nav(page)).toBeVisible()
+      else {
+        await expect(nav(page)).toHaveCount(0)
+        await page.goto('./')
+      }
     }
+    // Les anciennes entrées provisoires restent joignables ailleurs : « Nouvelle recette » depuis Recettes.
+    await page.goto('./nutrition/recettes')
+    await page.getByRole('link', { name: 'Créer une recette' }).click()
+    await expect(page).toHaveURL(/\/nutrition\/recettes\/nouvelle$/)
 
     await goTab(page, 'Nutrition')
     await openSheet(page)

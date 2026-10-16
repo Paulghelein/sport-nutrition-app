@@ -1,9 +1,9 @@
-import { ClipboardPaste, FileJson, FilePlus, Ruler, UtensilsCrossed } from 'lucide-react'
+import { ClipboardPaste, FileJson, Ruler } from 'lucide-react'
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getActiveSession, listWeighIns } from '../../db'
 import type { MealSlot, WeighIn } from '../../types'
-import { LogSheet } from '../../ui/kit'
+import { DEFAULT_CREATE_ENTRIES, LogSheet } from '../../ui/kit'
 import type { LogEntry } from '../../ui/kit'
 import { slotForNow } from '../nutrition/format'
 import { GUIDED_PATH, PREVIEW_PATH } from '../routes'
@@ -13,11 +13,6 @@ import { LOG_MEALS } from './meals'
 
 const WeightSheet = lazy(() => import('../forms/WeightSheet').then((m) => ({ default: m.WeightSheet })))
 
-// F4 / F5 (recette par scan, recette d'une vidéo) arrivent en R3 : pas de bouton mort d'ici là.
-const CREATE: readonly LogEntry[] = [
-  { action: 'recipe-new', label: 'Nouvelle recette', Icon: UtensilsCrossed },
-  { action: 'food-new', label: 'Nouvel aliment', Icon: FilePlus },
-]
 const OTHERS: readonly LogEntry[] = [
   { action: 'claude-response', label: 'Réponse de Claude', Icon: ClipboardPaste },
   { action: 'import-recipe', label: 'Importer des recettes', Icon: FileJson },
@@ -59,7 +54,7 @@ function AddSheet({ onClose, onWeigh }: { onClose: () => void; onWeigh: () => vo
         if (to !== null) once(() => finish(to))
         else if (action === 'weigh-in') once(onWeigh)
       }}
-      createEntries={CREATE}
+      createEntries={DEFAULT_CREATE_ENTRIES}
       otherEntries={OTHERS}
       onStartSession={() =>
         once(() => {

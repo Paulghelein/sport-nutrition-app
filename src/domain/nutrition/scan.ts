@@ -2,7 +2,13 @@
 // `RecipeInput`. Les macros par portion se calculent avec `recipeNutrition` (recipes.ts) sur le résultat de
 // `draftToRecipeInput` : aucun second calcul ici.
 import type { Aisle, CiqualFood, Food, MealSlot } from '../../types/nutrition'
-import { MAX_INGREDIENT_GRAMS, MAX_RECIPE_NAME_LENGTH, MAX_RECIPE_SERVINGS, MAX_SERVING_UNIT_LENGTH, SERVING_UNIT_MESSAGE } from './limits'
+import {
+  MAX_INGREDIENT_GRAMS,
+  MAX_RECIPE_NAME_LENGTH,
+  MAX_RECIPE_SERVINGS,
+  MAX_SERVING_UNIT_LENGTH,
+  SERVING_UNIT_MESSAGE,
+} from './limits'
 import type { RecipeInput, ScanIngredient, ScanRecipeDraft } from '../../types/recipes'
 
 /** Quantité proposée quand on ne sait rien du produit. */
@@ -17,7 +23,8 @@ export interface ScanIngredientOptions {
   grams?: number
 }
 
-const wholeFlag = (grams: number, packageG: number | undefined): boolean => packageG !== undefined && grams === packageG
+const wholeFlag = (grams: number, packageG: number | undefined): boolean =>
+  packageG !== undefined && grams === packageG
 
 /** Aliment de la table `foods` (produit OFF scanné ou aliment perso) -> ingrédient. */
 export function scanIngredientFromFood(food: Food, opts: ScanIngredientOptions): ScanIngredient {
@@ -37,7 +44,7 @@ export function scanIngredientFromFood(food: Food, opts: ScanIngredientOptions):
 
 /** Aliment Ciqual -> ingrédient (`ciqualCode`, pas de `foodId`). Rayon : « autre » (Ciqual n'en donne pas). */
 export function scanIngredientFromCiqual(
-  food: CiqualFood,
+  food: Pick<CiqualFood, 'code' | 'name'>,
   opts: ScanIngredientOptions & { aisle?: Aisle },
 ): ScanIngredient {
   return {
@@ -93,7 +100,11 @@ export function draftToRecipeInput(draft: ScanRecipeDraft): RecipeInput {
     cookMinutes: 0,
     tags: [],
     ingredients: draft.ingredients.map((i) => {
-      const out: RecipeInput['ingredients'][number] = { name: ingredientName(i), grams: i.grams, aisle: i.aisle }
+      const out: RecipeInput['ingredients'][number] = {
+        name: ingredientName(i),
+        grams: i.grams,
+        aisle: i.aisle,
+      }
       if (i.origin === 'ciqual') {
         if (i.ciqualCode !== undefined) out.ciqualCode = i.ciqualCode
       } else if (i.foodId !== undefined) out.foodId = i.foodId
@@ -110,7 +121,8 @@ export function draftToRecipeInput(draft: ScanRecipeDraft): RecipeInput {
 export function checkScanDraft(draft: ScanRecipeDraft): string | null {
   const name = draft.name.trim()
   if (name === '') return 'Donne un nom à la recette.'
-  if (name.length > MAX_RECIPE_NAME_LENGTH) return `Le nom ne peut pas dépasser ${MAX_RECIPE_NAME_LENGTH} caractères.`
+  if (name.length > MAX_RECIPE_NAME_LENGTH)
+    return `Le nom ne peut pas dépasser ${MAX_RECIPE_NAME_LENGTH} caractères.`
   if (draft.ingredients.length === 0) return 'Ajoute au moins un ingrédient.'
   if (!Number.isInteger(draft.servings) || draft.servings < 1 || draft.servings > MAX_RECIPE_SERVINGS) {
     return `Le nombre de portions doit être un entier entre 1 et ${MAX_RECIPE_SERVINGS}.`

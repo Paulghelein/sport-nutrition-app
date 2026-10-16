@@ -63,7 +63,8 @@ function parsePackageG(product: Json): number | undefined {
   if (unit !== '' && unit !== 'g' && unit !== 'kg') return undefined
   const raw = toNumber(product.product_quantity)
   const q = raw !== undefined && unit === 'kg' ? raw * 1000 : raw
-  return q !== undefined && q > 0 && q <= MAX_PACKAGE_G ? q : undefined
+  const g = q === undefined ? undefined : Math.round(q)
+  return g !== undefined && g > 0 && g <= MAX_PACKAGE_G ? g : undefined
 }
 
 const OFF_IMAGE_HOSTS: readonly string[] = ['images.openfoodfacts.org', 'static.openfoodfacts.org']
@@ -111,6 +112,8 @@ export function parseOffProduct(ean: Ean, json: unknown): Exclude<OffLookupResul
     const res: Extract<OffLookupResult, { status: 'incomplete' }> = { status: 'incomplete', ean }
     if (name) res.name = name
     if (brand) res.brand = brand
+    const pkg = parsePackageG(product)
+    if (pkg !== undefined) res.packageG = pkg
     return res
   }
 
@@ -121,6 +124,8 @@ export function parseOffProduct(ean: Ean, json: unknown): Exclude<OffLookupResul
     const res: Extract<OffLookupResult, { status: 'incomplete' }> = { status: 'incomplete', ean }
     if (name) res.name = name
     if (brand) res.brand = brand
+    const pkg = parsePackageG(product)
+    if (pkg !== undefined) res.packageG = pkg
     return res
   }
 
@@ -154,7 +159,8 @@ export function offProductToFood(product: OffProduct, now: IsoDateTime): Food {
   return food
 }
 
-const OFF_FIELDS = 'code,product_name,product_name_fr,generic_name,brands,nutriments,serving_quantity,product_quantity,product_quantity_unit,image_front_small_url'
+const OFF_FIELDS =
+  'code,product_name,product_name_fr,generic_name,brands,nutriments,serving_quantity,product_quantity,product_quantity_unit,image_front_small_url'
 
 export function offProductUrl(ean: Ean): string {
   return `https://world.openfoodfacts.org/api/v2/product/${ean}.json?fields=${OFF_FIELDS}`
@@ -191,7 +197,11 @@ export async function lookupOff(
       reject(new Error('timeout'))
     }, timeoutMs)
   })
-  const fail = (message: string): { status: 'error'; ean: Ean; message: string } => ({ status: 'error', ean, message })
+  const fail = (message: string): { status: 'error'; ean: Ean; message: string } => ({
+    status: 'error',
+    ean,
+    message,
+  })
 
   try {
     const work = (async () => {

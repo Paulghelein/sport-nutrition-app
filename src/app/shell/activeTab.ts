@@ -1,12 +1,17 @@
 import type { TabId } from '../../ui/kit'
 import {
   COOK_PATH_PATTERN,
+  FRIDGE_PATH,
   GUIDED_PATH,
   HOME_PATH,
   NUTRITION_PATH,
   PROGRESS_PATH,
+  RECIPES_PATH,
+  RECIPE_SCAN_PATH,
+  SHOPPING_PATH,
   SETTINGS_PATH,
   TRAINING_PATH,
+  VIDEO_RECIPE_PATH,
 } from '../routes'
 
 const PREFIXES: readonly (readonly [string, TabId])[] = [
@@ -29,14 +34,38 @@ export function activeTab(pathname: string): TabId | null {
 }
 
 /**
- * Mode cuisine : plein écran, sans barre d'onglets. Le mode séance (`GUIDED_PATH`) est servi hors de `TabsLayout`
+ * Mode cuisine et recette par scan (caméra + feuille du bas) : plein écran, sans barre d'onglets. Le mode séance (`GUIDED_PATH`) est servi hors de `TabsLayout`
  * (App.tsx) et n'arrive donc jamais ici ; la branche reste par sécurité si la route changeait de place.
  */
 export function hidesTabBar(pathname: string): boolean {
-  return under(pathname, GUIDED_PATH) || COOK_PATH_PATTERN.test(pathname)
+  return under(pathname, GUIDED_PATH) || COOK_PATH_PATTERN.test(pathname) || under(pathname, RECIPE_SCAN_PATH)
+}
+
+/** Écrans nutrition refaits en v2 (R3) ; le journal (`/nutrition` exact) est traité à part. */
+const V2_NUTRITION: readonly string[] = [RECIPE_SCAN_PATH, VIDEO_RECIPE_PATH]
+
+/** Recettes, fiche, mode cuisine, frigo, courses : v2. Le formulaire (`nouvelle`, `:id/modifier`) reste v1 (R5). */
+const V2_RECIPE_SCREEN = new RegExp(`^${RECIPES_PATH}/(?!nouvelle/?$)[^/]+(?:/cuisine)?/?$`)
+
+function isV2Recipes(pathname: string): boolean {
+  return (
+    pathname === RECIPES_PATH ||
+    pathname === `${RECIPES_PATH}/` ||
+    V2_RECIPE_SCREEN.test(pathname) ||
+    pathname === FRIDGE_PATH ||
+    pathname === SHOPPING_PATH
+  )
 }
 
 /** Seuls les écrans refaits en v2 sont en clair (canvas) ; les autres restent sombres (fond v1). */
 export function usesCanvas(pathname: string): boolean {
-  return pathname === HOME_PATH || under(pathname, PROGRESS_PATH) || under(pathname, TRAINING_PATH)
+  return (
+    pathname === HOME_PATH ||
+    under(pathname, PROGRESS_PATH) ||
+    under(pathname, TRAINING_PATH) ||
+    V2_NUTRITION.some((p) => under(pathname, p)) ||
+    isV2Recipes(pathname) ||
+    pathname === NUTRITION_PATH ||
+    pathname === `${NUTRITION_PATH}/`
+  )
 }

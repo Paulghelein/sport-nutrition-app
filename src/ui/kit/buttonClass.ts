@@ -1,7 +1,11 @@
 import { cx } from './cx'
 
-/** `danger` : action destructive ; `inverse` : sur fond sombre (mode séance), panneau translucide. */
-export type ButtonVariant = 'primary' | 'secondary' | 'dark' | 'text' | 'danger' | 'inverse'
+/**
+ * `danger` : action destructive ; `flat` / `dangerSoft` : secondaire et destructif discret posés sur une carte (fond
+ * canvas, sans ombre) ; `inverse` : sur fond sombre (mode séance), panneau translucide.
+ */
+export type ButtonVariant =
+  'primary' | 'secondary' | 'flat' | 'dark' | 'text' | 'danger' | 'dangerSoft' | 'inverse'
 /** `normal` : 48 px ; `session` : 64 px (mode séance, collé en bas, à portée de pouce). */
 export type ButtonSize = 'normal' | 'session'
 
@@ -9,8 +13,10 @@ const variantClass: Record<ButtonVariant, string> = {
   // Le texte sur ember est toujours ink, jamais blanc.
   primary: 'bg-ember text-ink font-bold disabled:bg-surface-sunken disabled:text-ink-muted',
   secondary: 'bg-surface text-ink shadow-card disabled:text-ink-muted',
+  flat: 'bg-canvas text-ink disabled:text-ink-muted',
   dark: 'bg-inverse text-on-inverse disabled:bg-surface-sunken disabled:text-ink-muted',
   text: 'bg-transparent text-ember-ink disabled:text-ink-muted',
+  dangerSoft: 'bg-canvas text-critical font-bold disabled:text-ink-muted',
   danger: 'bg-critical text-on-inverse font-bold disabled:bg-surface-sunken disabled:text-ink-muted',
   inverse: 'bg-on-inverse/10 text-on-inverse disabled:text-on-inverse-muted',
 }

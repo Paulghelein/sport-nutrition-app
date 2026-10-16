@@ -1,15 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  ValidationError,
-  addLogEntries,
-  cacheOffFood,
-  deleteLogEntry,
-  findFoodByEan,
-  getFoodRow,
-  listLogForDate,
-} from '../../db'
-import { foodLogEntry, lookupOff, normalizeEan, offProductToFood } from '../../domain/nutrition'
+import { addLogEntries, deleteLogEntry, getFoodRow, listLogForDate } from '../../db'
+import { foodLogEntry, normalizeEan } from '../../domain/nutrition'
 import { isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { Ean, Food, ScanErrorKind } from '../../types'
 import { Button, ErrorNote, TextField, errorMessage, linkButtonClass, useLiveQuery } from '../../ui'
@@ -17,37 +9,9 @@ import { QuantitySheet } from '../nutrition/QuantitySheet'
 import { SLOT_LABEL, isMealSlot, slotForNow } from '../nutrition/format'
 import { BackLink } from '../nutrition/parts'
 import { CameraView } from './CameraView'
+import { resolveScan } from './resolveScan'
 import { scanErrorText, scanReducer } from './scanLogic'
-
-/** Bip court de lecture caméra : un seul AudioContext, déverrouillé au premier toucher, fermé au démontage. */
-function useBeep(): () => void {
-  const ctx = useRef<AudioContext | null>(null)
-  useEffect(() => {
-    const unlock = () => {
-      try {
-        ctx.current ??= new window.AudioContext()
-        void ctx.current.resume().catch(() => undefined)
-      } catch {
-        // pas de son : l'animation du cadre suffit
-      }
-    }
-    document.addEventListener('pointerdown', unlock, { once: true })
-    return () => {
-      document.removeEventListener('pointerdown', unlock)
-      void ctx.current?.close().catch(() => undefined)
-      ctx.current = null
-    }
-  }, [])
-  return () => {
-    const c = ctx.current
-    if (!c || c.state !== 'running') return
-    const osc = c.createOscillator()
-    osc.frequency.value = 880
-    osc.connect(c.destination)
-    osc.start()
-    osc.stop(c.currentTime + 0.12)
-  }
-}
+import { useBeep } from './useBeep'
 
 export default function ScanScreen() {
   const [params, setParams] = useSearchParams()
@@ -89,44 +53,16 @@ export default function ScanScreen() {
       dispatch({ type: 'failed', ean, message })
     }
     try {
-      const cached = await findFoodByEan(ean)
-      if (ctrl.signal.aborted) return
-      if (cached) return void dispatch({ type: 'resolved', food: cached })
-      const res = await lookupOff(ean, (input, init) => fetch(input, init), { signal: ctrl.signal })
-      if (ctrl.signal.aborted) return
-      if (res.status === 'found') {
-        let food: Food
-        try {
-          food = await cacheOffFood(offProductToFood(res.product, new Date().toISOString()))
-        } catch (e) {
-          if (!(e instanceof ValidationError)) throw e
-          // Valeurs OFF incohérentes : formulaire pré-rempli plutôt qu'un « Réessayer » sans issue.
-          if (ctrl.signal.aborted) return
-          const q = new URLSearchParams({
-            repas: slot,
-            date,
-            ean,
-            origine: 'incomplete',
-            nom: res.product.name,
-          })
-          if (res.product.brand) q.set('marque', res.product.brand)
-          busy.current = false
-          navigate(`/nutrition/aliments/nouveau?${q.toString()}`, { replace: true })
-          return
-        }
-        if (ctrl.signal.aborted) return
-        dispatch({ type: 'resolved', food })
-      } else if (res.status === 'error') {
-        fail(res.message)
-      } else {
-        const q = new URLSearchParams({ repas: slot, date, ean, origine: res.status })
-        if (res.status === 'incomplete') {
-          if (res.name) q.set('nom', res.name)
-          if (res.brand) q.set('marque', res.brand)
-        }
-        busy.current = false
-        navigate(`/nutrition/aliments/nouveau?${q.toString()}`, { replace: true })
-      }
+      const res = await resolveScan(ean, (input, init) => fetch(input, init), ctrl.signal)
+      if (res.status === 'aborted' || ctrl.signal.aborted) return
+      if (res.status === 'food') return void dispatch({ type: 'resolved', food: res.food })
+      if (res.status === 'error') return fail(res.message)
+      const q = new URLSearchParams({ repas: slot, date, ean, origine: res.origin })
+      if (res.name) q.set('nom', res.name)
+      if (res.brand) q.set('marque', res.brand)
+      if (res.packageG !== undefined) q.set('paquet', String(res.packageG))
+      busy.current = false
+      navigate(`/nutrition/aliments/nouveau?${q.toString()}`, { replace: true })
     } catch (e) {
       if (!ctrl.signal.aborted) fail(errorMessage(e, 'Recherche impossible. Réessaie.'))
     }

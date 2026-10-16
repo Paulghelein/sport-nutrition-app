@@ -365,7 +365,7 @@ test('boutons de la fiche recette, du récapitulatif, du bilan et de la page Pro
     .getByRole('link', { name: 'Nutrition' })
     .click()
   await page
-    .getByRole('navigation', { name: 'Recettes, frigo et courses' })
+    .getByRole('navigation', { name: 'Sections de la nutrition' })
     .getByRole('link', { name: 'Recettes' })
     .click()
   await page.getByRole('link', { name: /Poulet, riz basmati et brocoli sauce soja/ }).click()

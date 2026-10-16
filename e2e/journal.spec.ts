@@ -134,6 +134,49 @@ test('journal : recherche, saisie libre, favori, copie d’hier, objectifs', asy
   expect(errors).toEqual([])
 })
 
+test('journal v2 : navigation de jour, sections en pastilles, cibles ≥ 44 px', async ({ page }) => {
+  const errors = collectErrors(page)
+  await page.goto('./')
+  await completeOnboarding(page)
+  await settle(page)
+  await nav(page, 'Nutrition').click()
+  await expect(page.getByRole('heading', { name: 'Nutrition', level: 1 })).toBeVisible()
+
+  // Jour suivant possible (préparer demain) ; ?date= conservé ; retour à aujourd'hui.
+  await page.getByRole('button', { name: 'Jour suivant' }).click()
+  await expect(page.getByText('Demain')).toBeVisible()
+  await page.getByRole('button', { name: 'Revenir à aujourd’hui' }).click()
+  await page.getByRole('button', { name: 'Jour précédent' }).click()
+  await expect(page).toHaveURL(/\/nutrition\?date=\d{4}-\d{2}-\d{2}$/)
+  await page.getByRole('button', { name: 'Revenir à aujourd’hui' }).click()
+  await expect(page.getByRole('button', { name: 'Revenir à aujourd’hui' })).toHaveCount(0)
+
+  // Sections : liens en pastilles, Journal est la page courante.
+  const tabs = page.getByRole('navigation', { name: 'Sections de la nutrition' })
+  await expect(tabs.getByRole('link')).toHaveText(['Journal', 'Recettes', 'Frigo', 'Courses'])
+  await expect(tabs.getByRole('link', { name: 'Journal' })).toHaveAttribute('aria-current', 'page')
+
+  // Cibles tactiles >= 44 px : onglets, jours, ajout par repas.
+  for (const target of [
+    ...(await tabs.getByRole('link').all()),
+    page.getByRole('button', { name: 'Jour précédent' }),
+    page.getByRole('link', { name: 'Ajouter au repas : Déjeuner' }),
+  ]) {
+    const box = await target.boundingBox()
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
+  }
+  // Aucun débordement horizontal à 390 px.
+  const overflow = await page.evaluate(() => {
+    const main = document.querySelector('main')
+    return main ? main.scrollWidth - main.clientWidth : 0
+  })
+  expect(overflow).toBeLessThanOrEqual(0)
+
+  await tabs.getByRole('link', { name: 'Courses' }).click()
+  await expect(page).toHaveURL(/\/nutrition\/courses$/)
+  expect(errors).toEqual([])
+})
+
 test('aliment : création, modification, suppression', async ({ page }) => {
   const errors = collectErrors(page)
   await page.goto('./')

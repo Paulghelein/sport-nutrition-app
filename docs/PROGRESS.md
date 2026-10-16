@@ -12,7 +12,7 @@ R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16
 Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
 (domain/nutrition, src/db) et F5 (domain/claude) — **fait le 2026-10-16** (eeb548d, afc94c4, c5a56c3) ; (2) écrans R2
 et R4 en parallèle — **faits et validés sur iPhone le 2026-10-16** (R4 853e602, R2 e759e74) ; (3) R3 écrans
-nutrition ensuite (session suivante) ; R5 en dernier.
+nutrition ensuite — **fait le 2026-10-16, à valider sur iPhone** ; R5 en dernier.
 
 ## Décisions prises
 
@@ -92,6 +92,31 @@ nutrition ensuite (session suivante) ; R5 en dernier.
   % nutrition = jours évalués (journal non vide, objectif connu) sur 12 semaines. `loadCalendarData` ne borne que le
   journal (séances/pesées/exercices lus en entier : records et série). Jeton `--text-micro` (10 px). WeightSheet et
   MeasurementSheet déplacés dans `src/app/forms/` (encore v1). `PROGRESS_FOOD_DAYS` 35 → 84.
+- 2026-10-16 (R3) : pictogramme d'un aliment = `foodCategory` (src/domain/nutrition/category.ts) : groupe Ciqual de tête
+  affiné par mots entiers du nom (pluriel toléré ; « pomme de terre » ≠ pomme ; oléagineux → `fat` ; légumineuses et
+  tubercules → `starch` ; défaut `dish`). `entryVisual` donne le visuel d'une entrée ; produit scanné = `isScannedFood`
+  (EAN ou source OFF), une seule règle. Le groupe Ciqual est lu pour les seuls aliments du jour (`getCiqualFoodsByIds`).
+- 2026-10-16 (R3) : photos affichées par `usePhotoUrls` (src/app/nutrition) : Blob recréé depuis `bytes`, URL recréée
+  seulement si la photo change, révoquée 300 ms après remplacement et au démontage. Scan : `resolveScan`
+  (src/app/scan) = cache → OFF → photo → `cacheOffFoodWithPhoto` ; photo refusée par la base → aliment réenregistré
+  sans photo ; `packageG` arrondi à l'entier, aussi transmis pour un produit OFF incomplet. Caméra mutualisée :
+  `useBarcodeCamera` + `useBeep` (ScanScreen, CameraView, recette par scan).
+- 2026-10-16 (R3) : sections Journal · Recettes · Frigo · Courses = `NutritionTabs`, une `<nav>` de liens en pastilles
+  (`aria-current`, pas d'onglets ARIA : ce sont des pages), une seule ligne défilante ; « Frigo · N » lu « Frigo, N
+  portions ». « Jour suivant » permis au-delà d'aujourd'hui (comme en v1). Filet des lignes porté par le `<li>`.
+- 2026-10-16 (R3) : feuille + : « Créer » = Recette par scan, Recette d'une vidéo ; « Nouvelle recette » reste sur
+  Recettes (« Créer une recette »), « Nouvel aliment » sur l'écran Ajouter. Recette par scan plein écran (barre
+  d'onglets masquée), bandeau caméra collant en haut (marges négatives couplées au padding de `<main>`, commenté) ;
+  même code relu = « Déjà dans la liste », pas d'incrément ; brouillon `localStorage` `forge.recipeScanDraft.v1`
+  validé à la relecture ; produit inconnu → « Chercher un aliment » ou « Créer l'aliment » (formulaire avec
+  `retour` en liste blanche = seul `RECIPE_SCAN_PATH`, puis `?ajout=<id>`) ; création → fiche en `replace`.
+- 2026-10-16 (R3) : recette d'une vidéo = écran `/nutrition/recette-video` (onglets visibles) ; pont Claude extrait
+  dans `useClaudeBridge` (AskClaudeButton inchangé). Retour arrière sans historique → Nutrition.
+- 2026-10-16 (R3) : « Annuler » après log d'une portion (fiche, frigo, cuisine) visible 7 s comme le toast du journal ;
+  macros par portion = part des objectifs du jour ; « Ajouté au journal : N portion(s) » (unité libre non accordée).
+  Variantes `flat` et `dangerSoft` de `buttonClass`. Restent v1 : RecipeFormScreen, ImportScreen, AddFoodScreen,
+  FoodScreen, FoodFormScreen, RecipePickerSheet, FoodPickerSheet, LogRecipeSheet, QuantitySheet, FreeEntrySheet.
+
 - 2026-10-16 (process) : les agents n'utilisent plus `git add/mv/rm` (un `git mv` dans l'index partagé est parti dans le
   commit F3 et a cassé le build de main, réparé en e0e1895 ; le site en ligne n'a pas été touché). Jalons parallèles
   committés séparément depuis une copie de travail isolée.
@@ -263,6 +288,11 @@ nutrition ensuite (session suivante) ; R5 en dernier.
 
 ## Fait
 
+- R3 Nutrition (2026-10-16) : journal restylé (jour ‹ ›, sections en pastilles, carte bilan, cartes par repas, FoodRow
+  avec pictogramme / photo OFF / badge code-barres / fond frigo), photo OFF enregistrée au scan, contenance du paquet
+  dans le formulaire d'aliment, recette par scan (F4), recette d'une vidéo (F5), feuille + branchée, Recettes, Frigo,
+  Courses, fiche et mode cuisine en clair. Total : 2088 tests Vitest, 111 e2e. Démarrage 593 kB / 181,6 kB gzip (+0,6).
+
 - R2 Entraînement (2026-10-16) : aperçu restylé, mode séance sombre (Série, Repos), séries max et temps fixe dans
   l'interface, écrans d'entraînement en clair. R4 Progrès (2026-10-16) : calendrier 12 semaines + résumé du jour
   (aussi depuis Aujourd'hui), 3 chiffres, cartes restylées. Moteur F3, F4 + photo OFF (Dexie v3), F5. Total : 1963 tests
@@ -320,8 +350,16 @@ nutrition ensuite (session suivante) ; R5 en dernier.
 
 ## À faire ensuite
 
-- R2 + R4 validés sur iPhone le 2026-10-16. Prochain : R3 (écrans nutrition : journal restylé, FoodRow + photos OFF, recette par scan,
-  recette d'une vidéo ; la feuille + remplace les entrées provisoires de « Créer »).
+- **Valider R3 sur iPhone**, puis R5 (finitions).
+- À vérifier sur iPhone (R3) : scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
+  scan (caméra en continu, paquet entier, quantité, fermer l'app puis rouvrir : brouillon intact) puis 6 portions au
+  frigo et « 6 muffins » sur la fiche ; recette depuis un vrai TikTok (« Coller le lien » et bulle iOS, copier +
+  ouvrir Claude, « Coller la réponse ») ; journal lisible (pastilles sur une ligne, noms longs, photos 40 px) ; bandeau
+  caméra collé en haut sous la barre d'état ; fond au rebond (body encore sombre v1) ; mode cuisine clair d'une main.
+- Remarques reportées (R3, pour R5) : RecipeLogSheet (v2) / LogRecipeSheet (v1) en double (même logique, fusionner
+  avec la refonte d'AddFoodScreen) ; NutritionTabs relit le frigo (2e requête sur l'écran Frigo) et duplique le style
+  de PillTabs ; marges négatives des écrans pleine largeur (recette par scan, pastilles) couplées au padding de
+  `<main>` ; `body` encore au fond v1 ; feuille d'AskClaudeButton toujours v1 ; écrans nutrition v1 listés ci-dessus.
 - À vérifier sur iPhone (R2) : lisibilité à 1 m (panneaux 64 px, repos 76 px), une main, petit écran (SE) ; bip de fin
   du temps fixe en mode silencieux ; série max avec la consigne d'arrêt ; Facile/Correct/Dur en un tap ; aperçu avec la
   barre d'onglets sous Modifier/Démarrer ; fond sombre sans bande claire au rebond ; feuilles claires sur le mode séance.

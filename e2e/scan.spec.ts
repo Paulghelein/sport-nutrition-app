@@ -319,3 +319,109 @@ test('scan : 390×844, pas de débordement, cibles tactiles ≥ 44 px', async ({
   )
   expect(small).toEqual([])
 })
+
+test('scan : la photo OFF est récupérée au scan puis stockée (aucun nouvel appel au second scan)', async ({
+  page,
+}) => {
+  const errors = collectErrors(page)
+  const IMG = 'https://images.openfoodfacts.org/images/products/301/762/042/2003/front_fr.3.200.jpg'
+  const JPEG = Buffer.from([
+    0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0xff, 0xd9,
+  ])
+  let productCalls = 0
+  let imageCalls = 0
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true })
+  })
+  await page.route(/images\.openfoodfacts\.org/, (route) => {
+    imageCalls++
+    return route.fulfill({ headers: { ...CORS, 'content-type': 'image/jpeg' }, body: JPEG })
+  })
+  await page.route(/world\.openfoodfacts\.org/, (route) => {
+    productCalls++
+    return route.fulfill({
+      headers: CORS,
+      json: {
+        status: 1,
+        product: {
+          ...FULL.product,
+          product_quantity: 250,
+          product_quantity_unit: 'g',
+          image_front_small_url: IMG,
+        },
+      },
+    })
+  })
+  await openScanner(page)
+  await typeCode(page, FOUND)
+  const sheet = page.getByRole('dialog', { name: 'Barre test' })
+  await expect(sheet).toBeVisible()
+  expect(productCalls).toBe(1)
+  expect(imageCalls).toBe(1)
+
+  const stored = await page.evaluate(async (id) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('forge')
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+    return new Promise<{ mime: string; size: number } | null>((resolve, reject) => {
+      const get = db.transaction('foodPhotos').objectStore('foodPhotos').get(id)
+      get.onsuccess = () => {
+        const row = get.result as { mime: string; bytes: ArrayBuffer } | undefined
+        resolve(row ? { mime: row.mime, size: row.bytes.byteLength } : null)
+      }
+      get.onerror = () => reject(get.error)
+    })
+  }, `off-${FOUND}`)
+  expect(stored).toEqual({ mime: 'image/jpeg', size: JPEG.length })
+
+  // Second scan : produit en cache, ni fiche ni photo redemandées.
+  await sheet.getByRole('button', { name: 'Ajouter' }).click()
+  await page.getByRole('button', { name: 'Scanner un autre produit' }).click()
+  await typeCode(page, FOUND)
+  await expect(page.getByRole('dialog', { name: 'Barre test' })).toBeVisible()
+  expect(productCalls).toBe(1)
+  expect(imageCalls).toBe(1)
+  expect(errors.filter((e) => !e.includes('Failed to load resource'))).toEqual([])
+})
+
+test('scan : photo en échec -> aliment ajouté quand même, sans photo', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true })
+  })
+  let imageCalls = 0
+  await page.route(/images\.openfoodfacts\.org/, (route) => {
+    imageCalls++
+    return route.fulfill({ status: 404, headers: CORS, body: '' })
+  })
+  await page.route(/world\.openfoodfacts\.org/, (route) =>
+    route.fulfill({
+      headers: CORS,
+      json: {
+        status: 1,
+        product: {
+          ...FULL.product,
+          image_front_small_url: 'https://images.openfoodfacts.org/images/products/x/front.200.jpg',
+        },
+      },
+    }),
+  )
+  await openScanner(page)
+  await typeCode(page, FOUND)
+  await expect(page.getByRole('dialog', { name: 'Barre test' })).toBeVisible()
+  expect(imageCalls).toBe(1)
+  const row = await page.evaluate(async (id) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('forge')
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+    return new Promise<unknown>((resolve, reject) => {
+      const get = db.transaction('foodPhotos').objectStore('foodPhotos').get(id)
+      get.onsuccess = () => resolve(get.result)
+      get.onerror = () => reject(get.error)
+    })
+  }, `off-${FOUND}`)
+  expect(row).toBeUndefined()
+})

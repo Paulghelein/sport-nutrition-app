@@ -1,3 +1,4 @@
+import { servingLabel } from '../../domain/nutrition/scan'
 import { fmtG, fmtInt } from '../nutrition/format'
 
 const portionsFmt = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
@@ -27,4 +28,15 @@ export function expiryLabel(daysLeft: number): string {
   if (daysLeft === 0) return 'À consommer aujourd’hui'
   if (daysLeft === 1) return 'À consommer demain'
   return `À consommer sous ${daysLeft} jours`
+}
+
+/** Unité d'une portion : celle de la recette (`servingUnit`, « muffins ») ou « portion(s) ». */
+export function portionUnit(n: number, unit: string | undefined): string {
+  const u = unit?.trim()
+  return u === undefined || u === '' || u.toLowerCase() === 'portions' ? portionsWord(n) : u
+}
+
+/** « 6 muffins », « 4 portions », « 1 portion », « 0,5 portion » (virgule française pour les demi-portions). */
+export function portionsText(n: number, unit: string | undefined): string {
+  return Number.isInteger(n) ? servingLabel(n, unit) : `${fmtPortions(n)} ${portionUnit(n, unit)}`
 }

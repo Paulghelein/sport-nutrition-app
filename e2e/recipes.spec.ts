@@ -6,6 +6,10 @@ const settle = (page: Page) => page.waitForLoadState('networkidle')
 
 const CHICKEN = 'Poulet, riz basmati et brocoli sauce soja'
 
+/** Pastilles Journal · Recettes · Frigo · Courses (liens dans une navigation, `aria-current="page"` sur l’onglet actif). */
+const sectionLink = (page: Page, name: string | RegExp) =>
+  page.getByRole('navigation', { name: 'Sections de la nutrition' }).getByRole('link', { name })
+
 async function start(page: Page) {
   await page.goto('./')
   await completeOnboarding(page)
@@ -14,10 +18,8 @@ async function start(page: Page) {
     .getByRole('navigation', { name: 'Navigation principale' })
     .getByRole('link', { name: 'Nutrition' })
     .click()
-  await page
-    .getByRole('navigation', { name: 'Recettes, frigo et courses' })
-    .getByRole('link', { name: 'Recettes' })
-    .click()
+  await sectionLink(page, 'Recettes').click()
+  await expect(sectionLink(page, 'Recettes')).toHaveAttribute('aria-current', 'page')
   // Première préparation de Ciqual : les macros ne s'affichent qu'ensuite.
   await expect(page.getByRole('link', { name: new RegExp(CHICKEN) })).toBeVisible({ timeout: 40_000 })
 }
@@ -240,6 +242,8 @@ test('mode cuisine : portions x2 -> grammes doublés, étapes', async ({ page })
   await openRecipe(page, CHICKEN)
   await page.getByRole('link', { name: 'Cuisiner' }).click()
   await expect(page.getByText(/600\s?g/).first()).toBeVisible()
+  // Plein écran : pas de barre d’onglets en mode cuisine.
+  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Augmenter : Portions à cuisiner' }).click()
   await page.getByRole('button', { name: 'Augmenter : Portions à cuisiner' }).click()
   await page.getByRole('button', { name: 'Augmenter : Portions à cuisiner' }).click()
@@ -267,6 +271,39 @@ test('mode cuisine : portions x2 -> grammes doublés, étapes', async ({ page })
   const prep = page.getByRole('dialog', { name: 'Préparer pour le frigo' })
   await expect(prep).toBeVisible()
   await expect(prep.getByLabel('Portions préparées : 8')).toBeVisible()
+  expect(errors).toEqual([])
+})
+
+test('frigo : loguer une portion, Annuler la rend au frigo et retire l’entrée du journal', async ({
+  page,
+}) => {
+  const errors = collectErrors(page)
+  await start(page)
+  await openRecipe(page, CHICKEN)
+  await page.getByRole('button', { name: 'Préparer pour le frigo' }).click()
+  await page
+    .getByRole('dialog', { name: 'Préparer pour le frigo' })
+    .getByRole('button', { name: 'Mettre au frigo' })
+    .click()
+  await expect(page.getByRole('status').filter({ hasText: 'au frigo jusqu’au' })).toBeVisible()
+
+  await page.goto('./nutrition/frigo')
+  await expect(page.getByTestId('fridge-left')).toContainText('4')
+  await page.getByRole('button', { name: /^Loguer une portion de/ }).click()
+  await page
+    .getByRole('dialog', { name: 'Loguer une portion' })
+    .getByRole('button', { name: 'Ajouter au journal' })
+    .click()
+  await expect(page.getByTestId('fridge-left')).toContainText('3')
+  const notice = page.getByRole('status').filter({ hasText: 'Ajouté au journal' })
+  await expect(notice).toBeVisible()
+  await notice.getByRole('button', { name: 'Annuler' }).click()
+  await expect(page.getByTestId('fridge-left')).toContainText('4')
+  await expect(page.getByRole('status').filter({ hasText: 'Annulé' })).toBeVisible()
+
+  await sectionLink(page, 'Journal').click()
+  await expect(page.getByTestId('kcal-consumed')).toBeVisible()
+  await expect(page.getByRole('button', { name: new RegExp(`^Modifier ${CHICKEN}`) })).toHaveCount(0)
   expect(errors).toEqual([])
 })
 
@@ -393,7 +430,7 @@ test('frigo : loguer la dernière portion retire la ligne, journal avec macros f
   await expect(page.getByTestId('fridge-left')).toHaveCount(0)
 
   // Journal du jour : l'entrée est là, macros figées
-  await page.getByRole('link', { name: 'Journal' }).click()
+  await sectionLink(page, 'Journal').click()
   await expect(page.getByTestId('kcal-consumed')).toBeVisible()
   const consumed = Number(((await page.getByTestId('kcal-consumed').textContent()) ?? '').replace(/\D/g, ''))
   expect(Math.abs(consumed - perServing)).toBeLessThanOrEqual(1)
@@ -426,7 +463,7 @@ test.describe('journal : portion de recette', () => {
       .getByRole('navigation', { name: 'Navigation principale' })
       .getByRole('link', { name: 'Nutrition' })
       .click()
-    await expect(page.getByRole('link', { name: 'Frigo, 4 portions' })).toBeVisible()
+    await expect(sectionLink(page, 'Frigo, 4 portions')).toBeVisible()
     await page.getByRole('link', { name: 'Ajouter au repas : Déjeuner' }).click()
     await page.getByRole('button', { name: 'Portion de recette' }).click()
     const picker = page.getByRole('dialog', { name: 'Portion de recette' })
@@ -438,7 +475,7 @@ test.describe('journal : portion de recette', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Ajouté : ' })).toBeVisible()
     await page.getByRole('button', { name: /^Terminer \(1 ajouté/ }).click()
     await expect(page.getByRole('button', { name: /^Modifier Poulet, riz basmati.*kcal/ })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Frigo, 3 portions' })).toBeVisible()
+    await expect(sectionLink(page, 'Frigo, 3 portions')).toBeVisible()
     expect(errors).toEqual([])
   })
 })
@@ -478,7 +515,7 @@ test.describe('annulation et base d’aliments en échec', () => {
     await expect(page.getByRole('button', { name: /^Terminer/ })).toBeHidden()
 
     await page.getByRole('link', { name: 'Journal' }).click()
-    await expect(page.getByRole('link', { name: 'Frigo, 1 portion' })).toBeVisible()
+    await expect(sectionLink(page, 'Frigo, 1 portion')).toBeVisible()
     expect(errors).toEqual([])
   })
 
@@ -492,7 +529,7 @@ test.describe('annulation et base d’aliments en échec', () => {
       timeout: 40_000,
     })
     await expect(page.getByRole('button', { name: 'Réessayer' })).toBeVisible()
-    await expect(page.getByLabel('Macros incomplètes, environ ').first()).toBeVisible()
+    await expect(page.getByText('Macros incomplètes, environ').first()).toBeVisible()
     await page.getByRole('link', { name: new RegExp(CHICKEN) }).click()
     await page.getByRole('button', { name: 'Loguer une portion' }).click()
     const sheet = page.getByRole('dialog', { name: 'Loguer une portion' })

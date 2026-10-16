@@ -42,3 +42,18 @@ export type MuscleZone =
   | 'glutes'
   | 'hamstrings'
   | 'triceps'
+
+/**
+ * Visuel d'une ligne d'aliment (FoodRow, R3) : pictogramme de repli, photo Open Food Facts éventuelle, badges.
+ * Calculé par une fonction pure (`entryVisual`, src/domain/nutrition/category.ts) ; l'écran lit la photo par
+ * `getFoodPhotos(photoFoodId)`.
+ */
+export interface FoodVisual {
+  category: FoodCategory
+  /** Aliment dont la photo OFF est à afficher s'il en a une (produit scanné). */
+  photoFoodId?: string
+  /** Produit scanné (aliment avec EAN) : badge code-barres. */
+  scanned: boolean
+  /** Portion venant du frigo : fond ember-soft. */
+  fromFridge: boolean
+}

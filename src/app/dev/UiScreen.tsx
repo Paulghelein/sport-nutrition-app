@@ -38,16 +38,10 @@ import {
   withUnit,
 } from '../../ui/kit'
 import { CalendarHeatmap } from '../../ui/kit/CalendarHeatmap'
+import { FoodRow } from '../../ui/kit/FoodRow'
 import { DaySummarySheet } from '../../ui/kit/DaySummarySheet'
 import { SessionDemos } from './SessionDemos'
-import type {
-  DaySummaryView,
-  LogAction,
-  LogEntry,
-  LogMealOption,
-  TabId,
-  WeekStripDay,
-} from '../../ui/kit'
+import type { DaySummaryView, LogAction, LogEntry, LogMealOption, TabId, WeekStripDay } from '../../ui/kit'
 
 /** Page de démonstration du kit v2 (`/dev/ui`). Hors de la mise en page à onglets v1. */
 
@@ -80,8 +74,10 @@ const DEMO_WEEK: readonly WeekStripDay[] = [
 ]
 
 /** 12 semaines d'exemple (lundi 3 août → dimanche 25 octobre 2026), aujourd'hui = vendredi 16 octobre. */
-const DEMO_HEAT_LEVELS = '0200100 0201020 1020300 0030200 2003100 0203020 3020300 0302030 2030402 0303030 3040302 2030000'
-const DEMO_HEAT_FOOD = '0110110 1110101 0111011 1011010 1101101 0111011 1110111 1011101 1111011 0111110 1111101 1110000'
+const DEMO_HEAT_LEVELS =
+  '0200100 0201020 1020300 0030200 2003100 0203020 3020300 0302030 2030402 0303030 3040302 2030000'
+const DEMO_HEAT_FOOD =
+  '0110110 1110101 0111011 1011010 1101101 0111011 1110111 1011101 1111011 0111110 1111101 1110000'
 const DEMO_HEATMAP: readonly WeekStripDay[] = (() => {
   const levels = DEMO_HEAT_LEVELS.replace(/ /g, '')
   const food = DEMO_HEAT_FOOD.replace(/ /g, '')
@@ -421,6 +417,47 @@ export default function UiScreen() {
               }
             />
             <ListRow title="Sans visuel" subtitle="Le visuel est l’exception" />
+          </Card>
+          <Card as="div" padding="none" className="px-4 py-1">
+            <ul className="m-0 list-none p-0">
+              <li className="border-t border-line first:border-t-0">
+                <FoodRow
+                  name="Flocons d’avoine"
+                  quantity="80 g"
+                  protein={11}
+                  carbs={47}
+                  fat={6}
+                  kcal={298}
+                  category="starch"
+                  onPress={() => setSelectedRow((v) => !v)}
+                  ariaLabel="Modifier Flocons d’avoine, 298 kcal"
+                />
+              </li>
+              <li className="border-t border-line first:border-t-0">
+                <FoodRow
+                  name="Skyr nature · Siggi’s"
+                  quantity="200 g"
+                  protein={22}
+                  carbs={8}
+                  fat={0}
+                  kcal={124}
+                  category="dairy"
+                  scanned
+                />
+              </li>
+              <li className="border-t border-line first:border-t-0">
+                <FoodRow
+                  name="Poulet, riz et brocoli"
+                  quantity="1,5 portion · depuis le frigo"
+                  protein={64}
+                  carbs={96}
+                  fat={21}
+                  kcal={918}
+                  category="dish"
+                  fromFridge
+                />
+              </li>
+            </ul>
           </Card>
           <Card padding="large">
             <p className="text-label uppercase text-ink-muted">Séance du jour</p>

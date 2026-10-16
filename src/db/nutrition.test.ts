@@ -9,8 +9,10 @@ import {
   deleteFood,
   deleteLogEntry,
   getCiqualFood,
+  getCiqualFoodsByIds,
   getCiqualVersion,
   getFoodRow,
+  getFoodRowsByIds,
   listCiqualFoods,
   listFoodRows,
   listLogBetween,
@@ -103,6 +105,25 @@ describe('Ciqual', () => {
     await replaceCiqual('big', many, NOW)
     expect(performance.now() - t0).toBeLessThan(3000)
     expect(await db.ciqual.count()).toBe(3000)
+  })
+})
+
+describe('lectures groupées (journal)', () => {
+  it('getCiqualFoodsByIds : ids connus seulement, doublons ignorés', async () => {
+    await replaceCiqual('v', [rice], NOW)
+    const map = await getCiqualFoodsByIds([rice.id, 'ciqual-0', rice.id])
+    expect([...map.keys()]).toEqual([rice.id])
+    expect(map.get(rice.id)?.group).toBe('Féculents')
+    expect((await getCiqualFoodsByIds([])).size).toBe(0)
+  })
+
+  it('getFoodRowsByIds : lignes foods seulement (une surcharge Ciqual oui, un Ciqual pur non)', async () => {
+    await replaceCiqual('v', [rice], NOW)
+    const custom = await createFood(input, NOW)
+    expect((await getFoodRowsByIds([rice.id, custom.id])).size).toBe(1)
+    await setFoodFavorite(riceFood, true, T2)
+    const map = await getFoodRowsByIds([rice.id, custom.id, 'inconnu'])
+    expect([...map.keys()].sort()).toEqual([custom.id, rice.id].sort())
   })
 })
 

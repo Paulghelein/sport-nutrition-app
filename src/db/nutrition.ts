@@ -57,6 +57,14 @@ export async function getCiqualFood(id: Id): Promise<CiqualFood | undefined> {
   return db.ciqual.get(id)
 }
 
+/** Aliments Ciqual d'une liste d'ids (lecture groupée) : Map `id` -> aliment, les ids inconnus sont absents. */
+export async function getCiqualFoodsByIds(ids: readonly Id[]): Promise<Map<Id, CiqualFood>> {
+  const rows = await db.ciqual.bulkGet([...new Set(ids)])
+  const map = new Map<Id, CiqualFood>()
+  for (const r of rows) if (r) map.set(r.id, r)
+  return map
+}
+
 // ---------- Aliments ----------
 
 /** Lignes de la table `foods` : aliments perso, OFF et surcharges Ciqual (même id que la table `ciqual`). */
@@ -66,6 +74,14 @@ export async function listFoodRows(): Promise<Food[]> {
 
 export async function getFoodRow(id: Id): Promise<Food | undefined> {
   return db.foods.get(id)
+}
+
+/** Lignes `foods` d'une liste d'ids (lecture groupée) : Map `id` -> aliment, les ids sans ligne sont absents. */
+export async function getFoodRowsByIds(ids: readonly Id[]): Promise<Map<Id, Food>> {
+  const rows = await db.foods.bulkGet([...new Set(ids)])
+  const map = new Map<Id, Food>()
+  for (const r of rows) if (r) map.set(r.id, r)
+  return map
 }
 
 /** Applique les champs saisis (chaînes trimées, champs vides retirés) sur un aliment. */
