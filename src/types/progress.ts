@@ -111,8 +111,9 @@ export interface NutritionWeek {
 /**
  * Règle qui a produit la suggestion, par priorité décroissante (une seule suggestion) :
  * `no_data` (rien de logué ni fait) → `few_sessions` (< séances/semaine du profil) → `low_protein`
- * (moyenne < 90 % de l'objectif) → `weight_stalled` (objectif bulk, tendance < +0,1 kg/sem. avec ≥ 3 pesées)
- * → `weight_too_fast` (bulk, > +0,5 % du poids/sem.) → `low_kcal` (moyenne < 90 %) → `volume_gap`
+ * (moyenne < 90 % de l'objectif) → `weight_stalled` (objectif bulk et proposition `kcalSuggestion` active : mêmes
+ * règles que SPEC §4.1, 21 jours de stagnation, jamais juste après un ajustement accepté) → `weight_too_fast`
+ * (bulk, > +0,5 % du poids/sem. en moyenne sur 14 jours, ≥ 3 pesées) → `low_kcal` (moyenne < 90 %) → `volume_gap`
  * (un grand groupe sous sa cible) → `all_good`.
  */
 export type ReviewRule =

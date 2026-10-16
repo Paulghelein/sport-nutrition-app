@@ -41,9 +41,9 @@ const isDone = (s: SetEntry): boolean => s.status === 'done'
 /**
  * Tonnage d'une série chargée en répétitions = charge × reps ; × 2 pour un exercice unilatéral, car les reps
  * saisies sont par côté (série complète d'un côté puis de l'autre). Exercice inconnu : d'après la série seule,
- * bilatéral.
+ * bilatéral. Exportée pour la page Progrès (même convention que le récapitulatif).
  */
-function tonnageOf(set: SetEntry, ex: Exercise | undefined): number {
+export function tonnageOf(set: SetEntry, ex: Exercise | undefined): number {
   if (!isDone(set) || set.loadKg === undefined || set.actualReps === undefined) return 0
   if (ex !== undefined && ex.loadType !== 'kettlebell') return 0
   return set.loadKg * set.actualReps * (ex?.unilateral === true ? 2 : 1)

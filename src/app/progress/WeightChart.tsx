@@ -1,5 +1,5 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { weightSeries } from '../../domain/progress'
+import { weightSeries } from '../../domain/progress/weight'
 import { addDays, daysBetween, formatDateFr } from '../../domain/shared'
 import { formatKg } from '../../ui'
 import type { WeighIn } from '../../types'

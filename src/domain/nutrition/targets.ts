@@ -5,6 +5,11 @@ import type { KcalSuggestion, NutritionTargets } from '../../types/nutrition'
 import { addDays, ageOn, daysBetween } from '../shared/dates'
 import { movingAverage7d } from '../progress/weight'
 
+/** Bornes réglables des objectifs (SPEC §4.1) ; la validation des réglages (src/db/validation.ts) doit s'y brancher. */
+export const SURPLUS_RANGE = [0.05, 0.2] as const
+export const PROTEIN_PER_KG_RANGE = [1.6, 2.2] as const
+export const FAT_SHARE_RANGE = [0.2, 0.35] as const
+
 export type TargetsProfile = Pick<
   Profile,
   'sex' | 'birthDate' | 'heightCm' | 'activityLevel' | 'goal' | 'nutrition'

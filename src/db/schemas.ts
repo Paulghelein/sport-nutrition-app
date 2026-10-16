@@ -161,6 +161,7 @@ const setEntry = z.strictObject({
   targetReps: range.optional(),
   targetDurationSec: num.optional(),
   loadKg: num.optional(),
+  plannedLoadKg: num.optional(),
   actualReps: num.optional(),
   actualDurationSec: num.optional(),
   feeling: feeling.optional(),

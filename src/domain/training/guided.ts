@@ -242,6 +242,33 @@ function clearResult(set: SetEntry): SetEntry {
   return rest
 }
 
+/**
+ * Valeur de `plannedLoadKg` qui signifie « pas de charge prévue » (série au poids du corps lestée à la saisie) :
+ * `resetSet` retire alors `loadKg`. Une charge prévue réelle est toujours > 0 (charges ≤ 0 refusées à la saisie et
+ * jamais produites par le moteur). Valeur lue uniquement dans ce fichier.
+ */
+const NO_PLANNED_LOAD = 0
+
+/**
+ * Charge prévue d'une série (`undefined` = poids du corps) : `plannedLoadKg` si une autre charge a été saisie
+ * (`NO_PLANNED_LOAD` → aucune), sinon `loadKg`.
+ */
+function plannedLoad(set: SetEntry): number | undefined {
+  if (set.plannedLoadKg === undefined) return set.loadKg
+  return set.plannedLoadKg > NO_PLANNED_LOAD ? set.plannedLoadKg : undefined
+}
+
+/** Résultat effacé et charge prévue rétablie (`plannedLoadKg` retiré ; `loadKg` retiré s'il n'y en avait pas). */
+function resetSet(set: SetEntry): SetEntry {
+  const planned = plannedLoad(set)
+  const { plannedLoadKg, loadKg, ...rest } = clearResult(set)
+  void [plannedLoadKg, loadKg]
+  return planned === undefined ? rest : { ...rest, loadKg: planned }
+}
+
+/** Tolérance de comparaison des charges (kg, demi-kilos possibles). */
+const LOAD_EPS = 1e-9
+
 /** Entier ≥ 0, ou `undefined` si la valeur n'est pas un nombre fini. */
 function count(x: number | undefined): number | undefined {
   return x !== undefined && Number.isFinite(x) ? Math.max(0, Math.round(x)) : undefined
@@ -254,7 +281,10 @@ function withCursorAfter(session: Session, from: SessionCursor): Session {
 
 /**
  * Enregistre une série faite : `done`, reps ou durée réelles (entiers ≥ 0 ; valeur non finie ignorée), ressenti,
- * charge réellement utilisée si fournie (> 0). Une saisie précédente de la série est remplacée. Curseur avancé
+ * charge réellement utilisée si fournie (> 0). Une saisie précédente de la série est remplacée.
+ * Charge saisie différente de la charge prévue : la prévue est gardée dans `plannedLoadKg` (retirée si l'on
+ * revient à la prévue) pour que `undoSet` la rétablisse. Série sans charge prévue (poids du corps lesté) :
+ * `plannedLoadKg = 0` (`NO_PLANNED_LOAD`), et `undoSet` / `skipSet` retirent la charge. Curseur avancé
  * à la prochaine série à faire (laissé sur la série si c'était la dernière). `restEndsAt` et `updatedAt` sont
  * gérés par l'appelant (horloge).
  */
@@ -266,16 +296,20 @@ export function recordSet(session: Session, cursor: SessionCursor, input: SetInp
     if (reps !== undefined) next.actualReps = reps
     if (duration !== undefined) next.actualDurationSec = duration
     if (input.loadKg !== undefined && Number.isFinite(input.loadKg) && input.loadKg > 0) {
+      const planned = plannedLoad(set)
+      delete next.plannedLoadKg
       next.loadKg = input.loadKg
+      if (planned === undefined) next.plannedLoadKg = NO_PLANNED_LOAD
+      else if (Math.abs(input.loadKg - planned) > LOAD_EPS) next.plannedLoadKg = planned
     }
     return next
   })
   return withCursorAfter(updated, cursor)
 }
 
-/** Passe une série (`skipped`, résultat effacé) et avance le curseur. */
+/** Passe une série (`skipped`, résultat effacé, charge prévue rétablie) et avance le curseur. */
 export function skipSet(session: Session, cursor: SessionCursor): Session {
-  const updated = mapSet(session, cursor, (set) => ({ ...clearResult(set), status: 'skipped' }))
+  const updated = mapSet(session, cursor, (set) => ({ ...resetSet(set), status: 'skipped' }))
   return withCursorAfter(updated, cursor)
 }
 
@@ -294,12 +328,10 @@ export function skipExercise(session: Session, block: number, exercise: number):
 
 /**
  * Rend une série à faire (correction d'une erreur de saisie) : statut, reps, durée et ressenti effacés ;
- * la charge reste celle saisie (elle sera redemandée). Le curseur revient sur cette série.
- * Limite connue : si la charge saisie différait de la charge prévue, la charge prévue n'est pas rétablie
- * (`SetEntry` ne garde pas la charge prévue à part) ; l'écran de saisie la repropose telle quelle.
+ * la charge prévue est rétablie (`plannedLoadKg`, voir `recordSet`). Le curseur revient sur cette série.
  */
 export function undoSet(session: Session, cursor: SessionCursor): Session {
-  return { ...mapSet(session, cursor, clearResult), cursor }
+  return { ...mapSet(session, cursor, resetSet), cursor }
 }
 
 // ---------------------------------------------------------------------------------------------------------------

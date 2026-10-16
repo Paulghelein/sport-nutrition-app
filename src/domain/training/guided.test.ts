@@ -3,6 +3,7 @@ import type { SessionPlan } from '../../types/engine'
 import type { Session, SessionBlock, SessionCursor, SetEntry } from '../../types/training'
 import { SUPERSET_TRANSITION_SEC, estimateMinutes } from './estimate'
 import { generateSession } from './generate'
+import { summarizeSession } from './summary'
 import {
   addExercise,
   currentStep,
@@ -217,6 +218,7 @@ describe('saisie', () => {
     expect(setAt(r, c(0, 0, 0))).toEqual({
       targetReps: [8, 12],
       loadKg: 14,
+      plannedLoadKg: 12,
       status: 'done',
       actualReps: 11,
       feeling: 'hard',
@@ -268,6 +270,96 @@ describe('saisie', () => {
     expect(setAt(s, c(0, 0, 0))).toEqual({ targetReps: [8, 12], loadKg: 12 })
     expect(s.cursor).toEqual(c(0, 0, 0))
     expect(currentStep(s)).toEqual({ kind: 'set', cursor: c(0, 0, 0) })
+  })
+})
+
+describe('charge prévue (plannedLoadKg)', () => {
+  it('undoSet rétablit la charge prévue après une charge saisie différente (non-régression J4)', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 16, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 16, plannedLoadKg: 12 })
+    s = undoSet(s, c(0, 0, 0))
+    expect(setAt(s, c(0, 0, 0))).toEqual({ targetReps: [8, 12], loadKg: 12 })
+  })
+
+  it('charge saisie égale à la prévue : pas de plannedLoadKg', () => {
+    const s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 12, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).not.toHaveProperty('plannedLoadKg')
+    expect(setAt(undoSet(s, c(0, 0, 0)), c(0, 0, 0))).toEqual({ targetReps: [8, 12], loadKg: 12 })
+  })
+
+  it('nouvelle saisie : la prévue d’origine est gardée, retirée si l’on revient à la prévue', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 16, feeling: 'ok' })
+    s = recordSet(s, c(0, 0, 0), { reps: 8, loadKg: 14, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 14, plannedLoadKg: 12 })
+    s = recordSet(s, c(0, 0, 0), { reps: 8, loadKg: 12, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 12 })
+    expect(setAt(s, c(0, 0, 0))).not.toHaveProperty('plannedLoadKg')
+  })
+
+  it('saisie sans charge : charge saisie et prévue conservées ; undo puis saisie normale', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 16, feeling: 'ok' })
+    s = recordSet(s, c(0, 0, 0), { reps: 9, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 16, plannedLoadKg: 12, actualReps: 9 })
+    s = undoSet(s, c(0, 0, 0))
+    expect(setAt(s, c(0, 0, 0))?.loadKg).toBe(12)
+  })
+
+  it('skipSet rétablit aussi la charge prévue ; les autres séries ne sont pas touchées', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 16, feeling: 'ok' })
+    s = skipSet(s, c(0, 0, 0))
+    expect(setAt(s, c(0, 0, 0))).toEqual({ targetReps: [8, 12], loadKg: 12, status: 'skipped' })
+    expect(setAt(s, c(0, 0, 1))).toEqual(setAt(makeSession(), c(0, 0, 1)))
+  })
+
+  it('série sans charge prévue (poids du corps lesté) : plannedLoadKg 0, undo / skip retirent la charge', () => {
+    const before = setAt(makeSession(), c(1, 0, 0))
+    let s = recordSet(makeSession(), c(1, 0, 0), { reps: 10, loadKg: 8, feeling: 'ok' })
+    expect(setAt(s, c(1, 0, 0))).toMatchObject({ loadKg: 8, plannedLoadKg: 0 })
+    expect(setAt(undoSet(s, c(1, 0, 0)), c(1, 0, 0))).toEqual(before)
+    expect(setAt(skipSet(s, c(1, 0, 0)), c(1, 0, 0))).toEqual({ ...before, status: 'skipped' })
+    // Ressaisie d'un autre lest : toujours « pas de charge prévue ».
+    s = recordSet(s, c(1, 0, 0), { reps: 10, loadKg: 10, feeling: 'ok' })
+    expect(setAt(s, c(1, 0, 0))).toMatchObject({ loadKg: 10, plannedLoadKg: 0 })
+    expect(setAt(undoSet(s, c(1, 0, 0)), c(1, 0, 0))?.loadKg).toBeUndefined()
+  })
+
+  it('plannedLoadKg 0 ne fuit pas : tonnage et records du récapitulatif sur la charge réelle', () => {
+    let s = recordSet(makeSession(), c(1, 0, 0), { reps: 10, loadKg: 8, feeling: 'ok' })
+    s = recordSet(s, c(1, 0, 1), { reps: 10, feeling: 'ok' })
+    const sum = summarizeSession({ ...s, status: 'done' }, lib, [])
+    expect(sum.exercises.find((e) => e.exerciseId === 'incline-push-up')?.topLoadKg).toBe(8)
+  })
+})
+
+describe('charge prévue : enchaînements undo / ressaisie', () => {
+  it('undo après charge différente, puis ressaisie d’une autre charge : prévue d’origine conservée', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 16, feeling: 'ok' })
+    s = undoSet(s, c(0, 0, 0))
+    s = recordSet(s, c(0, 0, 0), { reps: 8, loadKg: 14, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 14, plannedLoadKg: 12 })
+    s = undoSet(s, c(0, 0, 0))
+    expect(setAt(s, c(0, 0, 0))).toEqual({ targetReps: [8, 12], loadKg: 12 })
+  })
+
+  it('charge saisie 0 ou négative ignorée : charge et prévue inchangées', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 16, feeling: 'ok' })
+    s = recordSet(s, c(0, 0, 0), { reps: 10, loadKg: 0, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 16, plannedLoadKg: 12 })
+    s = recordSet(s, c(0, 0, 0), { reps: 10, loadKg: -4, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 16, plannedLoadKg: 12 })
+  })
+
+  it('demi-kilo : 12,5 diffère de 12 ; undo rétablit 12', () => {
+    let s = recordSet(makeSession(), c(0, 0, 0), { reps: 10, loadKg: 12.5, feeling: 'ok' })
+    expect(setAt(s, c(0, 0, 0))).toMatchObject({ loadKg: 12.5, plannedLoadKg: 12 })
+    s = undoSet(s, c(0, 0, 0))
+    expect(setAt(s, c(0, 0, 0))?.loadKg).toBe(12)
+  })
+
+  it('undo sur une série jamais saisie : inchangée, curseur déplacé', () => {
+    const s = undoSet(makeSession(), c(0, 1, 2))
+    expect(setAt(s, c(0, 1, 2))).toEqual(setAt(makeSession(), c(0, 1, 2)))
+    expect(s.cursor).toEqual(c(0, 1, 2))
   })
 })
 

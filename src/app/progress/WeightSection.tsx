@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from 'react'
 import { listWeighIns } from '../../db'
-import { weightSummary } from '../../domain/progress'
+import { weightSummary } from '../../domain/progress/weight'
 import { formatDateFr, toLocalDate } from '../../domain/shared'
 import { Button, Card, ErrorBoundary, ErrorNote, Section, formatKg, formatSignedKg, useLiveQuery } from '../../ui'
 import type { WeighIn } from '../../types'

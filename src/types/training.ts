@@ -123,6 +123,11 @@ export interface SetEntry {
   targetReps?: Range
   targetDurationSec?: number
   loadKg?: number
+  /**
+   * Charge prévue, gardée quand la charge saisie (`loadKg`) en diffère : `undoSet` la rétablit. Absente = `loadKg`
+   * est la charge prévue ; `0` = pas de charge prévue (poids du corps lesté à la saisie : l'annulation retire `loadKg`).
+   */
+  plannedLoadKg?: number
   actualReps?: number
   actualDurationSec?: number
   feeling?: Feeling

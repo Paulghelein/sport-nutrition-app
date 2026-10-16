@@ -26,16 +26,14 @@ describe('movingAverage7d', () => {
 describe('weightSeries', () => {
   it('vide', () => expect(weightSeries([])).toEqual([]))
   it('une seule pesée', () => {
-    expect(weightSeries([w('2026-10-01', 70)])).toEqual([
-      { date: '2026-10-01', weightKg: 70, avg7d: 70 },
-    ])
+    expect(weightSeries([w('2026-10-01', 70)])).toEqual([{ date: '2026-10-01', weightKg: 70, avg7d: 70 }])
   })
   it('trie et calcule la moyenne à la date du point', () => {
     const out = weightSeries([w('2026-10-05', 72), w('2026-10-01', 70), w('2026-10-20', 75)])
     expect(out.map((p) => p.date)).toEqual(['2026-10-01', '2026-10-05', '2026-10-20'])
     expect(out.map((p) => p.avg7d)).toEqual([70, 71, 75])
   })
-  it('ne mute pas l\'entrée', () => {
+  it("ne mute pas l'entrée", () => {
     const input = [w('2026-10-05', 72), w('2026-10-01', 70)]
     weightSeries(input)
     expect(input[0]?.date).toBe('2026-10-05')
