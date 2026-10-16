@@ -19,7 +19,9 @@ export async function completeOnboarding(page: Page): Promise<void> {
 export function collectErrors(page: Page): string[] {
   const errors: string[] = []
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text())
+    // WebKit signale ainsi un import() interrompu par une navigation du test (reload, goto) — ex. le préchargement
+    // Ciqual en tâche de fond. Un vrai échec de chargement afficherait une erreur à l'écran, vérifiée par les tests.
+    if (m.type() === 'error' && !m.text().includes('Importing a module script failed')) errors.push(m.text())
   })
   page.on('pageerror', (e) => errors.push(e.message))
   return errors

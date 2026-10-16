@@ -139,7 +139,8 @@ export function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <div className="flex h-full flex-col overflow-hidden bg-bg text-zinc-100">
+      {/* fixed inset-0 : colle aux vrais bords de l’écran (en standalone iOS, height: 100% peut s’arrêter avant le bas). */}
+      <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg text-zinc-100">
         <Gate />
       </div>
     </BrowserRouter>
