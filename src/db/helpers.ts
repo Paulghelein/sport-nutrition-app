@@ -1,6 +1,13 @@
 // Petits utilitaires partagés par sessions.ts et nutrition.ts.
 import type { IsoDateTime } from '../types'
-import { ValidationError } from './repositories'
+
+/** Erreur de validation dont le message (français) est affichable tel quel. */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
 
 export const nowIso = (): IsoDateTime => new Date().toISOString()
 export const newId = (): string => crypto.randomUUID()

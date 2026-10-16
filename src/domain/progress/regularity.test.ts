@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { REGULARITY_WEEK_TARGET } from '../../types/progress'
 import type { Session } from '../../types/training'
 import { addDays } from '../shared/dates'
-import { regularity, sessionMinutes, weekStartOf } from './regularity'
+import { regularity, regularityWeekTarget, sessionMinutes, weekStartOf } from './regularity'
 
 const T0 = '2026-10-15T08:00:00.000Z'
 let seq = 0
@@ -199,5 +200,58 @@ describe('regularity : cas limites calendaires et durées', () => {
       endedAt: '2026-10-13T20:00:00.000Z',
     })
     expect(regularity([s], '2026-10-16').totalMinutes).toBe(40)
+  })
+})
+
+describe('seuil de série (weekTarget)', () => {
+  const today = '2026-10-16' // vendredi, semaine du 12 octobre
+  const twoPerWeek = [...week('2026-09-21', 2), ...week('2026-09-28', 2), ...week('2026-10-05', 2)]
+
+  it('défaut 3 : un profil à 2 séances/sem. n’a jamais de série', () => {
+    const r = regularity(twoPerWeek, today)
+    expect(r.currentStreak).toBe(0)
+    expect(r.bestStreak).toBe(0)
+  })
+
+  it('seuil min(3, profil) = 2 : la série compte les semaines à 2 séances', () => {
+    const r = regularity(twoPerWeek, today, { weekTarget: Math.min(REGULARITY_WEEK_TARGET, 2) })
+    expect(r.currentStreak).toBe(3)
+    expect(r.bestStreak).toBe(3)
+    // semaine en cours : une seule séance -> ne casse pas, ne s'ajoute pas ; 2 séances -> s'ajoute
+    const more = [...twoPerWeek, ...week('2026-10-12', 1)]
+    expect(regularity(more, today, { weekTarget: 2 }).currentStreak).toBe(3)
+    expect(
+      regularity([...twoPerWeek, ...week('2026-10-12', 2)], today, { weekTarget: 2 }).currentStreak,
+    ).toBe(4)
+  })
+
+  it('une semaine sous le seuil casse la série', () => {
+    const sessions = [...week('2026-09-21', 2), ...week('2026-09-28', 1), ...week('2026-10-05', 2)]
+    const r = regularity(sessions, today, { weekTarget: 2 })
+    expect(r.currentStreak).toBe(1)
+    expect(r.bestStreak).toBe(1)
+  })
+
+  it('options { weeks, weekTarget } combinées ; forme numérique historique inchangée', () => {
+    const r = regularity(twoPerWeek, today, { weeks: 4, weekTarget: 2 })
+    expect(r.weeks.map((w) => w.weekStart)).toEqual(['2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12'])
+    expect(r.currentStreak).toBe(3)
+    expect(regularity(twoPerWeek, today, 4)).toEqual(regularity(twoPerWeek, today, { weeks: 4 }))
+    expect(regularity(twoPerWeek, today, {})).toEqual(regularity(twoPerWeek, today))
+    expect(regularity(twoPerWeek, today, { weekTarget: 3 })).toEqual(regularity(twoPerWeek, today))
+  })
+
+  it('seuil assaini : non fini -> 3, < 1 -> 1 (semaine vide jamais comptée), décimal arrondi', () => {
+    expect(regularityWeekTarget()).toBe(REGULARITY_WEEK_TARGET)
+    expect(regularityWeekTarget(Number.NaN)).toBe(REGULARITY_WEEK_TARGET)
+    expect(regularityWeekTarget(Number.POSITIVE_INFINITY)).toBe(REGULARITY_WEEK_TARGET)
+    expect(regularityWeekTarget(0)).toBe(1)
+    expect(regularityWeekTarget(-2)).toBe(1)
+    expect(regularityWeekTarget(1.5)).toBe(2)
+    expect(regularityWeekTarget(2)).toBe(2)
+    // seuil 0 demandé : les semaines vides ne forment pas de série
+    const r = regularity(week('2026-09-21', 1), today, { weekTarget: 0 })
+    expect(r.currentStreak).toBe(0)
+    expect(r.bestStreak).toBe(1)
   })
 })

@@ -126,6 +126,9 @@ export interface SetEntry {
   /**
    * Charge prévue, gardée quand la charge saisie (`loadKg`) en diffère : `undoSet` la rétablit. Absente = `loadKg`
    * est la charge prévue ; `0` = pas de charge prévue (poids du corps lesté à la saisie : l'annulation retire `loadKg`).
+   * Une série corrigée dans l'historique peut avoir `plannedLoadKg` sans `loadKg` (charge effacée) : la progression
+   * n'est jamais rejouée sur une séance corrigée, mais un moteur qui la relirait ne doit pas la compter à la charge
+   * courante.
    */
   plannedLoadKg?: number
   actualReps?: number

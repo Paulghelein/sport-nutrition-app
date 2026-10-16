@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { toLocalDate } from '../domain/shared/dates'
 import { AppDB, DB_SCHEMA_VERSION, db, openTestDb } from './database'
 import { defaultEquipment, defaultNutritionParams, defaultSettings } from './defaults'
 import {
@@ -7,6 +8,7 @@ import {
   completeOnboarding,
   deleteMeasurement,
   deleteWeighIn,
+  dismissReview,
   getEquipment,
   getProfile,
   getSettings,
@@ -32,6 +34,7 @@ import {
   checkProfile,
   checkProfileIdentity,
   checkSettings,
+  checkWeekStart,
   checkWeeklySessions,
   checkWeighIn,
 } from './validation'
@@ -244,7 +247,7 @@ describe('mensurations', () => {
 
   it('valide : au moins une valeur, valeurs > 0, date valide', async () => {
     await expect(addMeasurement({ date: '2026-02-01' })).rejects.toThrow(/au moins une/)
-    await expect(addMeasurement({ date: '2026-02-01', armCm: 0 })).rejects.toThrow(/supérieurs à 0/)
+    await expect(addMeasurement({ date: '2026-02-01', armCm: 0 })).rejects.toThrow(/entre 10 et 250/)
     await expect(addMeasurement({ date: '2026-02-01', armCm: -3 })).rejects.toThrow()
     await expect(addMeasurement({ date: 'nope', armCm: 30 })).rejects.toThrow(/Date invalide/)
     const m = await addMeasurement({ date: '2026-02-01', armCm: 30 }, NOW)
@@ -252,6 +255,80 @@ describe('mensurations', () => {
     await expect(updateMeasurement(m.id, { armCm: 0 })).rejects.toThrow()
     await expect(updateMeasurement('inconnu', { armCm: 3 })).rejects.toThrow(/introuvable/)
     expect(await listMeasurements()).toEqual([m])
+  })
+
+  it('refuse les valeurs absurdes et les dates futures', async () => {
+    await expect(addMeasurement({ date: '2026-02-01', armCm: 9.9 }, NOW)).rejects.toThrow(/entre 10 et 250/)
+    await expect(addMeasurement({ date: '2026-02-01', waistCm: 251 }, NOW)).rejects.toThrow(/entre 10 et 250/)
+    await expect(addMeasurement({ date: '2026-02-01', chestCm: Infinity }, NOW)).rejects.toThrow()
+    await expect(addMeasurement({ date: '2026-02-01', chestCm: NaN }, NOW)).rejects.toThrow()
+    await expect(addMeasurement({ date: '2099-01-01', armCm: 30 }, NOW)).rejects.toThrow(/futur/)
+    const m = await addMeasurement({ date: '2026-02-01', armCm: 10, thighCm: 250 }, NOW)
+    await expect(updateMeasurement(m.id, { date: '2099-01-01' }, NOW)).rejects.toThrow(/futur/)
+    await expect(updateMeasurement(m.id, { armCm: 300 }, NOW)).rejects.toThrow(/entre 10 et 250/)
+    expect(await listMeasurements()).toEqual([m])
+    expect(checkMeasurement({ date: '2026-02-01', armCm: 30 }, '2026-02-01')).toBeNull()
+    expect(checkMeasurement({ date: '2026-02-02', armCm: 30 }, '2026-02-01')).toMatch(/futur/)
+  })
+
+  it('accepte une mensuration datée du jour même', async () => {
+    const m = await addMeasurement({ date: toLocalDate(new Date(NOW)), armCm: 30 }, NOW)
+    expect(await listMeasurements()).toEqual([m])
+  })
+
+  it('deleteMeasurement : inconnu = sans effet', async () => {
+    const m = await addMeasurement({ date: '2026-02-01', armCm: 30 }, NOW)
+    await deleteMeasurement('inconnu')
+    expect(await listMeasurements()).toEqual([m])
+    await deleteMeasurement(m.id)
+    expect(await listMeasurements()).toEqual([])
+  })
+})
+
+describe('dismissReview', () => {
+  it('enregistre la semaine, ne recule jamais, crée les réglages si absents', async () => {
+    await dismissReview('2026-02-23', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-02-23')
+    await dismissReview('2026-02-16', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-02-23')
+    await dismissReview('2026-03-02', '2026-03-03T08:00:00.000Z')
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-03-02')
+    await dismissReview('2026-03-02', '2026-03-03T08:00:00.000Z')
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-03-02')
+  })
+
+  it('refuse une semaine future (now injectable)', async () => {
+    // NOW = dimanche 2026-03-01 -> semaine en cours : lundi 2026-02-23
+    await expect(dismissReview('2026-03-02', NOW)).rejects.toThrow(/futur/)
+    await expect(dismissReview('2099-01-05', NOW)).rejects.toThrow(/futur/)
+    expect(await db.settings.count()).toBe(0)
+    await dismissReview('2026-02-23', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-02-23')
+  })
+
+  it('refuse une date invalide ou qui n’est pas un lundi, sans écrire', async () => {
+    await expect(dismissReview('nope')).rejects.toThrow(/Date invalide/)
+    await expect(dismissReview('2026-02-24')).rejects.toThrow(/lundi/)
+    expect(await db.settings.count()).toBe(0)
+    expect(checkWeekStart('2026-03-01')).not.toBeNull()
+    expect(checkWeekStart('2026-03-02')).toBeNull()
+  })
+
+  it('conserve les autres réglages existants', async () => {
+    await db.settings.put({ ...defaultSettings(NOW), onboardingCompleted: true, coachUrl: 'https://c.test' })
+    await dismissReview('2026-02-23', NOW)
+    const s = await getSettings()
+    expect(s).toMatchObject({
+      onboardingCompleted: true,
+      coachUrl: 'https://c.test',
+      reviewDismissedWeek: '2026-02-23',
+    })
+  })
+
+  it('updateSettings conserve reviewDismissedWeek', async () => {
+    await dismissReview('2026-02-23', NOW)
+    const s = await updateSettings({ coachUrl: 'https://claude.ai/x' }, NOW)
+    expect(s.reviewDismissedWeek).toBe('2026-02-23')
   })
 })
 

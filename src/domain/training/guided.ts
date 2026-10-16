@@ -243,17 +243,18 @@ function clearResult(set: SetEntry): SetEntry {
 }
 
 /**
- * Valeur de `plannedLoadKg` qui signifie « pas de charge prévue » (série au poids du corps lestée à la saisie) :
- * `resetSet` retire alors `loadKg`. Une charge prévue réelle est toujours > 0 (charges ≤ 0 refusées à la saisie et
- * jamais produites par le moteur). Valeur lue uniquement dans ce fichier.
+ * Valeur de `plannedLoadKg` qui signifie « pas de charge prévue » (série au poids du corps lestée à la
+ * saisie) : `resetSet` retire alors `loadKg`. Une charge prévue réelle est toujours > 0 (charges ≤ 0 refusées
+ * à la saisie et jamais produites par le moteur). Exportée pour la correction d'une séance faite
+ * (src/app/training/sessionDrafts.ts).
  */
-const NO_PLANNED_LOAD = 0
+export const NO_PLANNED_LOAD = 0
 
 /**
  * Charge prévue d'une série (`undefined` = poids du corps) : `plannedLoadKg` si une autre charge a été saisie
  * (`NO_PLANNED_LOAD` → aucune), sinon `loadKg`.
  */
-function plannedLoad(set: SetEntry): number | undefined {
+export function plannedLoad(set: SetEntry): number | undefined {
   if (set.plannedLoadKg === undefined) return set.loadKg
   return set.plannedLoadKg > NO_PLANNED_LOAD ? set.plannedLoadKg : undefined
 }
@@ -268,6 +269,26 @@ function resetSet(set: SetEntry): SetEntry {
 
 /** Tolérance de comparaison des charges (kg, demi-kilos possibles). */
 const LOAD_EPS = 1e-9
+
+/**
+ * Charges cohérentes après saisie d'une charge réelle (`undefined` = aucune, poids du corps) : `loadKg` =
+ * charge réelle ; `plannedLoadKg` retiré si elle égale la prévue, `NO_PLANNED_LOAD` si la série n'avait pas
+ * de charge prévue, sinon la prévue (aussi quand la charge est retirée : la prévue reste connue). Règle de
+ * `recordSet`, réutilisée par la correction d'une séance faite. Les autres champs sont inchangés.
+ */
+export function setLoads(set: SetEntry, actualLoadKg: number | undefined): SetEntry {
+  const planned = plannedLoad(set)
+  const { loadKg, plannedLoadKg, ...rest } = set
+  void [loadKg, plannedLoadKg]
+  const next: SetEntry = { ...rest }
+  if (actualLoadKg !== undefined) next.loadKg = actualLoadKg
+  const same =
+    actualLoadKg === undefined
+      ? planned === undefined
+      : planned !== undefined && Math.abs(actualLoadKg - planned) <= LOAD_EPS
+  if (!same) next.plannedLoadKg = planned ?? NO_PLANNED_LOAD
+  return next
+}
 
 /** Entier ≥ 0, ou `undefined` si la valeur n'est pas un nombre fini. */
 function count(x: number | undefined): number | undefined {
@@ -295,13 +316,8 @@ export function recordSet(session: Session, cursor: SessionCursor, input: SetInp
     const next: SetEntry = { ...clearResult(set), status: 'done', feeling: input.feeling }
     if (reps !== undefined) next.actualReps = reps
     if (duration !== undefined) next.actualDurationSec = duration
-    if (input.loadKg !== undefined && Number.isFinite(input.loadKg) && input.loadKg > 0) {
-      const planned = plannedLoad(set)
-      delete next.plannedLoadKg
-      next.loadKg = input.loadKg
-      if (planned === undefined) next.plannedLoadKg = NO_PLANNED_LOAD
-      else if (Math.abs(input.loadKg - planned) > LOAD_EPS) next.plannedLoadKg = planned
-    }
+    if (input.loadKg !== undefined && Number.isFinite(input.loadKg) && input.loadKg > 0)
+      return setLoads(next, input.loadKg)
     return next
   })
   return withCursorAfter(updated, cursor)

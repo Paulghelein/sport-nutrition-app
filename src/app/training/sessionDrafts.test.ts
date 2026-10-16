@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Equipment, Session } from '../../types'
+import type { Equipment, Session, SetEntry } from '../../types'
+import { NO_PLANNED_LOAD, plannedLoad } from '../../domain/training/guided'
 import { applyDrafts, draftKey, toDraft } from './sessionDrafts'
 import type { SetDraft } from './sessionDrafts'
 
@@ -98,5 +99,88 @@ describe('applyDrafts', () => {
     if (!('session' in r)) throw new Error(r.error)
     expect(r.session.notes).toBeUndefined()
     expect(r.session.blocks[0]?.exercises[0]?.sets[0]?.actualReps).toBeUndefined()
+  })
+
+  describe('charge prévue (plannedLoadKg) cohérente après correction', () => {
+    /** Séance dont la 1re série a une charge `loadKg` et éventuellement `plannedLoadKg`. */
+    function withSet(patch: Partial<SetEntry>): Session {
+      const s = session()
+      const first = s.blocks[0]?.exercises[0]?.sets[0] as SetEntry
+      Object.assign(first, patch)
+      return s
+    }
+    const fix = (s: Session, patch: Partial<SetDraft>) => {
+      const d = drafts(s)
+      d[draftKey(0, 0, 0)] = { ...(d[draftKey(0, 0, 0)] as SetDraft), ...patch }
+      const r = applyDrafts(s, d, '', equipment)
+      if (!('session' in r)) throw new Error(r.error)
+      return r.session.blocks[0]?.exercises[0]?.sets[0] as SetEntry
+    }
+
+    it('plannedLoad suit le contrat de SetEntry', () => {
+      expect(plannedLoad({ loadKg: 16 })).toBe(16)
+      expect(plannedLoad({ loadKg: 16, plannedLoadKg: 12 })).toBe(12)
+      expect(plannedLoad({ loadKg: 8, plannedLoadKg: 0 })).toBeUndefined()
+      expect(plannedLoad({})).toBeUndefined()
+    })
+
+    it('charge corrigée différente de la prévue : la prévue est gardée', () => {
+      const set = fix(withSet({ loadKg: 16 }), { load: '18' })
+      expect(set).toMatchObject({ loadKg: 18, plannedLoadKg: 16 })
+      expect(plannedLoad(set)).toBe(16)
+    })
+
+    it('déjà modifiée en séance (16 au lieu de 12) puis corrigée à 14 : prévue toujours 12', () => {
+      const set = fix(withSet({ loadKg: 16, plannedLoadKg: 12 }), { load: '14' })
+      expect(set).toMatchObject({ loadKg: 14, plannedLoadKg: 12 })
+    })
+
+    it('corrigée pour revenir à la prévue : plannedLoadKg retiré', () => {
+      const set = fix(withSet({ loadKg: 16, plannedLoadKg: 12 }), { load: '12' })
+      expect(set.loadKg).toBe(12)
+      expect(set).not.toHaveProperty('plannedLoadKg')
+    })
+
+    it('charge effacée : poids du corps, la prévue reste connue', () => {
+      const set = fix(withSet({ loadKg: 16 }), { load: '' })
+      expect(set).not.toHaveProperty('loadKg')
+      expect(set.plannedLoadKg).toBe(16)
+      expect(plannedLoad(set)).toBe(16)
+    })
+
+    it('série au poids du corps lestée à la correction : plannedLoadKg 0 ; lest retiré : plus rien', () => {
+      const s = session()
+      const plank = () => s.blocks[0]?.exercises[1]?.sets[0] as SetEntry
+      const d = drafts(s)
+      d[draftKey(0, 1, 0)] = { ...(d[draftKey(0, 1, 0)] as SetDraft), load: '8' }
+      const r = applyDrafts(s, d, '', equipment)
+      if (!('session' in r)) throw new Error(r.error)
+      const weighted = r.session.blocks[0]?.exercises[1]?.sets[0] as SetEntry
+      expect(weighted).toMatchObject({ loadKg: 8, plannedLoadKg: NO_PLANNED_LOAD })
+      expect(weighted.actualDurationSec).toBe(plank().actualDurationSec)
+
+      const d2 = drafts(r.session)
+      d2[draftKey(0, 1, 0)] = { ...(d2[draftKey(0, 1, 0)] as SetDraft), load: '' }
+      const r2 = applyDrafts(r.session, d2, '', equipment)
+      if (!('session' in r2)) throw new Error(r2.error)
+      const back = r2.session.blocks[0]?.exercises[1]?.sets[0] as SetEntry
+      expect(back).not.toHaveProperty('loadKg')
+      expect(back).not.toHaveProperty('plannedLoadKg')
+    })
+
+    it('série passée à la correction : charge prévue rétablie (comme skipSet)', () => {
+      const set = fix(withSet({ loadKg: 16, plannedLoadKg: 12 }), { status: 'skipped' })
+      expect(set).toMatchObject({ status: 'skipped', loadKg: 12 })
+      expect(set).not.toHaveProperty('plannedLoadKg')
+      const bodyweight = fix(withSet({ loadKg: 8, plannedLoadKg: 0 }), { status: 'skipped' })
+      expect(bodyweight).not.toHaveProperty('loadKg')
+      expect(bodyweight).not.toHaveProperty('plannedLoadKg')
+    })
+
+    it('sans changement : plannedLoadKg conservé tel quel', () => {
+      const s = withSet({ loadKg: 16, plannedLoadKg: 12 })
+      const r = applyDrafts(s, drafts(s), '', equipment)
+      expect('session' in r && r.session.blocks).toEqual(s.blocks)
+    })
   })
 })

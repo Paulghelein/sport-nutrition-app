@@ -22,15 +22,32 @@ export interface WeightPoint {
   avg7d: number
 }
 
+/**
+ * Pesées triées par date (tri stable) avec la moyenne mobile 7 j à chaque date (= `movingAverage7d`, doublons
+ * de date compris). Fenêtre glissante à deux curseurs sur la liste triée, puis chaque point additionne sa
+ * fenêtre triée par ordre d'entrée : O(n log n + n·k log k), k ≤ 7 (date unique en base). La somme est
+ * refaite à chaque point (pas de somme courante +/−, qui accumulerait des erreurs d'arrondi) et suit l'ordre
+ * de la liste d'entrée, comme `movingAverage7d` : le résultat est identique au bit près.
+ */
 export function weightSeries(weighIns: WeighIn[]): WeightPoint[] {
-  return [...weighIns]
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-    .map((w) => ({
-      date: w.date,
-      weightKg: w.weightKg,
-      // la pesée elle-même est dans la fenêtre : jamais null
-      avg7d: movingAverage7d(weighIns, w.date) as number,
-    }))
+  type Indexed = { w: WeighIn; index: number }
+  const sorted: Indexed[] = weighIns
+    .map((w, index) => ({ w, index }))
+    .sort((a, b) => (a.w.date < b.w.date ? -1 : a.w.date > b.w.date ? 1 : 0))
+  const out: WeightPoint[] = []
+  let lo = 0
+  let hi = 0 // fenêtre = sorted[lo, hi)
+  for (const { w } of sorted) {
+    const from = addDays(w.date, -6)
+    while (hi < sorted.length && (sorted[hi] as Indexed).w.date <= w.date) hi++
+    while ((sorted[lo] as Indexed).w.date < from) lo++
+    const window = sorted.slice(lo, hi).sort((a, b) => a.index - b.index)
+    let sum = 0
+    for (const x of window) sum += x.w.weightKg
+    // la pesée elle-même est dans la fenêtre : jamais vide
+    out.push({ date: w.date, weightKg: w.weightKg, avg7d: sum / window.length })
+  }
+  return out
 }
 
 export interface CorridorPoint {

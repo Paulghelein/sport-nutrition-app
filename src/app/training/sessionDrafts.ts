@@ -1,5 +1,6 @@
 // Correction d'une séance terminée (historique) : brouillon de saisie (texte) → séance corrigée. Fonctions pures.
 import { isPlausibleLoad } from '../../domain/training'
+import { plannedLoad, setLoads } from '../../domain/training/guided'
 import type { Equipment, Feeling, Session, SetEntry } from '../../types'
 import { parseDecimal, toInputNumber } from '../../ui'
 
@@ -45,15 +46,12 @@ export function applyDrafts(
       sets: se.sets.map((set, s): SetEntry => {
         const d = drafts[draftKey(b, e, s)]
         if (!d) return set
-        const { actualReps, actualDurationSec, feeling, status, loadKg, ...rest } = set
-        void [actualReps, actualDurationSec, feeling, status, loadKg]
+        const { actualReps, actualDurationSec, feeling, status, ...rest } = set
+        void [actualReps, actualDurationSec, feeling, status]
         const where = `Série ${s + 1} de l’exercice ${e + 1} (bloc ${b + 1})`
-        const next: SetEntry = { ...rest }
-        if (d.status === 'skipped') {
-          next.status = 'skipped'
-          if (loadKg !== undefined) next.loadKg = loadKg
-          return next
-        }
+        // Série passée : charge prévue rétablie, comme `skipSet` en séance guidée.
+        if (d.status === 'skipped') return { ...setLoads(rest, plannedLoad(set)), status: 'skipped' }
+        let next: SetEntry = { ...rest }
         next.status = 'done'
         const field = byDuration(set) ? d.duration : d.reps
         const max = byDuration(set) ? MAX_DURATION : MAX_REPS
@@ -63,14 +61,16 @@ export function applyDrafts(
         }
         if (byDuration(set)) next.actualDurationSec = Number(field)
         else next.actualReps = Number(field)
+        let kg: number | undefined
         if (d.load.trim() !== '') {
-          const kg = parseDecimal(d.load)
+          kg = parseDecimal(d.load)
           if (!isPlausibleLoad(kg, equipment)) {
             error ??= `${where} : charge invalide (au plus ${equipment.kettlebell.maxKg} kg).`
             return set
           }
-          next.loadKg = kg
         }
+        // charges cohérentes (`plannedLoadKg`), même règle que `recordSet`
+        next = setLoads(next, kg)
         if (d.feeling !== '') next.feeling = d.feeling
         return next
       }),

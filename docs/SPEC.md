@@ -132,7 +132,7 @@ Onglets bas : **Séance** (démarrer, choix de durée, historique) · **Nutritio
 | Bloc | Contenu |
 |---|---|
 | Poids | pesées + moyenne mobile 7 j + couloir cible (+0,25 à +0,5 %/semaine) |
-| Régularité | séances / semaine sur 12 semaines, série de semaines ≥ 3 séances, minutes totales |
+| Régularité | séances / semaine sur 12 semaines, série de semaines ≥ 3 séances (≥ minimum du profil s'il est plus bas), minutes totales |
 | Force | charge × reps par exercice dans le temps, records, niveau atteint par mouvement |
 | Volume | séries / groupe sur 7 j vs cible, carte du corps colorée |
 | Nutrition | kcal et protéines moyennes de la semaine vs objectif, jours dans la cible (±10 %) |

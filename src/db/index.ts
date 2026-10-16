@@ -11,6 +11,7 @@ export {
   deleteExercise,
   deleteMeasurement,
   deleteWeighIn,
+  dismissReview,
   getEquipment,
   getProfile,
   getSettings,
@@ -92,6 +93,8 @@ export {
   updateFridgeItem,
   updateRecipe,
 } from './recipes'
+export { PROGRESS_FOOD_DAYS, loadProgressData } from './progress'
+export type { ProgressData } from './progress'
 export { cacheOffFood, findFoodByEan } from './foods-off'
 export type {
   MeasurementInput,
@@ -111,6 +114,8 @@ export {
 } from './backup'
 export type { ParseResult, RawBackup, TableCounts } from './backup'
 export {
+  MAX_MEASUREMENT_CM,
+  MIN_MEASUREMENT_CM,
   MAX_DURATION_SEC,
   MAX_FOOD_NAME_LENGTH,
   MAX_FRIDGE_DAYS,
@@ -140,6 +145,7 @@ export {
   checkProfile,
   checkProfileIdentity,
   checkSessionRow,
+  checkWeekStart,
   checkSettings,
   checkTemplate,
   checkWeeklySessions,

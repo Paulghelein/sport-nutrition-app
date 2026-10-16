@@ -18,11 +18,14 @@ import type {
   Profile,
   Session,
   Settings,
+  WeekStart,
   WeighIn,
 } from '../types'
 import { db } from './database'
+import { ValidationError } from './helpers'
 import { defaultEquipment, defaultSettings } from './defaults'
 import { toLocalDate } from '../domain/shared/dates'
+import { weekStartOf } from '../domain/progress/regularity'
 import { equipmentSchema, exerciseSchema, exerciseStateSchema, profileSchema } from './schemas'
 import {
   checkCoachUrl,
@@ -31,16 +34,11 @@ import {
   checkExercise,
   checkMeasurement,
   checkProfile,
+  checkWeekStart,
   checkWeighIn,
 } from './validation'
 
-/** Erreur de validation dont le message (français) est affichable tel quel. */
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ValidationError'
-  }
-}
+export { ValidationError }
 
 const nowIso = (): IsoDateTime => new Date().toISOString()
 /** Jour local correspondant à l'instant `now`. */
@@ -114,6 +112,21 @@ export async function updateSettings(patch: SettingsPatch, now: IsoDateTime = no
     const next: Settings = { ...current, ...patch, id: SINGLETON_ID, updatedAt: now }
     await db.settings.put(next)
     return next
+  })
+}
+
+/**
+ * Ferme la carte du lundi pour la semaine évaluée `weekStart` (un lundi). Ne recule jamais :
+ * on garde la plus récente des deux valeurs.
+ */
+export async function dismissReview(weekStart: WeekStart, now: IsoDateTime = nowIso()): Promise<void> {
+  fail(checkWeekStart(weekStart))
+  if (weekStart > weekStartOf(todayOf(now)))
+    throw new ValidationError('La semaine ne peut pas être dans le futur.')
+  await db.transaction('rw', db.settings, async () => {
+    const current = (await db.settings.get(SINGLETON_ID)) ?? defaultSettings(now)
+    if (current.reviewDismissedWeek !== undefined && current.reviewDismissedWeek >= weekStart) return
+    await db.settings.put({ ...current, reviewDismissedWeek: weekStart, id: SINGLETON_ID, updatedAt: now })
   })
 }
 
@@ -206,7 +219,7 @@ export async function addMeasurement(
   input: MeasurementInput,
   now: IsoDateTime = nowIso(),
 ): Promise<Measurement> {
-  fail(checkMeasurement(input))
+  fail(checkMeasurement(input, todayOf(now)))
   const row: Measurement = { ...input, id: newId(), createdAt: now }
   await db.measurements.add(row)
   return row
@@ -214,7 +227,11 @@ export async function addMeasurement(
 
 export type MeasurementPatch = Partial<MeasurementInput>
 
-export async function updateMeasurement(id: string, patch: MeasurementPatch): Promise<Measurement> {
+export async function updateMeasurement(
+  id: string,
+  patch: MeasurementPatch,
+  now: IsoDateTime = nowIso(),
+): Promise<Measurement> {
   return db.transaction('rw', db.measurements, async () => {
     const current = await db.measurements.get(id)
     if (!current) throw new ValidationError('Mensuration introuvable.')
@@ -222,7 +239,7 @@ export async function updateMeasurement(id: string, patch: MeasurementPatch): Pr
     const next = Object.fromEntries(
       Object.entries({ ...current, ...patch }).filter(([, v]) => v !== undefined),
     ) as unknown as Measurement
-    fail(checkMeasurement(next))
+    fail(checkMeasurement(next, todayOf(now)))
     await db.measurements.put(next)
     return next
   })
@@ -362,7 +379,11 @@ export async function setExercisePreference(
 
 /** Séances par date croissante, puis `startedAt`, puis id (ordre stable). Tri en mémoire : pas d'index composite. */
 export async function listSessions(): Promise<Session[]> {
-  const rows = await db.sessions.toArray()
+  return sortSessions(await db.sessions.toArray())
+}
+
+/** Tri en place de `listSessions` (réutilisé pour les lectures filtrées). */
+export function sortSessions(rows: Session[]): Session[] {
   return rows.sort(
     (a, b) =>
       a.date.localeCompare(b.date) ||

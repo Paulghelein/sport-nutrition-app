@@ -17,14 +17,17 @@ export interface WeekActivity {
   minutes: number
 }
 
-/** Seuil d'une « bonne semaine » pour la série (SPEC §8). */
+/**
+ * Seuil par défaut d'une « bonne semaine » pour la série (SPEC §8). L'écran passe
+ * `min(REGULARITY_WEEK_TARGET, profile.weeklySessionsMin)` : un profil à 2 séances/sem. peut aussi avoir une série.
+ */
 export const REGULARITY_WEEK_TARGET = 3
 
 export interface Regularity {
   /** 12 semaines, la plus ancienne d'abord, la semaine en cours en dernier (même vide). */
   weeks: WeekActivity[]
   /**
-   * Semaines consécutives ≥ `REGULARITY_WEEK_TARGET` séances, en remontant depuis la semaine dernière ; la semaine
+   * Semaines consécutives ≥ seuil (`REGULARITY_WEEK_TARGET` par défaut) séances, en remontant depuis la semaine dernière ; la semaine
    * en cours s'ajoute si elle a déjà atteint le seuil (sinon elle ne casse pas la série).
    */
   currentStreak: number
@@ -165,6 +168,6 @@ export const BACKUP_REMINDER_DAYS = 7
  */
 export interface BackupReminder {
   status: 'never' | 'due' | 'ok'
-  /** Jours entiers depuis le dernier export ; `null` si jamais. */
+  /** Jours calendaires depuis le dernier export ; `null` si jamais, ou si la date est illisible ou future (`due`). */
   daysSince: number | null
 }

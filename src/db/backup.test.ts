@@ -412,6 +412,16 @@ describe('tolérance de fuseau à l’import', () => {
     expect(mk('2026-03-02').ok).toBe(true)
     expect(mk('2026-03-03').ok).toBe(false)
   })
+
+  it('accepte une mensuration à today + 1 jour, refuse today + 2', () => {
+    const mk = (date: string) => {
+      const v = { app: 'forge', schemaVersion: 1, exportedAt: NOW, tables: makeFullTables() }
+      first(v.tables.measurements).date = date
+      return parseBackup(JSON.stringify(v), '2026-03-01')
+    }
+    expect(mk('2026-03-02').ok).toBe(true)
+    expect(mk('2026-03-03').ok).toBe(false)
+  })
 })
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- indices de fixtures de test connus */
@@ -569,5 +579,57 @@ describe('sauvegarde v2 (Ciqual, bornes J4/J5)', () => {
     ]
     t.sessions[0]!.blocks[0]!.exercises[0]!.replacedFrom = 'x'
     expect(parseBackup(JSON.stringify(wrapV(2, t)), '2026-03-01').ok).toBe(true)
+  })
+})
+
+describe('reviewDismissedWeek', () => {
+  const withWeek = (week: string | undefined) => {
+    const t = makeFullTables()
+    t.settings = [{ ...t.settings[0]!, reviewDismissedWeek: week }]
+    if (week === undefined) delete t.settings[0]!.reviewDismissedWeek
+    return t
+  }
+  const build = (t: BackupFile['tables']) => ({
+    app: 'forge',
+    schemaVersion: DB_SCHEMA_VERSION,
+    exportedAt: NOW,
+    tables: t,
+  })
+
+  it('aller-retour export -> import replace', async () => {
+    await load(withWeek('2026-02-23'))
+    const text = JSON.stringify(await exportBackup(NOW))
+    await clearAll()
+    await importBackup(mustParse(text).backup, 'replace', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-02-23')
+  })
+
+  it('merge : garde la semaine la plus récente', async () => {
+    await load(withWeek('2026-03-02'))
+    await importBackup(mustParse(JSON.stringify(build(withWeek('2026-02-23')))).backup, 'merge', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-03-02')
+    await importBackup(mustParse(JSON.stringify(build(withWeek(undefined)))).backup, 'merge', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-03-02')
+    await importBackup(mustParse(JSON.stringify(build(withWeek('2026-03-09')))).backup, 'merge', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-03-09')
+  })
+
+  it('replace : la valeur du fichier l’emporte', async () => {
+    await load(withWeek('2026-03-02'))
+    await importBackup(mustParse(JSON.stringify(build(withWeek('2026-02-23')))).backup, 'replace', NOW)
+    expect((await getSettings()).reviewDismissedWeek).toBe('2026-02-23')
+  })
+
+  it('import : lundi requis, futur refusé (tolérance +1 jour)', () => {
+    const mk = (w: string) => parseBackup(JSON.stringify(build(withWeek(w))), '2026-03-01')
+    expect(mk('2026-02-23').ok).toBe(true)
+    expect(mk('2026-03-02').ok).toBe(true) // lundi = demain, fuseau en avance
+    expect(mk('2026-03-09').ok).toBe(false)
+    expect(mk('2099-01-05').ok).toBe(false)
+    expect(mk('2026-02-24').ok).toBe(false) // pas un lundi
+  })
+
+  it('refuse un format de date invalide', () => {
+    expect(parseBackup(JSON.stringify(build(withWeek('lundi')))).ok).toBe(false)
   })
 })

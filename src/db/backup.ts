@@ -12,6 +12,7 @@ import type {
 } from '../types'
 import { shoppingKey } from '../domain/nutrition/shopping'
 import { DB_SCHEMA_VERSION, applyV2SeedFlag, db } from './database'
+import { weekStartOf } from '../domain/progress/regularity'
 import { defaultSettings } from './defaults'
 import { updateSettings } from './repositories'
 import { primaryKeys, rowSchemas } from './schemas'
@@ -24,6 +25,7 @@ import {
   checkProfile,
   checkSessionRow,
   checkSettings,
+  checkWeekStart,
   checkWeighIn,
   validateFridgeItem,
   validateRecipeInput,
@@ -128,6 +130,17 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
+/** Réglages + semaine de la carte du lundi (lundi valide, pas dans le futur, tolérance d'un jour). */
+function checkSettingsRow(s: TableRows['settings'], today: LocalDate): string | null {
+  const base = checkSettings(s)
+  if (base !== null || s.reviewDismissedWeek === undefined) return base
+  const week = checkWeekStart(s.reviewDismissedWeek)
+  if (week !== null) return week
+  return s.reviewDismissedWeek > weekStartOf(addDays(today, 1))
+    ? 'La semaine ne peut pas être dans le futur.'
+    : null
+}
+
 /** Règles métier (validation.ts) appliquées après la validation structurelle. */
 function businessCheck(name: TableName, data: unknown, today: LocalDate): string | null {
   switch (name) {
@@ -137,11 +150,11 @@ function businessCheck(name: TableName, data: unknown, today: LocalDate): string
       // Tolérance d'un jour : fuseau en avance (voyage). La saisie reste stricte.
       return checkWeighIn(data as TableRows['weighIns'], addDays(today, 1))
     case 'measurements':
-      return checkMeasurement(data as TableRows['measurements'])
+      return checkMeasurement(data as TableRows['measurements'], addDays(today, 1))
     case 'equipment':
       return checkEquipment(data as TableRows['equipment'])
     case 'settings':
-      return checkSettings(data as TableRows['settings'])
+      return checkSettingsRow(data as TableRows['settings'], today)
     case 'foods':
       return checkFoodInput(data as TableRows['foods'])
     case 'foodLog':
@@ -167,7 +180,7 @@ function businessCheck(name: TableName, data: unknown, today: LocalDate): string
   }
 }
 
-/** `today` sert à refuser les pesées futures et à calculer l'âge (défaut : jour local courant). */
+/** `today` sert à refuser les pesées et mensurations futures et à calculer l'âge (défaut : jour local courant). */
 export function parseBackup(text: string, today: LocalDate = toLocalDate(new Date())): ParseResult {
   let json: unknown
   try {
@@ -310,7 +323,9 @@ export async function importBackup(
   const counts = emptyCounts()
   await db.transaction('rw', backupTables(), async () => {
     // La version Ciqual locale décrit la table `ciqual` de CET appareil : jamais reprise du fichier.
-    const localCiqualVersion = (await db.settings.get(SINGLETON_ID))?.ciqualVersion
+    const localSettings = await db.settings.get(SINGLETON_ID)
+    const localCiqualVersion = localSettings?.ciqualVersion
+    const localReviewWeek = localSettings?.reviewDismissedWeek
     if (mode === 'replace') {
       // La table `ciqual` n'est pas vidée (données de référence).
       await Promise.all(backupTables().map((t) => t.clear()))
@@ -334,6 +349,12 @@ export async function importBackup(
           const next = { ...row }
           delete next.ciqualVersion
           if (localCiqualVersion !== undefined) next.ciqualVersion = localCiqualVersion
+          // Merge : la carte du lundi ne « revient » pas ; on garde la semaine fermée la plus récente.
+          if (mode === 'merge' && localReviewWeek !== undefined) {
+            const incoming = next.reviewDismissedWeek
+            if (incoming === undefined || incoming < localReviewWeek)
+              next.reviewDismissedWeek = localReviewWeek
+          }
           return next
         })
       }

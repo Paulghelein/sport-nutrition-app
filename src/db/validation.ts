@@ -104,19 +104,38 @@ export function checkWeighIn(w: { date: LocalDate; weightKg: number }, today: Lo
 
 const MEASURE_KEYS = ['armCm', 'chestCm', 'waistCm', 'thighCm'] as const
 
-/** Mensuration : date valide, au moins une valeur, toutes les valeurs renseignées > 0. */
+/** Bornes plausibles d'une mensuration, en cm. */
+export const MIN_MEASUREMENT_CM = 10
+export const MAX_MEASUREMENT_CM = 250
+
+/**
+ * Mensuration : date valide (pas dans le futur si `today` est fourni), au moins une valeur,
+ * toutes les valeurs renseignées entre 10 et 250 cm.
+ */
 export function checkMeasurement(
   m: { date: LocalDate } & { [K in (typeof MEASURE_KEYS)[number]]?: number | undefined },
+  today?: LocalDate,
 ): string | null {
   if (!isValidLocalDate(m.date)) return DATE_FORMAT_MSG
+  if (today !== undefined && m.date > today) return 'La date ne peut pas être dans le futur.'
   let any = false
   for (const key of MEASURE_KEYS) {
     const v = m[key]
     if (v === undefined) continue
-    if (!Number.isFinite(v) || v <= 0) return 'Les mensurations doivent être des nombres supérieurs à 0.'
+    if (!Number.isFinite(v) || v < MIN_MEASUREMENT_CM || v > MAX_MEASUREMENT_CM)
+      return `Les mensurations doivent être comprises entre ${MIN_MEASUREMENT_CM} et ${MAX_MEASUREMENT_CM} cm.`
     any = true
   }
   return any ? null : 'Renseigne au moins une mensuration.'
+}
+
+/** Lundi valide au format AAAA-MM-JJ (`WeekStart`). */
+export function checkWeekStart(d: string): string | null {
+  if (!isValidLocalDate(d)) return DATE_FORMAT_MSG
+  const [y, m, da] = d.split('-').map(Number) as [number, number, number]
+  const t = new Date(Date.UTC(2000, m - 1, da))
+  t.setUTCFullYear(y)
+  return t.getUTCDay() === 1 ? null : 'La semaine doit commencer un lundi.'
 }
 
 /** URL du Projet Claude : `null` ou URL https valide (refus de `javascript:` et autres schémas). */
