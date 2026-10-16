@@ -2,7 +2,7 @@ import { Suspense, lazy, useState } from 'react'
 import { formatDateFr } from '../../domain/shared'
 import { Button, Card, ErrorBoundary, Section, formatKg, formatSignedKg } from '../../ui'
 import type { WeighIn } from '../../types'
-import { WeightSheet } from './WeightSheet'
+import { WeightSheet } from '../forms/WeightSheet'
 import type { WeightModel } from './progressModel'
 
 // Recharts est lourd : chargé seulement à l'ouverture de l'onglet Progrès.

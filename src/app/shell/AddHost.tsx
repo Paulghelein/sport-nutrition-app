@@ -11,7 +11,7 @@ import { loadDuration } from '../training/durations'
 import { destinationFor } from './destinations'
 import { LOG_MEALS } from './meals'
 
-const WeightSheet = lazy(() => import('../progress/WeightSheet').then((m) => ({ default: m.WeightSheet })))
+const WeightSheet = lazy(() => import('../forms/WeightSheet').then((m) => ({ default: m.WeightSheet })))
 
 // F4 / F5 (recette par scan, recette d'une vidéo) arrivent en R3 : pas de bouton mort d'ici là.
 const CREATE: readonly LogEntry[] = [
