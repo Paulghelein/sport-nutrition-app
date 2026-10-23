@@ -2,7 +2,7 @@ import { Star } from 'lucide-react'
 import { MUSCLE_GROUPS } from '../../domain/training'
 import type { PersonalRecord, SessionSummary } from '../../types/guided'
 import { muscleLabel } from '../../ui'
-import { Card, StatTile, cx, withUnit } from '../../ui/kit'
+import { Card, StatTile, cx, formatDecimal, withUnit } from '../../ui/kit'
 import { Section } from './parts'
 import { formatSeconds, kgText } from './format'
 
@@ -98,7 +98,7 @@ export function SummaryView({
                   <div className="flex items-baseline justify-between text-body">
                     <span>{muscleLabel(g)}</span>
                     <span className="font-display font-bold tabular-nums">
-                      {summary.volume[g].toLocaleString('fr-FR', { maximumFractionDigits: 1 })} séries
+                      {formatDecimal(summary.volume[g])} séries
                     </span>
                   </div>
                   <div aria-hidden="true" className="mt-1 h-2 overflow-hidden rounded-full bg-surface-sunken">

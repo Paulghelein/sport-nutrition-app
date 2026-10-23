@@ -23,18 +23,20 @@ import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { Note } from '../../ui/kit/Note'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { FRIDGE_PATH, SHOPPING_PATH, cookPath, editRecipePath } from '../routes'
-import { SLOT_LABEL, fmtG, fmtInt } from '../nutrition/format'
+import { SLOT_LABEL } from '../nutrition/format'
 import { usePhotoUrls } from '../nutrition/usePhotoUrls'
 import { AddToShoppingSheet } from './AddToShoppingSheet'
 import { fmtGrams, fmtMinutes, portionsText } from './format'
 import { Badge, CiqualBanner, Loading, Notice, NotFound, RECIPES_PATH } from './parts'
 import { BackLink } from '../../ui/kit/BackLink'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import type { NoticeState } from './parts'
 import { loggedNotice } from './loggedNotice'
 import { clearRecipeDraft } from './recipeDraft'
 import { PrepareFridgeSheet } from './PrepareFridgeSheet'
 import { RecipeLogSheet } from './RecipeLogSheet'
-import { useFridge, useRecipeLibrary } from './useRecipes'
+import { useFridge } from './useFridge'
+import { useRecipeLibrary } from './useRecipes'
 
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -62,7 +64,7 @@ function Macros({ recipe, nutrition }: { recipe: LibraryRecipe; nutrition: Recip
         <span>recette pour {portionsText(recipe.servings, recipe.servingUnit)}</span>
       </p>
       <p className="m-0 font-display text-display-l tabular-nums" data-testid="kcal-per-serving">
-        {fmtInt(m.kcal)} <span className="font-sans text-body font-medium text-ink-muted">kcal</span>
+        {formatInt(m.kcal)} <span className="font-sans text-body font-medium text-ink-muted">kcal</span>
       </p>
       {targets ? (
         <div className="flex flex-col gap-2.5">
@@ -86,7 +88,7 @@ function Macros({ recipe, nutrition }: { recipe: LibraryRecipe; nutrition: Recip
                 {label}
               </dt>
               <dd className="m-0 font-display text-title tabular-nums">
-                {fmtG(value)}
+                {formatDecimal(value)}
                 <span className="font-sans text-caption font-medium text-ink-muted">{'\u00a0g'}</span>
               </dd>
             </div>
@@ -226,7 +228,7 @@ export default function RecipeScreen() {
       {mine.length > 0 && nextExpiry ? (
         <Link
           to={FRIDGE_PATH}
-          className="focus-ring flex min-h-12 items-center justify-between gap-3 rounded-ds-md bg-ember-soft px-4 py-2.5 text-body text-ink no-underline active:opacity-80"
+          className="focus-ring flex min-h-12 items-center justify-between gap-3 rounded-md bg-ember-soft px-4 py-2.5 text-body text-ink no-underline active:opacity-80"
         >
           <span>
             Au frigo : <strong className="font-display">{portionsText(leftTotal, recipe.servingUnit)}</strong>

@@ -22,11 +22,12 @@ import { SearchBox } from '../../ui/kit/SearchBox'
 import { NEW_FOOD_PATH, NUTRITION_PATH, SCAN_PATH } from '../routes'
 import { FreeEntrySheet } from './FreeEntrySheet'
 import { QuantitySheet } from './QuantitySheet'
-import { SLOT_LABEL, SLOT_TO, fmtG, fmtInt, isMealSlot, slotForNow } from './format'
+import { SLOT_LABEL, SLOT_TO, isMealSlot, slotForNow } from './format'
 import { Toast } from './JournalToast'
 import type { ToastState } from './JournalToast'
 import { StickyStack } from './parts'
 import { BackLink } from '../../ui/kit/BackLink'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import { clearSearchSeed, peekSearchSeed } from './navContext'
 import { useFoods } from './useFoods'
 
@@ -49,7 +50,7 @@ function FoodRow({ food, onPick }: { food: Food; onPick: (food: Food) => void })
         category={foodCategory({ name: food.name })}
         scanned={isScannedFood(food)}
         onPress={() => onPick(food)}
-        ariaLabel={`${food.name}${food.favorite ? ' (favori)' : ''}${food.brand ? `, ${food.brand}` : ''}, ${fmtInt(p.kcal)} kcal pour 100 g`}
+        ariaLabel={`${food.name}${food.favorite ? ' (favori)' : ''}${food.brand ? `, ${food.brand}` : ''}, ${formatInt(p.kcal)} kcal pour 100 g`}
       />
     </li>
   )
@@ -62,7 +63,7 @@ function QuickRow({ item, onAdd }: { item: QuickItem; onAdd: (item: QuickItem) =
     <li className={rowBorder}>
       <KitFoodRow
         name={name}
-        quantity={item.kind === 'food' ? `${fmtG(item.grams)} g` : 'Saisie libre'}
+        quantity={item.kind === 'food' ? `${formatDecimal(item.grams)} g` : 'Saisie libre'}
         protein={m.protein}
         carbs={m.carbs}
         fat={m.fat}
@@ -70,7 +71,7 @@ function QuickRow({ item, onAdd }: { item: QuickItem; onAdd: (item: QuickItem) =
         category={foodCategory({ name })}
         scanned={item.kind === 'food' && isScannedFood(item.food)}
         className="pr-12"
-        ariaLabel={`Ajouter ${name}, ${item.kind === 'food' ? `${fmtG(item.grams)} g, ` : ''}${fmtInt(m.kcal)} kcal`}
+        ariaLabel={`Ajouter ${name}, ${item.kind === 'food' ? `${formatDecimal(item.grams)} g, ` : ''}${formatInt(m.kcal)} kcal`}
         onPress={() => onAdd(item)}
       />
       <span

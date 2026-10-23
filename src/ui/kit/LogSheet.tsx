@@ -120,7 +120,7 @@ export function LogSheet({
             key={action}
             type="button"
             onClick={() => onAction(action)}
-            className="focus-ring flex min-h-24 flex-col items-center justify-center gap-2 rounded-ds-md bg-surface px-1 text-center text-caption font-semibold text-ink shadow-card active:opacity-70"
+            className="focus-ring flex min-h-24 flex-col items-center justify-center gap-2 rounded-md bg-surface px-1 text-center text-caption font-semibold text-ink shadow-card active:opacity-70"
           >
             <Icon size={28} strokeWidth={1.75} aria-hidden="true" />
             {label}
@@ -137,7 +137,7 @@ export function LogSheet({
                 key={action}
                 type="button"
                 onClick={() => onAction(action)}
-                className="focus-ring flex min-h-14 items-center gap-2.5 rounded-ds-md bg-surface px-3.5 text-left text-[14px] font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
+                className="focus-ring flex min-h-14 items-center gap-2.5 rounded-md bg-surface px-3.5 text-left text-body-sm font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
               >
                 <Icon size={24} strokeWidth={1.75} aria-hidden="true" className="shrink-0" />
                 {label}
@@ -156,7 +156,7 @@ export function LogSheet({
                 <button
                   type="button"
                   onClick={() => onAction(action)}
-                  className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-ds-pill bg-surface px-3.5 text-[14px] font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
+                  className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-3.5 text-body-sm font-semibold leading-[18px] text-ink shadow-card active:opacity-70"
                 >
                   <Icon size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-ink-muted" />
                   {label}

@@ -28,5 +28,5 @@ export function SettingsSection({
 
 /** Cadre de chargement d'une section à la demande (hauteur réservée pour ne pas faire sauter la page). */
 export function SectionFallback() {
-  return <div aria-busy="true" className="h-40 rounded-ds-lg bg-surface-sunken/50" />
+  return <div aria-busy="true" className="h-40 rounded-lg bg-surface-sunken/50" />
 }

@@ -40,7 +40,7 @@ export function Section({
 /** Niveau : un mot et une pastille (jamais la couleur seule). */
 export function LevelBadge({ level }: { level: TrainingLevel }) {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-ds-pill bg-canvas px-2.5 py-0.5 text-caption font-semibold text-ink">
+    <span className="inline-flex shrink-0 items-center rounded-full bg-canvas px-2.5 py-0.5 text-caption font-semibold text-ink">
       {levelLabel(level)}
     </span>
   )
@@ -51,7 +51,7 @@ export function Tag({ children, tone = 'neutral' }: { children: ReactNode; tone?
   return (
     <span
       className={cx(
-        'inline-flex shrink-0 items-center rounded-ds-pill px-2.5 py-0.5 text-caption font-semibold',
+        'inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-caption font-semibold',
         tone === 'warning' ? 'bg-ember-soft text-ink' : 'bg-canvas text-ink-muted',
       )}
     >
@@ -79,7 +79,7 @@ export function PreferenceIcon({ preference }: { preference: ExercisePreference 
 
 export function Warning({ children }: { children: ReactNode }) {
   return (
-    <p className="m-0 flex gap-2.5 rounded-ds-md bg-ember-soft p-3 text-body text-ink">
+    <p className="m-0 flex gap-2.5 rounded-md bg-ember-soft p-3 text-body text-ink">
       <TriangleAlert size={20} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
       <span>{children}</span>
     </p>

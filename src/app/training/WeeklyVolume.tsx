@@ -3,10 +3,10 @@ import { MUSCLE_GROUPS, volumeTargets, weeklyVolume } from '../../domain/trainin
 import { muscleLabel } from '../../ui'
 import { Card } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
+import { formatDecimal } from '../../ui/kit/format'
 import { Section } from './parts'
 import { useEngineInput } from './useEngineInput'
 
-const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 })
 const TITLE = 'Volume des 7 derniers jours'
 
 /** Séries faites sur 7 jours glissants face à la cible (groupes sans cible propre masqués). */
@@ -44,7 +44,7 @@ export default function WeeklyVolume() {
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-body-strong">{muscleLabel(r.group)}</span>
                   <span className="text-caption tabular-nums text-ink-muted">
-                    <span className="font-display text-body-strong text-ink">{nf.format(r.done)}</span> /{' '}
+                    <span className="font-display text-body-strong text-ink">{formatDecimal(r.done)}</span> /{' '}
                     {r.min}–{r.max} séries{reached ? ' · atteint' : ''}
                   </span>
                 </div>
@@ -54,7 +54,7 @@ export default function WeeklyVolume() {
                   aria-valuemin={0}
                   aria-valuemax={r.max}
                   aria-valuenow={Math.min(r.done, r.max)}
-                  aria-valuetext={`${nf.format(r.done)} séries sur ${r.min} à ${r.max} visées`}
+                  aria-valuetext={`${formatDecimal(r.done)} séries sur ${r.min} à ${r.max} visées`}
                   className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-surface-sunken"
                 >
                   <div

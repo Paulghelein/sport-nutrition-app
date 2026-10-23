@@ -388,7 +388,11 @@ describe('replaceExercise', () => {
           {
             exerciseId: 'incline-push-up',
             restSec: 60,
-            sets: [{ targetReps: [8, 12] }, { targetReps: [8, 12] }, { setType: 'amrap', targetReps: [8, 12] }],
+            sets: [
+              { targetReps: [8, 12] },
+              { targetReps: [8, 12] },
+              { setType: 'amrap', targetReps: [8, 12] },
+            ],
           },
           {
             exerciseId: 'two-hand-swing',

@@ -14,7 +14,7 @@ const paddingClass = { normal: 'p-4', large: 'p-5', none: 'p-0' } as const
 export function Card({ padding = 'normal', as: Tag = 'section', className, ...props }: CardProps) {
   return (
     <Tag
-      className={cx('rounded-ds-lg bg-surface text-ink shadow-card', paddingClass[padding], className)}
+      className={cx('rounded-lg bg-surface text-ink shadow-card', paddingClass[padding], className)}
       {...props}
     />
   )

@@ -83,7 +83,8 @@ export const pushVExercises: Exercise[] = [
     compound: true,
     unilateral: true,
     loadStepKg: 1,
-    progressionCriteria: '3 × 10 propres par bras à la même charge sur 2 séances → augmente la charge de 1 kg',
+    progressionCriteria:
+      '3 × 10 propres par bras à la même charge sur 2 séances → augmente la charge de 1 kg',
     technique: {
       setup:
         'Debout, pieds à la largeur des hanches, kettlebell en position rack : coude collé aux côtes, poignet droit, ventre gainé.',

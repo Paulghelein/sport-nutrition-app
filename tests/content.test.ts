@@ -3,7 +3,13 @@ import { illustrations, SEED_UPDATED_AT, seedExercises } from '../src/content'
 import { defaultEquipment } from '../src/db/defaults'
 import { exerciseSchema } from '../src/db/schemas'
 import { checkExercise } from '../src/db/validation'
-import { defaultLoadStep, isAvailable, mergeLibrary, PATTERN_ORDER, toExerciseInput } from '../src/domain/training/library'
+import {
+  defaultLoadStep,
+  isAvailable,
+  mergeLibrary,
+  PATTERN_ORDER,
+  toExerciseInput,
+} from '../src/domain/training/library'
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
@@ -47,7 +53,10 @@ describe('exercices de départ', () => {
     for (const pattern of PATTERN_ORDER) {
       const inPattern = seedExercises.filter((e) => e.pattern === pattern)
       for (const level of [1, 2, 3]) {
-        expect(inPattern.some((e) => e.level === level), `${pattern} niveau ${level}`).toBe(true)
+        expect(
+          inPattern.some((e) => e.level === level),
+          `${pattern} niveau ${level}`,
+        ).toBe(true)
       }
       expect(
         inPattern.some((e) => e.level === 1 && isAvailable(e, equipment)),

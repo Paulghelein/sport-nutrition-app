@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { formatDateFr } from '../../domain/shared/dates'
 import { Button, Card, ListRow } from '../../ui/kit'
+import { formatDecimal } from '../../ui/kit/format'
 import type { Measurement } from '../../types'
 import { MeasurementSheet } from '../forms/MeasurementSheet'
 import { MEASURE_FIELDS, sortMeasurements } from '../forms/measurementDraft'
 import { Note, ScreenSection } from './parts'
-import { formatNumber } from './progressModel'
 
 function summary(m: Measurement): string {
   return MEASURE_FIELDS.filter(({ key }) => m[key] !== undefined)
-    .map(({ key, label }) => `${label} ${formatNumber(m[key] as number)} cm`)
+    .map(({ key, label }) => `${label} ${formatDecimal(m[key] as number, 2)} cm`)
     .join(' · ')
 }
 

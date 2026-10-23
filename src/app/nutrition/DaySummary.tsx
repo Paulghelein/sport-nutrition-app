@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { MacroBar, cx } from '../../ui/kit'
 import type { MacroKind } from '../../ui/kit'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import { PROGRESS_PATH, SETTINGS_PATH } from '../routes'
 import type { JournalBilan } from './journalModel'
-import { fmtG, fmtInt } from './format'
 
 const MACRO_LABEL: Record<MacroKind, string> = { protein: 'Protéines', carbs: 'Glucides', fat: 'Lipides' }
 const MACRO_DOT: Record<MacroKind, string> = { protein: 'bg-protein', carbs: 'bg-carbs', fat: 'bg-fat' }
@@ -20,7 +20,7 @@ function MacroTotal({ kind, value }: { kind: MacroKind; value: number }) {
         {MACRO_LABEL[kind]}
       </span>
       <span className="font-display text-body-strong tabular-nums">
-        {fmtG(value)}
+        {formatDecimal(value)}
         <span className="font-sans text-caption font-medium text-ink-muted">{'\u00a0g'}</span>
       </span>
     </div>
@@ -36,13 +36,13 @@ export function DaySummary({ bilan }: { bilan: JournalBilan }) {
   return (
     <section
       aria-label="Bilan du jour"
-      className="flex flex-col gap-3 rounded-ds-lg bg-surface px-[18px] py-4 text-ink shadow-card"
+      className="flex flex-col gap-3 rounded-lg bg-surface px-[18px] py-4 text-ink shadow-card"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <span className="font-display text-number-l tabular-nums">
-          <span data-testid="kcal-consumed">{fmtInt(totals.kcal)}</span>
+          <span data-testid="kcal-consumed">{formatInt(totals.kcal)}</span>
           <span className="font-sans text-body font-medium text-ink-muted">
-            {targets ? `\u00a0/ ${fmtInt(targets.kcal)}\u00a0kcal` : '\u00a0kcal'}
+            {targets ? `\u00a0/ ${formatInt(targets.kcal)}\u00a0kcal` : '\u00a0kcal'}
           </span>
         </span>
         {targets ? (
@@ -50,7 +50,7 @@ export function DaySummary({ bilan }: { bilan: JournalBilan }) {
             data-testid="kcal-left"
             className={cx('text-caption font-semibold', over > 0 ? 'text-warning' : 'text-ember-ink')}
           >
-            {over > 0 ? `Dépassé de ${fmtInt(over)} kcal` : `${fmtInt(left)} restantes`}
+            {over > 0 ? `Dépassé de ${formatInt(over)} kcal` : `${formatInt(left)} restantes`}
           </span>
         ) : null}
       </div>
@@ -61,7 +61,7 @@ export function DaySummary({ bilan }: { bilan: JournalBilan }) {
           aria-valuemin={0}
           aria-valuemax={targets.kcal}
           aria-valuenow={Math.min(Math.round(totals.kcal), targets.kcal)}
-          aria-valuetext={`${fmtInt(totals.kcal)} sur ${fmtInt(targets.kcal)} kcal`}
+          aria-valuetext={`${formatInt(totals.kcal)} sur ${formatInt(targets.kcal)} kcal`}
           className="h-2.5 rounded-full bg-surface-sunken"
         >
           <div className="h-2.5 rounded-full bg-ember" style={{ width: `${ratio * 100}%` }} />
@@ -82,7 +82,7 @@ export function DaySummary({ bilan }: { bilan: JournalBilan }) {
       )}
       {targets ? (
         <p className="m-0 text-caption text-ink-muted">
-          Objectifs calculés pour {fmtG(targets.weightKg)} kg.{' '}
+          Objectifs calculés pour {formatDecimal(targets.weightKg)} kg.{' '}
           <Link to={SETTINGS_PATH} className={linkClass}>
             Les régler
           </Link>

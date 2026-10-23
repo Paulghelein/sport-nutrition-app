@@ -44,7 +44,7 @@ function Tab({
       aria-current={active ? 'page' : undefined}
       onClick={() => onSelect?.(id)}
       className={cx(
-        'focus-ring flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-ds-md font-sans no-underline',
+        'focus-ring flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md font-sans no-underline',
         active ? 'text-ink' : 'text-ink-muted',
       )}
     >
@@ -54,7 +54,7 @@ function Tab({
         aria-hidden="true"
         className={active ? 'text-ink' : 'text-ink-faint'}
       />
-      <span className="text-[11px] font-semibold leading-[14px]">{label}</span>
+      <span className="text-tiny">{label}</span>
       <span aria-hidden="true" className={cx('size-1 rounded-full', active && 'bg-ember')} />
     </Link>
   )
@@ -79,7 +79,7 @@ export function TabBar({ current, hrefs, onPlus, onSelect }: TabBarProps) {
     >
       <nav
         aria-label="Navigation principale"
-        className="pointer-events-auto mx-auto grid h-[68px] max-w-xl grid-cols-[1fr_1fr_72px_1fr_1fr] items-center rounded-ds-xl bg-surface-raised px-2 shadow-float"
+        className="pointer-events-auto mx-auto grid h-[68px] max-w-xl grid-cols-[1fr_1fr_72px_1fr_1fr] items-center rounded-xl bg-surface-raised px-2 shadow-float"
       >
         {tab(today)}
         {tab(training)}

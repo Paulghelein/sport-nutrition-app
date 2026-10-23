@@ -9,13 +9,13 @@ import { Button, Card, buttonClass } from '../../ui/kit'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { Note } from '../../ui/kit/Note'
 import { editFoodPath } from '../routes'
-import { fmtG, fmtInt } from './format'
 import { BackLink } from '../../ui/kit/BackLink'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import { useAddContext, useGoBack } from './navContext'
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-ds-md bg-canvas px-3 py-2.5">
+    <div className="rounded-md bg-canvas px-3 py-2.5">
       <dt className="text-caption text-ink-muted">{label}</dt>
       <dd className="m-0 mt-0.5 font-display text-title tabular-nums">{value}</dd>
     </div>
@@ -102,13 +102,13 @@ export default function FoodScreen() {
           Pour 100 g
         </h2>
         <dl className="m-0 mt-3 grid grid-cols-2 gap-2">
-          <Fact label="Calories" value={`${fmtInt(per.kcal)} kcal`} />
-          <Fact label="Protéines" value={`${fmtG(per.protein)} g`} />
-          <Fact label="Glucides" value={`${fmtG(per.carbs)} g`} />
-          <Fact label="Lipides" value={`${fmtG(per.fat)} g`} />
-          {per.fiber !== undefined ? <Fact label="Fibres" value={`${fmtG(per.fiber)} g`} /> : null}
+          <Fact label="Calories" value={`${formatInt(per.kcal)} kcal`} />
+          <Fact label="Protéines" value={`${formatDecimal(per.protein)} g`} />
+          <Fact label="Glucides" value={`${formatDecimal(per.carbs)} g`} />
+          <Fact label="Lipides" value={`${formatDecimal(per.fat)} g`} />
+          {per.fiber !== undefined ? <Fact label="Fibres" value={`${formatDecimal(per.fiber)} g`} /> : null}
           {food.defaultPortionG !== undefined ? (
-            <Fact label="Portion habituelle" value={`${fmtG(food.defaultPortionG)} g`} />
+            <Fact label="Portion habituelle" value={`${formatDecimal(food.defaultPortionG)} g`} />
           ) : null}
         </dl>
       </Card>

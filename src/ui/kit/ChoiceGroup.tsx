@@ -43,7 +43,7 @@ export function ChoiceGroup<T extends string | number>({
           <label
             key={String(option.value)}
             className={cx(
-              'flex min-h-12 min-w-0 cursor-pointer rounded-ds-md bg-canvas py-2.5 text-ink',
+              'flex min-h-12 min-w-0 cursor-pointer rounded-md bg-canvas py-2.5 text-ink',
               'has-checked:bg-ember-soft has-checked:font-bold has-checked:ring-2 has-checked:ring-ember',
               'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus',
               layout === 'stack'

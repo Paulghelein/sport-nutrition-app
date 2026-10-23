@@ -14,6 +14,7 @@ export type { LogAction, LogEntry, LogMealOption, LogSheetProps } from './LogShe
 export { MacroBar } from './MacroBar'
 export type { MacroBarProps, MacroKind } from './MacroBar'
 export { PillTabs } from './PillTabs'
+export { pillClass } from './pillClass'
 export type { PillTab, PillTabsProps } from './PillTabs'
 export { Segmented } from './Segmented'
 export type { SegmentedOption, SegmentedProps } from './Segmented'

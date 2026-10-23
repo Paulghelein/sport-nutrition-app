@@ -95,7 +95,7 @@ export function Sheet({ title, description, onClose, busy = false, children }: S
         aria-labelledby={titleId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="ds-sheet-enter mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-t-ds-xl bg-surface-raised px-4 pt-3 text-ink shadow-float outline-none"
+        className="ds-sheet-enter mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-t-xl bg-surface-raised px-4 pt-3 text-ink shadow-float outline-none"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.25rem)' }}
       >
         <span

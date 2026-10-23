@@ -33,7 +33,7 @@ export function buttonClass(
   fullWidth = false,
 ): string {
   return cx(
-    'focus-ring inline-flex items-center justify-center gap-2 rounded-ds-pill font-sans no-underline',
+    'focus-ring inline-flex items-center justify-center gap-2 rounded-full font-sans no-underline',
     'transition-opacity active:opacity-80 disabled:cursor-not-allowed disabled:shadow-none disabled:active:opacity-100',
     sizeClass[size],
     variantClass[variant],

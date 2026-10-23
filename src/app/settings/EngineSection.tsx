@@ -243,7 +243,7 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
                             disabled={busy}
                             onClick={() => setConfirm(g)}
                             aria-label={`Rétablir (${hint}), ${muscleLabel(g)}`}
-                            className="focus-ring min-h-11 rounded-ds-sm px-2 text-caption font-bold text-ember-ink disabled:text-ink-muted"
+                            className="focus-ring min-h-11 rounded-sm px-2 text-caption font-bold text-ember-ink disabled:text-ink-muted"
                           >
                             Rétablir ({hint})
                           </button>

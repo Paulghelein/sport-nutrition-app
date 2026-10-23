@@ -77,7 +77,7 @@ function Thumbs({ exercises, total }: { exercises: readonly LibraryExercise[]; t
       {more > 0 && (
         <div
           aria-hidden="true"
-          className="grid size-12 shrink-0 place-items-center rounded-ds-sm bg-canvas font-display text-body-strong tabular-nums text-ink-muted"
+          className="grid size-12 shrink-0 place-items-center rounded-sm bg-canvas font-display text-body-strong tabular-nums text-ink-muted"
         >
           +{more}
         </div>

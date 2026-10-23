@@ -13,11 +13,13 @@ import type { ChoiceOption } from '../../ui/kit'
 import { TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { NutritionTabs } from '../nutrition/NutritionTabs'
-import { SLOT_LABEL, fmtG, fmtInt, isMealSlot, slotChoices } from '../nutrition/format'
+import { SLOT_LABEL, isMealSlot, slotChoices } from '../nutrition/format'
 import { NEW_RECIPE_PATH, RECIPE_SCAN_PATH, SETTINGS_PATH, VIDEO_RECIPE_PATH, recipePath } from '../routes'
 import { fmtMinutes } from './format'
 import { Badge, CiqualBanner, FilterChip, Loading } from './parts'
 import { SearchBox } from '../../ui/kit/SearchBox'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
+import { useFridgePortions } from './useFridge'
 import { recipesWithMissingData, useRecipeLibrary } from './useRecipes'
 
 type TimeFilter = 'all' | 15 | 30 | 45 | 60
@@ -70,10 +72,10 @@ function RecipeRow({ item, approx }: { item: RecipeListItem; approx: boolean }) 
                   <span className="sr-only">Macros incomplètes, environ </span>
                 </>
               ) : null}
-              {fmtInt(m.kcal)} kcal
+              {formatInt(m.kcal)} kcal
             </span>
             {' · '}
-            <span className="font-display font-bold tabular-nums">{`P\u00a0${fmtG(m.protein)}\u00a0g`}</span>
+            <span className="font-display font-bold tabular-nums">{`P\u00a0${formatDecimal(m.protein)}\u00a0g`}</span>
             <span className="text-ink-muted"> par portion</span>
           </span>
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-muted">
@@ -140,6 +142,7 @@ function DeletedSheet({
 }
 
 export default function RecipesScreen() {
+  const fridgePortions = useFridgePortions()
   const { data, error } = useRecipeLibrary()
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState(() => params.get('q') ?? '')
@@ -204,7 +207,7 @@ export default function RecipesScreen() {
         </Link>
       </header>
 
-      <NutritionTabs current="recipes" />
+      <NutritionTabs current="recipes" fridgePortions={fridgePortions} />
 
       <div className="flex flex-col gap-1.5">
         <p className="m-0 text-label uppercase text-ink-muted">Créer à partir de…</p>
@@ -242,7 +245,7 @@ export default function RecipesScreen() {
           aria-controls="recipe-filters"
           onClick={() => setParam('f', panelOpen ? null : '1')}
           className={cx(
-            'focus-ring flex min-h-12 shrink-0 items-center gap-1.5 rounded-ds-pill px-4 text-body-strong',
+            'focus-ring flex min-h-12 shrink-0 items-center gap-1.5 rounded-full px-4 text-body-strong',
             activeCount > 0 || panelOpen
               ? 'bg-ember-soft font-bold text-ink ring-2 ring-ember'
               : 'bg-surface text-ink shadow-card',
@@ -266,7 +269,7 @@ export default function RecipesScreen() {
       </div>
 
       <div role="group" aria-label="Filtrer par repas">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <div className="ds-bleed flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
           {([undefined, 'breakfast', 'lunch', 'dinner', 'snack'] as (MealSlot | undefined)[]).map((s) => (
             <FilterChip
               key={s ?? 'all'}

@@ -90,7 +90,11 @@ export function headlineTitle(patterns: Iterable<MovementPattern>): string {
 }
 
 /** Partie principale du titre ; `singleZone` = peut recevoir un complément. `null` sans famille principale. */
-function mainTitle(lower: boolean, push: boolean, pull: boolean): { base: string; singleZone: boolean } | null {
+function mainTitle(
+  lower: boolean,
+  push: boolean,
+  pull: boolean,
+): { base: string; singleZone: boolean } | null {
   if (lower && push && pull) return { base: 'Corps entier', singleZone: false }
   if (lower && pull) return { base: 'Bas du corps et tirage', singleZone: false }
   if (lower && push) return { base: 'Bas du corps et poussée', singleZone: false }
@@ -143,7 +147,9 @@ function laggingWorkedGroups(
   volume7d: MuscleVolume,
   targets: Record<MuscleGroup, Range>,
 ): MuscleGroup[] {
-  return MAJOR_GROUPS.filter((g) => worked.has(g) && focus.has(g) && targets[g][0] > 0 && volume7d[g] < targets[g][0])
+  return MAJOR_GROUPS.filter(
+    (g) => worked.has(g) && focus.has(g) && targets[g][0] > 0 && volume7d[g] < targets[g][0],
+  )
     .map((g, i) => ({ g, i, ratio: volume7d[g] / targets[g][0] }))
     .sort((a, b) => a.ratio - b.ratio || a.i - b.i)
     .map((x) => x.g)
@@ -185,7 +191,10 @@ export function sessionHeadline(
   if (total <= 0) return { title, reason: REASON_RESTART, laggingGroups: [] }
 
   const worked = new Set<MuscleGroup>(exercises.flatMap((e) => e.muscles.primary))
-  const lagging = laggingWorkedGroups(worked, new Set(plan.focus), volume7d, targets).slice(0, HEADLINE_MAX_LAGGING)
+  const lagging = laggingWorkedGroups(worked, new Set(plan.focus), volume7d, targets).slice(
+    0,
+    HEADLINE_MAX_LAGGING,
+  )
   if (lagging.length > 0) return { title, reason: laggingSentence(lagging), laggingGroups: lagging }
 
   const anyMajorLagging = MAJOR_GROUPS.some((g) => targets[g][0] > 0 && volume7d[g] < targets[g][0])

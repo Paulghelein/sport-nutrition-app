@@ -5,25 +5,36 @@ const url = (t: string): string | null => extractVideoLink(t)?.url ?? null
 
 describe('extractVideoLink : textes collés réels', () => {
   it('TikTok : légende multiligne, émojis, hashtags, lien en dernière ligne', () => {
-    const t = 'Poulet crémeux 🍗🔥 trop bon !\n#recette #prisedemasse #fyp\n\nhttps://vm.tiktok.com/ZGdAbCdEf/\n'
+    const t =
+      'Poulet crémeux 🍗🔥 trop bon !\n#recette #prisedemasse #fyp\n\nhttps://vm.tiktok.com/ZGdAbCdEf/\n'
     expect(extractVideoLink(t)).toEqual({ url: 'https://vm.tiktok.com/ZGdAbCdEf/', platform: 'tiktok' })
   })
   it('TikTok : lien long avec paramètres de partage', () => {
-    const t = 'https://www.tiktok.com/@chef.fr/video/7301234567890123456?_r=1&_t=8abcDEF&is_from_webapp=1&sender_device=pc&web_id=123&share_item_id=7301'
+    const t =
+      'https://www.tiktok.com/@chef.fr/video/7301234567890123456?_r=1&_t=8abcDEF&is_from_webapp=1&sender_device=pc&web_id=123&share_item_id=7301'
     expect(url(t)).toBe('https://www.tiktok.com/@chef.fr/video/7301234567890123456')
   })
   it('Instagram : « légende + lien » et lien en markdown', () => {
-    expect(url('Regarde ça https://www.instagram.com/reel/C8abc123/?igsh=MWxyz== merci')).toBe('https://www.instagram.com/reel/C8abc123/')
-    expect(url('[la vidéo](https://www.instagram.com/p/Cabc/?utm_source=ig_web_copy_link)')).toBe('https://www.instagram.com/p/Cabc/')
+    expect(url('Regarde ça https://www.instagram.com/reel/C8abc123/?igsh=MWxyz== merci')).toBe(
+      'https://www.instagram.com/reel/C8abc123/',
+    )
+    expect(url('[la vidéo](https://www.instagram.com/p/Cabc/?utm_source=ig_web_copy_link)')).toBe(
+      'https://www.instagram.com/p/Cabc/',
+    )
   })
   it('YouTube : watch, list et t conservés, si/feature retirés', () => {
     expect(url('https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PL123&t=42s&feature=shared&si=abc')).toBe(
       'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PL123&t=42s',
     )
-    expect(extractVideoLink('https://m.youtube.com/shorts/abc?feature=share')).toEqual({ url: 'https://m.youtube.com/shorts/abc', platform: 'youtube' })
+    expect(extractVideoLink('https://m.youtube.com/shorts/abc?feature=share')).toEqual({
+      url: 'https://m.youtube.com/shorts/abc',
+      platform: 'youtube',
+    })
   })
   it('plusieurs liens : le premier seulement', () => {
-    expect(url('https://www.tiktok.com/@a/video/1 et aussi https://www.youtube.com/watch?v=2')).toBe('https://www.tiktok.com/@a/video/1')
+    expect(url('https://www.tiktok.com/@a/video/1 et aussi https://www.youtube.com/watch?v=2')).toBe(
+      'https://www.tiktok.com/@a/video/1',
+    )
   })
   it('lien entre parenthèses, crochets, guillemets typographiques, ponctuation finale', () => {
     expect(url('(https://youtu.be/abc)')).toBe('https://youtu.be/abc')
@@ -39,7 +50,10 @@ describe('extractVideoLink : textes collés réels', () => {
     expect(url('https://youtu.be/abc\tsuite')).toBe('https://youtu.be/abc')
   })
   it('schéma et hôte en majuscules', () => {
-    expect(extractVideoLink('HTTPS://WWW.TIKTOK.COM/@A/video/1')).toEqual({ url: 'https://www.tiktok.com/@A/video/1', platform: 'tiktok' })
+    expect(extractVideoLink('HTTPS://WWW.TIKTOK.COM/@A/video/1')).toEqual({
+      url: 'https://www.tiktok.com/@A/video/1',
+      platform: 'tiktok',
+    })
   })
   it('caractères unicode : chemin accentué, texte unicode autour', () => {
     const r = extractVideoLink('Crêpes à la façon de Zoë 🥞 https://www.tiktok.com/@zoë/video/1?q=crêpe')
@@ -52,7 +66,9 @@ describe('extractVideoLink : textes collés réels', () => {
     expect(url('https://example.com/a?igsh=1&igsh=2&id=1')).toBe('https://example.com/a?id=1')
   })
   it('que du pistage : pas de « ? » résiduel ; fragment supprimé', () => {
-    expect(url('https://www.instagram.com/reel/x/?igsh=a&utm_medium=b')).toBe('https://www.instagram.com/reel/x/')
+    expect(url('https://www.instagram.com/reel/x/?igsh=a&utm_medium=b')).toBe(
+      'https://www.instagram.com/reel/x/',
+    )
     expect(url('https://example.com/a#section')).toBe('https://example.com/a')
   })
   it('un paramètre inconnu survit', () => {
@@ -120,7 +136,9 @@ describe('extractVideoLink : robustesse', () => {
     expect(extractVideoLink('https://www.tiktok.com./x')?.platform).toBe('tiktok')
   })
   it('premier lien refusé : le suivant valide est pris', () => {
-    expect(url('https://localhost/x puis https://user@a.com/y puis https://youtu.be/ok')).toBe('https://youtu.be/ok')
+    expect(url('https://localhost/x puis https://user@a.com/y puis https://youtu.be/ok')).toBe(
+      'https://youtu.be/ok',
+    )
   })
   it('query non pistée conservée telle quelle (pas de réencodage)', () => {
     expect(url('https://example.com/a?q=a%20b+c&utm_source=x&k=')).toBe('https://example.com/a?q=a%20b+c&k=')

@@ -23,7 +23,7 @@ export function RecordsSection({ records }: { records: readonly RecordRowModel[]
               leading={
                 <span
                   aria-hidden="true"
-                  className={`grid size-9 place-items-center rounded-ds-sm ${
+                  className={`grid size-9 place-items-center rounded-sm ${
                     i === 0 ? 'bg-ember-ink text-on-inverse' : 'bg-canvas text-ink'
                   }`}
                 >

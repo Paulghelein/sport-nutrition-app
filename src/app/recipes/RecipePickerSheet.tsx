@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react'
 import { recipeListItems, recipeNutrition, roundMacros, normalizeFoodSearch } from '../../domain/nutrition'
 import type { FoodLogEntry, FridgeItem, LibraryRecipe, LocalDate, MealSlot } from '../../types'
 import { Card, ListRow, Sheet } from '../../ui/kit'
-import { fmtG, fmtInt } from '../nutrition/format'
-import { fmtPortions, portionsWord } from './format'
+import { portionsWord } from './format'
 import { CiqualBanner } from './parts'
 import { SearchBox } from '../../ui/kit/SearchBox'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import { RecipeLogSheet } from './RecipeLogSheet'
-import { recipesWithMissingData, useFridge, useRecipeLibrary } from './useRecipes'
+import { useFridge } from './useFridge'
+import { recipesWithMissingData, useRecipeLibrary } from './useRecipes'
 
 type Item = ReturnType<typeof recipeListItems>[number]
 
@@ -27,11 +28,11 @@ function PickRow({
     <li>
       <ListRow
         title={item.recipe.name}
-        subtitle={`${left !== undefined ? `Au frigo : ${fmtPortions(left)} ${portionsWord(left)} · ` : ''}P ${fmtG(m.protein)} g par portion`}
+        subtitle={`${left !== undefined ? `Au frigo : ${formatDecimal(left, 2)} ${portionsWord(left)} · ` : ''}P ${formatDecimal(m.protein)} g par portion`}
         trailing={
           <span className="font-display text-body-strong tabular-nums">
             {approx ? <span aria-label="Macros incomplètes, environ ">≈ </span> : null}
-            {fmtInt(m.kcal)} kcal
+            {formatInt(m.kcal)} kcal
           </span>
         }
         onPress={() => onPick(item.recipe)}

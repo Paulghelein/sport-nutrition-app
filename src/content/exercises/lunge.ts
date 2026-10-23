@@ -83,7 +83,8 @@ export const lungeExercises: Exercise[] = [
     compound: true,
     unilateral: true,
     loadStepKg: 2,
-    progressionCriteria: '3 × 12 propres par jambe avec la kettlebell la plus lourde → tempo lent (3 s à la descente)',
+    progressionCriteria:
+      '3 × 12 propres par jambe avec la kettlebell la plus lourde → tempo lent (3 s à la descente)',
     technique: {
       setup:
         'Dos à une chaise stable ou à un banc. Pose le dessus du pied arrière sur l’assise, à un grand pas devant le support. Tiens la kettlebell contre la poitrine par les cornes (sans charge au début si besoin).',

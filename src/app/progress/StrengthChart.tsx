@@ -1,7 +1,8 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { addDays, formatDateFr } from '../../domain/shared/dates'
-import { METRIC_LABEL, METRIC_UNIT, formatNumber } from './progressModel'
+import { METRIC_LABEL, METRIC_UNIT } from './progressModel'
 import type { StrengthChartPoint, StrengthMetric } from './progressModel'
+import { formatDecimal } from '../../ui/kit/format'
 
 // Couleurs : variables CSS des jetons (src/index.css), jamais de valeur en dur.
 const EMBER = 'var(--color-ember)'
@@ -21,7 +22,7 @@ export function StrengthChart({
   const first = points[0]
   const span = points[points.length - 1]?.day ?? 0
   const dateOf = (day: number) => formatDateFr(first ? addDays(first.date, Math.round(day)) : '')
-  const summary = `Courbe ${METRIC_LABEL[metric].toLowerCase()} de ${name} : ${points.length} séance${points.length > 1 ? 's' : ''}, dernière valeur ${formatNumber(points[points.length - 1]?.value ?? 0)} ${unit}.`
+  const summary = `Courbe ${METRIC_LABEL[metric].toLowerCase()} de ${name} : ${points.length} séance${points.length > 1 ? 's' : ''}, dernière valeur ${formatDecimal(points[points.length - 1]?.value ?? 0, 2)} ${unit}.`
   return (
     <div role="img" aria-label={summary} className="h-52 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -53,7 +54,7 @@ export function StrengthChart({
               fontSize: 13,
             }}
             labelFormatter={(label) => dateOf(Number(label))}
-            formatter={(value) => [`${formatNumber(Number(value))} ${unit}`, METRIC_LABEL[metric]]}
+            formatter={(value) => [`${formatDecimal(Number(value), 2)} ${unit}`, METRIC_LABEL[metric]]}
           />
           <Line
             dataKey="value"

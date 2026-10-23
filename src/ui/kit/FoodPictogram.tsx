@@ -50,7 +50,7 @@ export interface FoodTileProps {
   className?: string
 }
 
-/** Visuel d'une ligne d'aliment : tuile radius ds-sm sur surface-sunken, photo ou pictogramme. */
+/** Visuel d'une ligne d'aliment : tuile rayon sm sur surface-sunken, photo ou pictogramme. */
 export function FoodTile({
   category,
   photoUrl,
@@ -64,7 +64,7 @@ export function FoodTile({
   return (
     <div
       className={cx(
-        'relative grid shrink-0 place-items-center rounded-ds-sm text-ink-muted',
+        'relative grid shrink-0 place-items-center rounded-sm text-ink-muted',
         fromFridge ? 'bg-ember-soft text-ink' : 'bg-surface-sunken',
         className,
       )}
@@ -76,7 +76,7 @@ export function FoodTile({
           alt=""
           loading="lazy"
           onError={() => setFailedUrl(photoUrl)}
-          className="size-full rounded-ds-sm object-cover"
+          className="size-full rounded-sm object-cover"
         />
       ) : (
         <FoodPictogram category={category} size={Math.round(size * 0.55)} />

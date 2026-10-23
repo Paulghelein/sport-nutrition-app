@@ -92,7 +92,7 @@ export default function ClaudeSection() {
           type="button"
           aria-expanded={showText}
           onClick={() => setShowText((v) => !v)}
-          className="focus-ring flex min-h-11 items-center justify-center rounded-ds-pill text-body-strong text-ember-ink underline underline-offset-4"
+          className="focus-ring flex min-h-11 items-center justify-center rounded-full text-body-strong text-ember-ink underline underline-offset-4"
         >
           {showText ? 'Masquer les instructions' : 'Voir les instructions'}
         </button>
@@ -103,7 +103,7 @@ export default function ClaudeSection() {
             rows={12}
             value={COACH_PROJECT_INSTRUCTIONS}
             onFocus={(e) => e.currentTarget.select()}
-            className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-mono text-input text-ink"
+            className="focus-ring w-full rounded-md bg-canvas px-3.5 py-3 font-mono text-input text-ink"
           />
         ) : null}
       </Card>

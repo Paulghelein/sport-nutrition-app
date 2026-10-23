@@ -25,14 +25,8 @@
 }
 
 @theme {
-  /* --- v1 (thème sombre), retirés quand les écrans v1 auront été refaits (R5).
-     --color-v1-bg doit rester égal à themeColor dans vite.config.ts et à <meta name="theme-color"> dans index.html. */
-  --color-v1-bg: #0b0b0f;
-  --color-v1-surface: #15151c;
-  --color-v1-surface-hi: #1e1e27;
-  --color-v1-line: #2c2c38;
-
-  /* --- v2 : jetons de docs/DESIGN.md §2 --- */
+  /* Jetons de docs/DESIGN.md §2. --color-canvas = theme-color (index.html, vite.config.ts) : vérifié par
+     tests/noHardcodedColors.test.ts. */
   --color-canvas: #e8e6e1;
   --color-surface: #f5f4f1;
   --color-surface-raised: #fbfaf8;
@@ -60,13 +54,18 @@
   --color-critical: #b3261e;
   --color-focus: #2f5fd0;
 
-  /* Attention : --font-sans remplace la police par défaut de Tailwind ; le body v1 garde system-ui (voir plus bas),
-     la police Figtree est appliquée par la racine des pages v2 (classe ds-page). */
+  /* Attention : --font-sans remplace la police par défaut de Tailwind ; le body garde system-ui (voir plus bas),
+     la police Figtree est appliquée par la racine des pages (classe ds-page). */
   --font-display: 'Archivo Variable', Archivo, 'Arial Narrow', system-ui, sans-serif;
   --font-sans: 'Figtree Variable', Figtree, system-ui, -apple-system, sans-serif;
 
   /* Styles de texte : `text-<nom>` règle taille, interligne, graisse et crénage. La famille s'ajoute à part
      (`font-display` pour display-xl, display-l, number-l, title ; `font-sans` pour le reste). */
+  /* Minuteur de repos : le plus grand chiffre de l'app, lisible à 1 m. */
+  --text-display-2xl: 76px;
+  --text-display-2xl--line-height: 76px;
+  --text-display-2xl--font-weight: 800;
+  --text-display-2xl--letter-spacing: -0.02em;
   --text-display-xl: 64px;
   --text-display-xl--line-height: 64px;
   --text-display-xl--font-weight: 800;
@@ -75,15 +74,27 @@
   --text-display-l--line-height: 38px;
   --text-display-l--font-weight: 800;
   --text-display-l--letter-spacing: -0.015em;
+  /* Titre de l'aperçu de séance. */
+  --text-display-m: 30px;
+  --text-display-m--line-height: 34px;
+  --text-display-m--font-weight: 800;
+  --text-display-m--letter-spacing: -0.015em;
   --text-number-l: 28px;
   --text-number-l--line-height: 32px;
   --text-number-l--font-weight: 700;
+  --text-number-m: 26px;
+  --text-number-m--line-height: 30px;
+  --text-number-m--font-weight: 700;
   --text-title: 20px;
   --text-title--line-height: 26px;
   --text-title--font-weight: 700;
   --text-headline: 17px;
   --text-headline--line-height: 22px;
   --text-headline--font-weight: 600;
+  /* Texte courant agrandi du mode séance (étapes, consignes). */
+  --text-lead: 20px;
+  --text-lead--line-height: 28px;
+  --text-lead--font-weight: 400;
   --text-body: 15px;
   --text-body--line-height: 22px;
   --text-body--font-weight: 400;
@@ -94,6 +105,10 @@
   --text-input: 16px;
   --text-input--line-height: 22px;
   --text-input--font-weight: 400;
+  /* Boutons secondaires et segments : un cran sous body. */
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--font-weight: 400;
   --text-caption: 13px;
   --text-caption--line-height: 18px;
   --text-caption--font-weight: 500;
@@ -101,17 +116,19 @@
   --text-label--line-height: 14px;
   --text-label--font-weight: 700;
   --text-label--letter-spacing: 0.06em;
+  /* Libellés de la barre d'onglets et légendes d'anneau (sans capitales). */
+  --text-tiny: 11px;
+  --text-tiny--line-height: 14px;
+  --text-tiny--font-weight: 600;
   /* Étiquettes de grille (jours du calendrier) : plus petit que `label`, sans capitales. */
   --text-micro: 10px;
   --text-micro--line-height: 12px;
 
-  /* Rayons : préfixe « ds » car --radius-sm/md/lg/xl sont ceux de Tailwind, utilisés par les écrans v1
-     (rounded-xl…) qui doivent rester identiques. À renommer en R5. */
-  --radius-ds-sm: 10px;
-  --radius-ds-md: 16px;
-  --radius-ds-lg: 24px;
-  --radius-ds-xl: 32px;
-  --radius-ds-pill: 999px;
+  /* Rayons de DESIGN.md §2, sur l'échelle standard de Tailwind (rounded-sm|md|lg|xl ; rounded-full pour les pastilles). */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
 
   --shadow-card: 0 1px 2px rgb(29 28 26 / 0.06), 0 6px 18px rgb(29 28 26 / 0.05);
   --shadow-float: 0 10px 30px rgb(29 28 26 / 0.16);
@@ -139,6 +156,32 @@
   color: var(--color-on-inverse);
   font-family: var(--font-sans);
   color-scheme: dark;
+}
+
+/* Remplissage de <main> : marge de page plus zones de sécurité haut, gauche et droite (le bas est posé par
+   TabsLayout, selon la barre d'onglets). */
+@utility ds-main-pad {
+  padding-top: var(--page-pad-top);
+  padding-left: var(--page-pad-left);
+  padding-right: var(--page-pad-right);
+}
+
+/* Rangée pleine largeur dans une page : déborde du remplissage de <main> (marge latérale seulement) et le
+   restitue en padding, pour que le contenu défilant ou collant touche les bords sans décaler son premier élément. */
+@utility ds-bleed {
+  margin-inline: calc(-1 * var(--page-gutter));
+  padding-inline: var(--page-gutter);
+}
+
+/* Bandeau collé tout en haut, sur toute la largeur, zones de sécurité comprises (caméra de la recette par scan).
+   `top` négatif : le bloc de référence d'un `sticky` est le contenu de <main>, remplissage exclu. */
+@utility ds-bleed-edge {
+  top: calc(-1 * var(--page-pad-top));
+  margin-top: calc(-1 * var(--page-pad-top));
+  margin-left: calc(-1 * var(--page-pad-left));
+  margin-right: calc(-1 * var(--page-pad-right));
+  padding-left: var(--page-pad-left);
+  padding-right: var(--page-pad-right);
 }
 
 /* Transitions de 200 ms ease-out ; avec prefers-reduced-motion : fondu de 100 ms (DESIGN.md §3). */
@@ -169,15 +212,24 @@
 }
 
 :root {
-  color-scheme: dark;
-  background-color: var(--color-v1-bg);
-  color: #f4f4f5;
+  /* Clair aussi pour les feuilles montées dans document.body (sélecteurs natifs date/select). */
+  color-scheme: light;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+
+  /* Marge latérale des pages (<main>, TabsLayout) et décalages qui en dérivent. Une seule définition : les
+     rangées pleine largeur (`ds-bleed`) et le bandeau caméra de la recette par scan s'y couplent. */
+  --page-gutter: 1rem;
+  --page-pad-top: calc(env(safe-area-inset-top) + var(--page-gutter));
+  --page-pad-left: calc(env(safe-area-inset-left) + var(--page-gutter));
+  --page-pad-right: calc(env(safe-area-inset-right) + var(--page-gutter));
 }
 
 html,
 body,
 #root {
   height: 100%;
+  background-color: var(--color-canvas);
 }
 
 /* Le document ne défile jamais : seul <main> défile. Sinon iOS (mode standalone) fait rebondir toute la page
@@ -190,7 +242,7 @@ body {
 
 body {
   margin: 0;
-  background-color: var(--color-v1-bg);
+  background-color: var(--color-canvas);
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;

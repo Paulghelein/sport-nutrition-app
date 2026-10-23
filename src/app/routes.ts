@@ -56,3 +56,22 @@ export const FOODS_PATH = `${NUTRITION_PATH}/aliments`
 export const NEW_FOOD_PATH = `${FOODS_PATH}/nouveau`
 export const foodPath = (id: string): string => `${FOODS_PATH}/${id}`
 export const editFoodPath = (id: string): string => `${FOODS_PATH}/${id}/modifier`
+
+/** Bibliothèque : nouvel exercice, exercices supprimés ; réglages : bloc de sauvegarde. */
+export const NEW_EXERCISE_PATH = `${LIBRARY_PATH}/nouveau`
+export const DELETED_EXERCISES_PATH = `${LIBRARY_PATH}/supprimes`
+export const BACKUP_PATH = `${SETTINGS_PATH}#sauvegarde`
+
+/**
+ * Motifs de route de React Router (`:id`) : uniquement pour les `<Route path>` de App.tsx. Pour naviguer,
+ * utiliser les fonctions `…Path(id)` ci-dessus.
+ */
+export const EXERCISE_ROUTE = `${LIBRARY_PATH}/:id`
+export const EDIT_EXERCISE_ROUTE = `${LIBRARY_PATH}/:id/modifier`
+export const RECAP_ROUTE = `${RECAP_PATH}/:id`
+export const HISTORY_DETAIL_ROUTE = `${HISTORY_PATH}/:id`
+export const FOOD_ROUTE = `${FOODS_PATH}/:id`
+export const EDIT_FOOD_ROUTE = `${FOODS_PATH}/:id/modifier`
+export const RECIPE_ROUTE = `${RECIPES_PATH}/:id`
+export const EDIT_RECIPE_ROUTE = `${RECIPES_PATH}/:id/modifier`
+export const COOK_ROUTE = `${RECIPES_PATH}/:id/cuisine`

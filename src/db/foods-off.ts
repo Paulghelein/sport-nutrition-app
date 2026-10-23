@@ -117,7 +117,8 @@ export async function cacheOffFoodWithPhoto(
     const row = await cacheOffFood(food)
     if (photo !== null && bytes !== null) {
       if (row.source === 'user') {
-        if (!(await db.foodPhotos.get(row.id))) await db.foodPhotos.put(photoRow(row.id, photo.mime, bytes, now))
+        if (!(await db.foodPhotos.get(row.id)))
+          await db.foodPhotos.put(photoRow(row.id, photo.mime, bytes, now))
       } else {
         await db.foodPhotos.put(photoRow(row.id, photo.mime, bytes, now))
       }

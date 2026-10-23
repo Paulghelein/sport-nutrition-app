@@ -68,7 +68,7 @@ export interface ExerciseThumbProps {
   className?: string
 }
 
-/** Miniature d'exercice : carré radius ds-sm, fond surface (ou on-inverse/6 en sombre), carte musculaire centrée. */
+/** Miniature d'exercice : carré rayon sm, fond surface (ou on-inverse/6 en sombre), carte musculaire centrée. */
 export function ExerciseThumb({
   primary,
   view,
@@ -80,7 +80,7 @@ export function ExerciseThumb({
   return (
     <div
       className={cx(
-        'grid shrink-0 place-items-center rounded-ds-sm',
+        'grid shrink-0 place-items-center rounded-sm',
         tone === 'dark' ? 'bg-on-inverse/6' : background === 'canvas' ? 'bg-canvas' : 'bg-surface',
         className,
       )}

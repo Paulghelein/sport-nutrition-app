@@ -61,7 +61,12 @@ describe('nutritionWeek', () => {
 describe('nutritionWeek : bornes', () => {
   it('entrées avant la période ignorées, bornes from/to incluses', () => {
     const w = nutritionWeek(
-      [e('2026-10-04', 5000, 99), e('2026-10-05', 3000, 100), e('2026-10-11', 3000, 200), e('2026-10-12', 1, 1)],
+      [
+        e('2026-10-04', 5000, 99),
+        e('2026-10-05', 3000, 100),
+        e('2026-10-11', 3000, 200),
+        e('2026-10-12', 1, 1),
+      ],
       '2026-10-05',
       '2026-10-11',
       T,

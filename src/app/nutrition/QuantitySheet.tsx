@@ -9,8 +9,9 @@ import { Button } from '../../ui/kit/Button'
 import { DecimalField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { Sheet } from '../../ui/kit/Sheet'
+import { formatDecimal } from '../../ui/kit/format'
 import { foodPath } from '../routes'
-import { fmtG, macroLine } from './format'
+import { macroLine } from './format'
 
 /** Quantité en grammes d'un aliment : raccourcis de portion, aperçu des macros en direct, favori. */
 export function QuantitySheet({
@@ -71,7 +72,7 @@ export function QuantitySheet({
       <div className="flex items-center justify-between gap-2">
         <Link
           to={`${foodPath(food.id)}${contextSearch}`}
-          className="focus-ring flex min-h-11 items-center rounded-ds-pill text-body-strong text-ember-ink"
+          className="focus-ring flex min-h-11 items-center rounded-full text-body-strong text-ember-ink"
         >
           Voir la fiche
         </Link>
@@ -79,7 +80,7 @@ export function QuantitySheet({
           type="button"
           aria-pressed={favorite}
           onClick={() => void toggleFavorite()}
-          className="focus-ring flex min-h-11 items-center gap-2 rounded-ds-pill px-3 text-body-strong text-ink active:opacity-70"
+          className="focus-ring flex min-h-11 items-center gap-2 rounded-full px-3 text-body-strong text-ink active:opacity-70"
         >
           <Star
             size={22}
@@ -105,7 +106,9 @@ export function QuantitySheet({
             aria-pressed={valid && value === g}
             onClick={() => setGrams(toInputNumber(g))}
           >
-            {i === 0 && g === food.defaultPortionG ? `Portion ${fmtG(g)} g` : `${fmtG(g)} g`}
+            {i === 0 && g === food.defaultPortionG
+              ? `Portion ${formatDecimal(g)} g`
+              : `${formatDecimal(g)} g`}
           </Button>
         ))}
       </div>

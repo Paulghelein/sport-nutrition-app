@@ -65,11 +65,11 @@ export function Notice({ notice }: { notice: NoticeState | null }) {
     return () => clearTimeout(t)
   }, [notice, failed])
   const actionClass =
-    'focus-ring flex min-h-11 items-center rounded-ds-pill px-3 text-body-strong text-ember-ink active:opacity-70 disabled:text-ink-muted'
+    'focus-ring flex min-h-11 items-center rounded-full px-3 text-body-strong text-ember-ink active:opacity-70 disabled:text-ink-muted'
   return (
     <div role="status" aria-live="polite">
       {notice ? (
-        <div className="flex flex-wrap items-center justify-between gap-x-3 rounded-ds-md bg-surface py-1 pl-3.5 pr-1.5 shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 rounded-md bg-surface py-1 pl-3.5 pr-1.5 shadow-card">
           <p className="m-0 flex min-w-0 items-center gap-2.5 py-2 text-body">
             <CheckCircle2 size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-good" />
             <span>{undone ? 'Annulé.' : failed ? 'Annulation impossible. Réessaie.' : notice.message}</span>
@@ -116,13 +116,13 @@ export function CiqualBanner({ failed, onRetry }: { failed: boolean; onRetry: ()
   return (
     <div
       role="alert"
-      className="flex items-center justify-between gap-3 rounded-ds-md bg-surface py-1 pl-3.5 pr-1.5 text-body shadow-card"
+      className="flex items-center justify-between gap-3 rounded-md bg-surface py-1 pl-3.5 pr-1.5 text-body shadow-card"
     >
       <span className="py-2">Base d’aliments non chargée : les macros sont incomplètes.</span>
       <button
         type="button"
         onClick={onRetry}
-        className="focus-ring min-h-11 shrink-0 rounded-ds-pill px-3 text-body-strong text-ember-ink active:opacity-70"
+        className="focus-ring min-h-11 shrink-0 rounded-full px-3 text-body-strong text-ember-ink active:opacity-70"
       >
         Réessayer
       </button>
@@ -133,7 +133,7 @@ export function CiqualBanner({ failed, onRetry }: { failed: boolean; onRetry: ()
 /** Petite étiquette (Perso, Modifiée, tags). */
 export function Badge({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-ds-pill bg-surface-sunken px-2.5 py-0.5 text-caption text-ink">
+    <span className="inline-flex shrink-0 items-center rounded-full bg-surface-sunken px-2.5 py-0.5 text-caption text-ink">
       {children}
     </span>
   )
@@ -155,7 +155,7 @@ export function FilterChip({
       aria-pressed={pressed}
       onClick={onClick}
       className={cx(
-        'focus-ring min-h-11 shrink-0 rounded-ds-pill px-4 text-body-strong',
+        'focus-ring min-h-11 shrink-0 rounded-full px-4 text-body-strong',
         pressed ? 'bg-ember-soft font-bold text-ink ring-2 ring-ember' : 'bg-surface text-ink shadow-card',
       )}
     >

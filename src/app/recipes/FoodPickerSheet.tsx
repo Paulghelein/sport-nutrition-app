@@ -3,8 +3,8 @@ import { searchFoodIndex } from '../../domain/nutrition'
 import type { FoodIndex } from '../../domain/nutrition'
 import type { Food } from '../../types'
 import { Card, ListRow, Sheet } from '../../ui/kit'
-import { fmtG, fmtInt } from '../nutrition/format'
 import { SearchBox } from '../../ui/kit/SearchBox'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 
 /** Recherche d'un aliment (Ciqual ou perso) pour relier un ingrédient. */
 export function FoodPickerSheet({
@@ -42,10 +42,10 @@ export function FoodPickerSheet({
                 <li key={food.id}>
                   <ListRow
                     title={food.name}
-                    subtitle={`P ${fmtG(food.per100g.protein)} · G ${fmtG(food.per100g.carbs)} · L ${fmtG(food.per100g.fat)} / 100 g`}
+                    subtitle={`P ${formatDecimal(food.per100g.protein)} · G ${formatDecimal(food.per100g.carbs)} · L ${formatDecimal(food.per100g.fat)} / 100 g`}
                     trailing={
                       <span className="font-display text-body-strong tabular-nums">
-                        {fmtInt(food.per100g.kcal)} kcal
+                        {formatInt(food.per100g.kcal)} kcal
                       </span>
                     }
                     onPress={() => onPick(food)}

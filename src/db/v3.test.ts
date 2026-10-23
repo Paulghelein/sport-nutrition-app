@@ -15,7 +15,13 @@ import { draftToRecipeInput } from '../domain/nutrition/scan'
 import { createFood, deleteFood, restoreCiqualFood, updateFood } from './nutrition'
 import { createRecipe, createRecipeWithFridge, listFridge, listRecipeRows } from './recipes'
 import { ValidationError } from './repositories'
-import { exerciseStateSchema, foodSchema, recipeSchema, sessionSchema, sessionTemplateSchema } from './schemas'
+import {
+  exerciseStateSchema,
+  foodSchema,
+  recipeSchema,
+  sessionSchema,
+  sessionTemplateSchema,
+} from './schemas'
 import { NOW, makeFullTables } from './testFixtures'
 import { checkFoodInput, validateRecipeInput } from './validation'
 
@@ -85,10 +91,23 @@ describe('photos des aliments', () => {
 
   it('saveFoodPhoto refuse un aliment Ciqual ; restoreCiqualFood supprime la photo orpheline', async () => {
     const per100g = off().per100g
-    const ciq: Food = { id: 'ciq-1', name: 'Pomme', source: 'ciqual', ciqualCode: '1', per100g, favorite: false, updatedAt: NOW }
+    const ciq: Food = {
+      id: 'ciq-1',
+      name: 'Pomme',
+      source: 'ciqual',
+      ciqualCode: '1',
+      per100g,
+      favorite: false,
+      updatedAt: NOW,
+    }
     await db.foods.put(ciq)
     await rejects(saveFoodPhoto(ciq.id, photo()))
-    await db.foodPhotos.put({ foodId: ciq.id, mime: 'image/png', bytes: new Uint8Array(PNG).buffer, fetchedAt: NOW })
+    await db.foodPhotos.put({
+      foodId: ciq.id,
+      mime: 'image/png',
+      bytes: new Uint8Array(PNG).buffer,
+      fetchedAt: NOW,
+    })
     await restoreCiqualFood(ciq.id)
     expect(await db.foodPhotos.count()).toBe(0)
   })
@@ -280,7 +299,9 @@ describe('nouveaux champs optionnels (schémas et règles)', () => {
     if (tpl) {
       const block = { exerciseId: 'e', sets: 3, restSec: 30, setType: 'timedMax', lastSetAmrap: true }
       expect(sessionTemplateSchema.safeParse({ ...tpl, blocks: [block] }).success).toBe(true)
-      expect(sessionTemplateSchema.safeParse({ ...tpl, blocks: [{ ...block, setType: 'x' }] }).success).toBe(false)
+      expect(sessionTemplateSchema.safeParse({ ...tpl, blocks: [{ ...block, setType: 'x' }] }).success).toBe(
+        false,
+      )
     }
   })
 
@@ -307,7 +328,15 @@ describe('nouveaux champs optionnels (schémas et règles)', () => {
     expect(cleared.packageG).toBeUndefined()
     expect((await db.foods.get(f.id))?.packageG).toBeUndefined()
     await rejects(updateFood(f, { name: 'Skyr', per100g, packageG: 0 }))
-    const ciqual: Food = { id: 'ciq-1', name: 'Pomme', source: 'ciqual', ciqualCode: '1', per100g, favorite: false, updatedAt: NOW }
+    const ciqual: Food = {
+      id: 'ciq-1',
+      name: 'Pomme',
+      source: 'ciqual',
+      ciqualCode: '1',
+      per100g,
+      favorite: false,
+      updatedAt: NOW,
+    }
     expect((await updateFood(ciqual, { name: 'Pomme', per100g, packageG: 300 }, NOW)).packageG).toBe(300)
   })
 
@@ -405,11 +434,21 @@ describe('createRecipeWithFridge (F4)', () => {
 
   it('refuse une recette invalide ou des portions incohérentes sans rien écrire', async () => {
     await rejects(
-      createRecipeWithFridge({ recipe: recipeInput({ name: ' ' }), fridgePortions: 2, preparedOn: '2026-03-01' }),
+      createRecipeWithFridge({
+        recipe: recipeInput({ name: ' ' }),
+        fridgePortions: 2,
+        preparedOn: '2026-03-01',
+      }),
     )
-    await rejects(createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: 7, preparedOn: '2026-03-01' }))
-    await rejects(createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: -1, preparedOn: '2026-03-01' }))
-    await rejects(createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: 1.5, preparedOn: '2026-03-01' }))
+    await rejects(
+      createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: 7, preparedOn: '2026-03-01' }),
+    )
+    await rejects(
+      createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: -1, preparedOn: '2026-03-01' }),
+    )
+    await rejects(
+      createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: 1.5, preparedOn: '2026-03-01' }),
+    )
     await rejects(createRecipeWithFridge({ recipe: recipeInput(), fridgePortions: 2, preparedOn: 'demain' }))
     expect(await db.recipes.count()).toBe(0)
     expect(await db.fridge.count()).toBe(0)
@@ -434,7 +473,15 @@ describe('createRecipeWithFridge (F4)', () => {
       servingUnit: 'muffins',
       meal: ['snack'],
       ingredients: [
-        { key: 'a', name: 'Flocons d’avoine', grams: 200, origin: 'scan', foodId: `off-${EAN}`, aisle: 'grocery', packageG: 500 },
+        {
+          key: 'a',
+          name: 'Flocons d’avoine',
+          grams: 200,
+          origin: 'scan',
+          foodId: `off-${EAN}`,
+          aisle: 'grocery',
+          packageG: 500,
+        },
         { key: 'b', name: 'Pomme', grams: 150, origin: 'ciqual', ciqualCode: '13039', aisle: 'produce' },
       ],
     })

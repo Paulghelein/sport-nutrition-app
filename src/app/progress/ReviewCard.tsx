@@ -4,11 +4,12 @@ import { buildReviewMessage } from '../../domain/claude/context'
 import { formatDateFr, addDays } from '../../domain/shared/dates'
 import { formatSignedKg } from '../../ui'
 import { Button, Card, StatTile } from '../../ui/kit'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import type { WeeklyReview } from '../../types'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { reviewData } from '../claude/inputs'
 import { Note, ScreenSection, Unit } from './parts'
-import { formatNumber, personalRecordText } from './progressModel'
+import { personalRecordText } from './progressModel'
 
 /** Carte du lundi : bilan de la semaine écoulée. `nameOf` : nom d'un exercice (supprimés compris). */
 export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (id: string) => string }) {
@@ -43,7 +44,7 @@ export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (
             label="Minutes"
             value={
               <>
-                {formatNumber(review.minutes)}
+                {formatDecimal(review.minutes, 2)}
                 {unit('min')}
               </>
             }
@@ -71,7 +72,7 @@ export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (
                 '—'
               ) : (
                 <>
-                  {formatNumber(Math.round(n.avgKcal))}
+                  {formatInt(n.avgKcal)}
                   {unit('kcal')}
                 </>
               )
@@ -85,7 +86,7 @@ export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (
                 '—'
               ) : (
                 <>
-                  {formatNumber(Math.round(n.avgProtein))}
+                  {formatInt(n.avgProtein)}
                   {unit('g')}
                 </>
               )
@@ -106,7 +107,7 @@ export function ReviewCard({ review, nameOf }: { review: WeeklyReview; nameOf: (
             </ul>
           )}
         </div>
-        <p className="m-0 rounded-ds-md bg-ember-soft px-3.5 py-3 text-body text-ink">
+        <p className="m-0 rounded-md bg-ember-soft px-3.5 py-3 text-body text-ink">
           {review.suggestion.message}
         </p>
         {error ? (

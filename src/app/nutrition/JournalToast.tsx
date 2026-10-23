@@ -23,7 +23,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
     <div role="status" aria-live="polite">
       {toast ? (
         <div
-          className={`mb-2 flex items-center justify-between gap-3 rounded-ds-md py-1 pl-4 pr-2 font-sans text-body shadow-float ${failed ? 'bg-critical text-on-inverse' : 'bg-inverse text-on-inverse'}`}
+          className={`mb-2 flex items-center justify-between gap-3 rounded-md py-1 pl-4 pr-2 font-sans text-body shadow-float ${failed ? 'bg-critical text-on-inverse' : 'bg-inverse text-on-inverse'}`}
         >
           <span className="min-w-0 py-2">{failed ? 'Annulation impossible. Réessaie.' : toast.message}</span>
           {toast.undo ? (
@@ -40,7 +40,7 @@ export function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismis
                   }
                 })()
               }}
-              className="focus-ring min-h-11 shrink-0 rounded-ds-pill px-4 text-body-strong text-ember-soft active:opacity-70"
+              className="focus-ring min-h-11 shrink-0 rounded-full px-4 text-body-strong text-ember-soft active:opacity-70"
             >
               {failed ? 'Réessayer' : 'Annuler'}
             </button>

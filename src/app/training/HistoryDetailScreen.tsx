@@ -159,7 +159,7 @@ function Editor({
           maxLength={1000}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="focus-ring w-full rounded-ds-md bg-surface px-3.5 py-2.5 text-input text-ink shadow-card"
+          className="focus-ring w-full rounded-md bg-surface px-3.5 py-2.5 text-input text-ink shadow-card"
         />
       </Section>
       <div className="mt-5 flex flex-col gap-3">

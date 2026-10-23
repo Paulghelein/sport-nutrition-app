@@ -40,7 +40,7 @@ export function TechniqueSheet({ exercise, onClose }: { exercise: Exercise; onCl
         <div
           role="img"
           aria-label={exercise.name}
-          className="rounded-ds-md bg-canvas p-3 text-ink [&>svg]:block [&>svg]:h-auto [&>svg]:max-h-56 [&>svg]:w-full"
+          className="rounded-md bg-canvas p-3 text-ink [&>svg]:block [&>svg]:h-auto [&>svg]:max-h-56 [&>svg]:w-full"
           // Contenu de confiance embarqué dans l'app (src/content), jamais un texte saisi.
           dangerouslySetInnerHTML={{ __html: svg }}
         />

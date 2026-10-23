@@ -52,11 +52,7 @@ export function RestTimer({
         )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-        <span
-          role="timer"
-          aria-label={ariaLabel}
-          className="font-display text-[76px] font-extrabold leading-[76px] tracking-[-0.02em] tabular-nums"
-        >
+        <span role="timer" aria-label={ariaLabel} className="font-display text-display-2xl tabular-nums">
           {clock(remainingSec)}
         </span>
         {caption ? <span className="text-caption font-semibold text-on-inverse-muted">{caption}</span> : null}

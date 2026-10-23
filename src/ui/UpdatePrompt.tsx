@@ -74,7 +74,7 @@ export function UpdatePrompt() {
         paddingRight: 'calc(env(safe-area-inset-right) + 1rem)',
       }}
     >
-      <div className="pointer-events-auto mx-auto flex max-w-xl flex-col gap-3 rounded-ds-lg bg-inverse p-4 text-on-inverse shadow-float">
+      <div className="pointer-events-auto mx-auto flex max-w-xl flex-col gap-3 rounded-lg bg-inverse p-4 text-on-inverse shadow-float">
         <p className="m-0 text-body-strong">Nouvelle version disponible.</p>
         <div className="flex gap-2">
           <Button variant="inverse" fullWidth onClick={() => setDismissed(true)}>

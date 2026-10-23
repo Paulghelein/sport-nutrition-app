@@ -13,9 +13,33 @@ const TRAILING = /[.,;:!?)\]}>»"'…]+$/
  * un paramètre inconnu (YouTube `v`, `list`, `t` doivent survivre).
  */
 const TRACKING_PARAMS = new Set([
-  '_t', '_r', '_d', 'igsh', 'igshid', 'si', 'fbclid', 'gclid', 'is_from_webapp', 'sender_device', 'sender_web_id',
-  'share_app_id', 'share_link_id', 'share_item_id', 'tt_from', 'u_code', 'user_id', 'sec_user_id', 'social_share_type',
-  'sharer_language', 'checksum', 'web_id', 'timestamp', 'refer', 'preview_pb', 'feature', 'pp',
+  '_t',
+  '_r',
+  '_d',
+  'igsh',
+  'igshid',
+  'si',
+  'fbclid',
+  'gclid',
+  'is_from_webapp',
+  'sender_device',
+  'sender_web_id',
+  'share_app_id',
+  'share_link_id',
+  'share_item_id',
+  'tt_from',
+  'u_code',
+  'user_id',
+  'sec_user_id',
+  'social_share_type',
+  'sharer_language',
+  'checksum',
+  'web_id',
+  'timestamp',
+  'refer',
+  'preview_pb',
+  'feature',
+  'pp',
 ])
 
 const isTracking = (name: string): boolean => name.startsWith('utm_') || TRACKING_PARAMS.has(name)

@@ -8,7 +8,7 @@ import { weekStartOf } from '../../domain/progress/regularity'
 import { addDays, daysBetween } from '../../domain/shared/dates'
 import type { DaySummaryView, WeekStripDay } from '../../ui/kit'
 import { longDateLabel, parseLocalNoon } from '../../ui/kit'
-import { formatNumber } from './format'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import type { DayActivity, LocalDate, MealSlot, PersonalRecord, Profile, WeighIn } from '../../types'
 
 /** Nombre de semaines du calendrier de l'écran Progrès. */
@@ -61,20 +61,20 @@ export const SLOT_LABEL: Record<MealSlot, string> = {
 export function recordValueText(r: PersonalRecord): string {
   switch (r.kind) {
     case 'load':
-      return `${formatNumber(r.value)} kg`
+      return `${formatDecimal(r.value, 2)} kg`
     case 'reps': {
       if (r.windowSec !== undefined) {
-        const at = r.loadKg !== undefined ? ` à ${formatNumber(r.loadKg)} kg` : ''
-        return `${formatNumber(r.value)} reps en ${formatNumber(r.windowSec)} s${at}`
+        const at = r.loadKg !== undefined ? ` à ${formatDecimal(r.loadKg, 2)} kg` : ''
+        return `${formatDecimal(r.value, 2)} reps en ${formatDecimal(r.windowSec, 2)} s${at}`
       }
       return r.loadKg !== undefined
-        ? `${formatNumber(r.loadKg)} kg × ${formatNumber(r.value)}`
-        : `max ${formatNumber(r.value)}`
+        ? `${formatDecimal(r.loadKg, 2)} kg × ${formatDecimal(r.value, 2)}`
+        : `max ${formatDecimal(r.value, 2)}`
     }
     case 'duration':
-      return `${formatNumber(r.value)} s${r.loadKg !== undefined ? ` à ${formatNumber(r.loadKg)} kg` : ''}`
+      return `${formatDecimal(r.value, 2)} s${r.loadKg !== undefined ? ` à ${formatDecimal(r.loadKg, 2)} kg` : ''}`
     case 'tonnage':
-      return `${formatNumber(Math.round(r.value))} kg au total`
+      return `${formatInt(r.value)} kg au total`
   }
 }
 

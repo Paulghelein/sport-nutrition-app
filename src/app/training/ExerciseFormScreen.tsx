@@ -14,22 +14,17 @@ import {
 } from '../../db'
 import { defaultLoadStep, emptyExerciseInput, toExerciseInput } from '../../domain/training'
 import type { ExerciseInput, LibraryExercise, MuscleGroup } from '../../types'
+import { equipmentChoices, errorMessage, levels, loadTypes, muscles, patterns } from '../../ui'
 import {
   canBeAmrap,
   clearExerciseDraft,
   draftToExercise,
-  equipmentChoices,
-  errorMessage,
   exerciseToDraft,
-  levels,
   loadExerciseDraft,
-  loadTypes,
-  muscles,
-  patterns,
   saveExerciseDraft,
   usesDuration,
-} from '../../ui'
-import type { ExerciseDraft } from '../../ui'
+} from '../../ui/exerciseDraft'
+import type { ExerciseDraft } from '../../ui/exerciseDraft'
 import { Button, Card, cx } from '../../ui/kit'
 import { CheckRow } from '../../ui/kit/CheckRow'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
@@ -69,7 +64,7 @@ function MuscleChips({
             <label
               key={m.value}
               className={cx(
-                'flex min-h-11 cursor-pointer items-center rounded-ds-pill px-4 text-body-strong text-ink',
+                'flex min-h-11 cursor-pointer items-center rounded-full px-4 text-body-strong text-ink',
                 'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus',
                 on ? 'bg-ember-soft ring-2 ring-ember' : 'bg-canvas',
               )}
@@ -179,7 +174,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
         </p>
       ) : null}
       {showRestored ? (
-        <div className="flex items-center justify-between gap-3 rounded-ds-md bg-ember-soft px-3.5 py-2.5 text-body text-ink">
+        <div className="flex items-center justify-between gap-3 rounded-md bg-ember-soft px-3.5 py-2.5 text-body text-ink">
           <span role="status">Brouillon retrouvé.</span>
           <button
             type="button"
@@ -365,7 +360,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
               maxLength={MAX_SETUP_LENGTH}
               value={draft.setup}
               onChange={(e) => patch({ setup: e.target.value })}
-              className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-2.5 text-input text-ink"
+              className="focus-ring w-full rounded-md bg-canvas px-3.5 py-2.5 text-input text-ink"
             />
           </div>
           <LineListEditor

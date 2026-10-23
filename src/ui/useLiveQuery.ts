@@ -18,7 +18,10 @@ export function useLiveQuery<T>(query: () => Promise<T>, deps: DependencyList): 
   useEffect(
     () => {
       // Nouvelle requête : on repasse en chargement (setState dans un callback différé, pas dans le corps de l'effet).
-      const timer = setTimeout(() => setState((prev) => (prev.loading ? prev : { ...prev, loading: true })), 0)
+      const timer = setTimeout(
+        () => setState((prev) => (prev.loading ? prev : { ...prev, loading: true })),
+        0,
+      )
       const stop = observe(
         query,
         (data) => {

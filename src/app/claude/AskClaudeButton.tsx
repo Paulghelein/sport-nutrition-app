@@ -29,7 +29,7 @@ interface Props {
 }
 
 const linkClass =
-  'focus-ring flex min-h-11 items-center justify-center rounded-ds-md text-body-strong text-ember-ink underline underline-offset-4'
+  'focus-ring flex min-h-11 items-center justify-center rounded-md text-body-strong text-ember-ink underline underline-offset-4'
 
 function AskSheet({
   kind,
@@ -67,7 +67,7 @@ function AskSheet({
                 placeholder={DEFAULT_REQUESTS[kind]}
                 aria-describedby="claude-request-hint"
                 autoComplete="off"
-                className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-sans text-input text-ink placeholder:text-ink-muted"
+                className="focus-ring w-full rounded-md bg-canvas px-3.5 py-3 font-sans text-input text-ink placeholder:text-ink-muted"
               />
               <p id="claude-request-hint" className="mt-1.5 text-caption text-ink-muted">
                 Laisse vide pour poser la question proposée.

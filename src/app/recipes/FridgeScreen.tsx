@@ -11,13 +11,15 @@ import { buttonClass } from '../../ui/kit/buttonClass'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
+import { formatDecimal } from '../../ui/kit/format'
 import { NutritionTabs } from '../nutrition/NutritionTabs'
-import { expiryLabel, fmtPortions, portionUnit, portionsText } from './format'
+import { expiryLabel, portionUnit, portionsText } from './format'
 import { Loading, Notice, RECIPES_PATH } from './parts'
 import type { NoticeState } from './parts'
 import { loggedNotice } from './loggedNotice'
 import { RecipeLogSheet } from './RecipeLogSheet'
-import { useFridge, useRecipeLibrary } from './useRecipes'
+import { fridgePortionsTotal, useFridge } from './useFridge'
+import { useRecipeLibrary } from './useRecipes'
 
 const roundBtn =
   'focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-canvas text-ink active:opacity-70 disabled:text-ink-faint'
@@ -90,7 +92,7 @@ export default function FridgeScreen() {
       <header>
         <h1 className="m-0 font-display text-display-l">Frigo</h1>
       </header>
-      <NutritionTabs current="fridge" />
+      <NutritionTabs current="fridge" fridgePortions={fridgePortionsTotal(items)} />
       <p className="m-0 text-body text-ink-muted">
         Les portions préparées à l’avance. Loguer une portion depuis ici la retire du frigo.
       </p>
@@ -130,7 +132,7 @@ export default function FridgeScreen() {
                     onClick={() => setExpiry(v)}
                     aria-label={`Changer la date limite de ${v.recipe?.name ?? 'cette ligne'}`}
                     className={cx(
-                      'focus-ring -my-1 flex min-h-11 w-full items-center justify-between gap-2 rounded-ds-sm text-left text-body',
+                      'focus-ring -my-1 flex min-h-11 w-full items-center justify-between gap-2 rounded-sm text-left text-body',
                       v.expired ? 'font-bold text-critical' : 'text-ink',
                     )}
                   >
@@ -161,7 +163,7 @@ export default function FridgeScreen() {
                       className="text-center font-display text-display-l tabular-nums"
                       data-testid="fridge-left"
                     >
-                      {fmtPortions(left)}
+                      {formatDecimal(left, 2)}
                       <span className="block font-sans text-caption font-medium text-ink-muted">
                         {portionUnit(left, v.recipe?.servingUnit)} au frigo
                       </span>

@@ -152,7 +152,8 @@ export const squatExercises: Exercise[] = [
     compound: true,
     unilateral: true,
     loadStepKg: 2,
-    progressionCriteria: '3 × 10 propres par côté de rack, même charge sur 2 séances → augmente la charge de 2 kg',
+    progressionCriteria:
+      '3 × 10 propres par côté de rack, même charge sur 2 séances → augmente la charge de 2 kg',
     technique: {
       setup:
         'Monte le kettlebell en position rack : poignée dans la main, kettlebell posé sur l’avant-bras et l’épaule, coude collé aux côtes. Pieds à la largeur des épaules.',

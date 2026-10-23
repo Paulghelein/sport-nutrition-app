@@ -26,7 +26,7 @@ function LinkRow({ to, title, subtitle }: { to: string; title: string; subtitle?
   return (
     <Link
       to={to}
-      className="focus-ring flex min-h-12 items-center gap-3 rounded-ds-sm py-1.5 text-ink no-underline active:opacity-70"
+      className="focus-ring flex min-h-12 items-center gap-3 rounded-sm py-1.5 text-ink no-underline active:opacity-70"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-px">
         <span className="text-headline">{title}</span>

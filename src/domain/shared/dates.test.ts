@@ -29,7 +29,7 @@ describe('addDays / daysBetween', () => {
     expect(addDays('2026-03-01', -1)).toBe('2026-02-28')
     expect(addDays('2026-10-15', 0)).toBe('2026-10-15')
   })
-  it('changement d\'heure fin octobre (Europe/Paris : 2026-10-25)', () => {
+  it("changement d'heure fin octobre (Europe/Paris : 2026-10-25)", () => {
     expect(addDays('2026-10-24', 1)).toBe('2026-10-25')
     expect(addDays('2026-10-25', 1)).toBe('2026-10-26')
     expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2)
@@ -44,7 +44,7 @@ describe('addDays / daysBetween', () => {
 })
 
 describe('ageOn', () => {
-  it('veille et jour d\'anniversaire', () => {
+  it("veille et jour d'anniversaire", () => {
     expect(ageOn('2000-10-15', '2026-10-14')).toBe(25)
     expect(ageOn('2000-10-15', '2026-10-15')).toBe(26)
   })

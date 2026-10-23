@@ -6,7 +6,16 @@ import { macrosFor, sumMacros } from '../src/domain/nutrition'
 import type { Aisle, CiqualDataset, Per100g, Recipe } from '../src/types'
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
-const AISLES: readonly Aisle[] = ['produce', 'butcher', 'fish', 'dairy', 'grocery', 'frozen', 'bakery', 'other']
+const AISLES: readonly Aisle[] = [
+  'produce',
+  'butcher',
+  'fish',
+  'dairy',
+  'grocery',
+  'frozen',
+  'bakery',
+  'other',
+]
 
 const ciqual = ciqualJson as unknown as CiqualDataset
 const byCode = new Map(ciqual.foods.map((r) => [r[0], r] as const))
@@ -68,9 +77,14 @@ describe('recettes de départ', () => {
   it('tableau récapitulatif', () => {
     const rows = SEED_RECIPES.map((r) => {
       const m = perServing(r)
-      return { id: r.id, meal: r.meal.join('+'), kcal: Math.round(m.kcal), prot: Math.round(m.protein * 10) / 10 }
+      return {
+        id: r.id,
+        meal: r.meal.join('+'),
+        kcal: Math.round(m.kcal),
+        prot: Math.round(m.protein * 10) / 10,
+      }
     })
-    console.log(rows.map((r) => `${r.id} [${r.meal}] ${r.kcal} kcal ${r.prot} g`).join("\n"))
+    console.log(rows.map((r) => `${r.id} [${r.meal}] ${r.kcal} kcal ${r.prot} g`).join('\n'))
     expect(rows).toHaveLength(SEED_RECIPES.length)
   })
 })

@@ -4,7 +4,12 @@ import type { Equipment, SessionBlock, SetEntry } from '../src/types'
 import type { SetInput } from '../src/types/guided'
 
 const alertEnd = vi.hoisted(() => vi.fn())
-vi.mock('../src/app/training/alerts', () => ({ alertEnd, unlockAudio: vi.fn(), beep: vi.fn(), vibrate: vi.fn() }))
+vi.mock('../src/app/training/alerts', () => ({
+  alertEnd,
+  unlockAudio: vi.fn(),
+  beep: vi.fn(),
+  vibrate: vi.fn(),
+}))
 
 import type { StepInfo } from '../src/app/training/guidedInfo'
 import { RestView, SetView } from '../src/app/training/guidedViews'
@@ -151,7 +156,9 @@ describe('SetView : cibles tactiles de séance', () => {
 })
 
 describe('RestView', () => {
-  const rest = (over: { endsAt?: number; totalSec?: number; onAdjust?: () => void; onEnd?: () => void } = {}) =>
+  const rest = (
+    over: { endsAt?: number; totalSec?: number; onAdjust?: () => void; onEnd?: () => void } = {},
+  ) =>
     render(
       <RestView
         top={top}

@@ -71,7 +71,7 @@ export function ResultPanel({
     <section
       ref={ref}
       aria-label="Résultat"
-      className="fixed inset-x-0 bottom-0 z-50 rounded-t-ds-xl bg-surface-raised text-ink shadow-float"
+      className="fixed inset-x-0 bottom-0 z-50 rounded-t-xl bg-surface-raised text-ink shadow-float"
     >
       <div
         className="mx-auto flex max-w-xl flex-col gap-3 px-4 pt-4"
@@ -82,7 +82,7 @@ export function ResultPanel({
             type="button"
             onClick={onEdit}
             aria-label={`Ça donne ${servingsText}. Régler les portions et le frigo`}
-            className="focus-ring -ml-1 flex min-h-11 min-w-0 flex-col items-start justify-center rounded-ds-md px-1 text-left"
+            className="focus-ring -ml-1 flex min-h-11 min-w-0 flex-col items-start justify-center rounded-md px-1 text-left"
           >
             <span className="text-caption font-semibold text-ink-muted">Ça donne</span>
             <span className="flex items-center gap-1 font-display text-title font-extrabold">

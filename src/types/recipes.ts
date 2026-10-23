@@ -1,6 +1,16 @@
 // Recettes, frigo, liste de courses, import JSON (J6, SPEC §4.3, IMPORT_FORMAT.md).
 import type { Id, LocalDate } from './common'
-import type { Aisle, Food, FoodLogEntry, FridgeItem, Macros, MealSlot, Per100g, Recipe, ShoppingItem } from './nutrition'
+import type {
+  Aisle,
+  Food,
+  FoodLogEntry,
+  FridgeItem,
+  Macros,
+  MealSlot,
+  Per100g,
+  Recipe,
+  ShoppingItem,
+} from './nutrition'
 import type { ImportedExercise, ImportedExercisePreference, ImportedSessionPlan } from './claude'
 
 // ---------- Bibliothèque (seed + surcharges, comme les exercices) ----------

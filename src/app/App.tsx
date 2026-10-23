@@ -4,7 +4,41 @@ import { getSettings, requestPersistentStorage } from '../db'
 import { useLiveQuery } from '../ui'
 import { DEV_UI_ENABLED } from './devUi'
 import { Onboarding } from './Onboarding'
-import { DEV_UI_PATH, GUIDED_PATH, HOME_PATH, RECIPE_SCAN_PATH, VIDEO_RECIPE_PATH } from './routes'
+import {
+  ADD_FOOD_PATH,
+  CLAUDE_RESPONSE_PATH,
+  COOK_ROUTE,
+  DELETED_EXERCISES_PATH,
+  DEV_UI_PATH,
+  EDIT_EXERCISE_ROUTE,
+  EDIT_FOOD_ROUTE,
+  EDIT_RECIPE_ROUTE,
+  EXERCISE_ROUTE,
+  FOOD_ROUTE,
+  FRIDGE_PATH,
+  GUIDED_PATH,
+  HISTORY_DETAIL_ROUTE,
+  HISTORY_PATH,
+  HOME_PATH,
+  IMPORT_PATH,
+  LIBRARY_PATH,
+  NEW_EXERCISE_PATH,
+  NEW_FOOD_PATH,
+  NEW_RECIPE_PATH,
+  NUTRITION_PATH,
+  PREVIEW_PATH,
+  PROGRESS_PATH,
+  RECAP_ROUTE,
+  RECIPES_PATH,
+  RECIPE_ROUTE,
+  RECIPE_SCAN_PATH,
+  SCAN_PATH,
+  SETTINGS_PATH,
+  SHOPPING_PATH,
+  TEMPLATES_PATH,
+  TRAINING_PATH,
+  VIDEO_RECIPE_PATH,
+} from './routes'
 import { SessionScreen } from './screens/SessionScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { TabsLayout } from './shell/TabsLayout'
@@ -57,34 +91,34 @@ function Tabs() {
       <Suspense fallback={<div aria-busy="true" className="min-h-40" />}>
         <Routes>
           <Route path={HOME_PATH} element={<TodayScreen />} />
-          <Route path="/entrainement" element={<SessionScreen />} />
-          <Route path="/entrainement/apercu" element={<PreviewScreen />} />
-          <Route path="/entrainement/exercices" element={<LibraryScreen />} />
-          <Route path="/entrainement/exercices/nouveau" element={<ExerciseFormScreen />} />
-          <Route path="/entrainement/exercices/supprimes" element={<DeletedScreen />} />
-          <Route path="/entrainement/exercices/:id" element={<ExerciseScreen />} />
-          <Route path="/entrainement/exercices/:id/modifier" element={<ExerciseFormScreen />} />
-          <Route path="/entrainement/recap/:id" element={<RecapScreen />} />
-          <Route path="/entrainement/historique" element={<HistoryScreen />} />
-          <Route path="/entrainement/historique/:id" element={<HistoryDetailScreen />} />
-          <Route path="/entrainement/modeles" element={<TemplatesScreen />} />
-          <Route path="/nutrition" element={<JournalScreen />} />
-          <Route path="/nutrition/ajouter" element={<AddFoodScreen />} />
-          <Route path="/nutrition/aliments/nouveau" element={<FoodFormScreen />} />
-          <Route path="/nutrition/aliments/:id" element={<FoodScreen />} />
-          <Route path="/nutrition/aliments/:id/modifier" element={<FoodFormScreen />} />
-          <Route path="/nutrition/recettes" element={<RecipesScreen />} />
-          <Route path="/nutrition/recettes/nouvelle" element={<RecipeFormScreen />} />
-          <Route path="/nutrition/recettes/:id" element={<RecipeScreen />} />
-          <Route path="/nutrition/recettes/:id/modifier" element={<RecipeFormScreen />} />
-          <Route path="/nutrition/recettes/:id/cuisine" element={<CookScreen />} />
-          <Route path="/nutrition/frigo" element={<FridgeScreen />} />
-          <Route path="/nutrition/courses" element={<ShoppingScreen />} />
-          <Route path="/nutrition/scanner" element={<ScanScreen />} />
-          <Route path="/progres" element={<ProgressScreen />} />
-          <Route path="/reglages" element={<SettingsScreen />} />
-          <Route path="/reglages/importer" element={<ImportScreen />} />
-          <Route path="/claude/reponse" element={<ClaudeResponseScreen />} />
+          <Route path={TRAINING_PATH} element={<SessionScreen />} />
+          <Route path={PREVIEW_PATH} element={<PreviewScreen />} />
+          <Route path={LIBRARY_PATH} element={<LibraryScreen />} />
+          <Route path={NEW_EXERCISE_PATH} element={<ExerciseFormScreen />} />
+          <Route path={DELETED_EXERCISES_PATH} element={<DeletedScreen />} />
+          <Route path={EXERCISE_ROUTE} element={<ExerciseScreen />} />
+          <Route path={EDIT_EXERCISE_ROUTE} element={<ExerciseFormScreen />} />
+          <Route path={RECAP_ROUTE} element={<RecapScreen />} />
+          <Route path={HISTORY_PATH} element={<HistoryScreen />} />
+          <Route path={HISTORY_DETAIL_ROUTE} element={<HistoryDetailScreen />} />
+          <Route path={TEMPLATES_PATH} element={<TemplatesScreen />} />
+          <Route path={NUTRITION_PATH} element={<JournalScreen />} />
+          <Route path={ADD_FOOD_PATH} element={<AddFoodScreen />} />
+          <Route path={NEW_FOOD_PATH} element={<FoodFormScreen />} />
+          <Route path={FOOD_ROUTE} element={<FoodScreen />} />
+          <Route path={EDIT_FOOD_ROUTE} element={<FoodFormScreen />} />
+          <Route path={RECIPES_PATH} element={<RecipesScreen />} />
+          <Route path={NEW_RECIPE_PATH} element={<RecipeFormScreen />} />
+          <Route path={RECIPE_ROUTE} element={<RecipeScreen />} />
+          <Route path={EDIT_RECIPE_ROUTE} element={<RecipeFormScreen />} />
+          <Route path={COOK_ROUTE} element={<CookScreen />} />
+          <Route path={FRIDGE_PATH} element={<FridgeScreen />} />
+          <Route path={SHOPPING_PATH} element={<ShoppingScreen />} />
+          <Route path={SCAN_PATH} element={<ScanScreen />} />
+          <Route path={PROGRESS_PATH} element={<ProgressScreen />} />
+          <Route path={SETTINGS_PATH} element={<SettingsScreen />} />
+          <Route path={IMPORT_PATH} element={<ImportScreen />} />
+          <Route path={CLAUDE_RESPONSE_PATH} element={<ClaudeResponseScreen />} />
           <Route path={VIDEO_RECIPE_PATH} element={<VideoRecipeScreen />} />
           <Route path={RECIPE_SCAN_PATH} element={<RecipeScanScreen />} />
           <Route path="*" element={<Navigate to={HOME_PATH} replace />} />
@@ -103,13 +137,13 @@ function LegacyRedirect() {
 /** Mode guidé : plein écran, sans barre d'onglets ni invite de mise à jour (l'écran gère ses safe areas). */
 function Guided() {
   return (
-    <Suspense fallback={<div aria-busy="true" className="flex-1" />}>
+    <Suspense fallback={<div aria-busy="true" className="ds-session flex-1" />}>
       <GuidedScreen />
     </Suspense>
   )
 }
 
-/** Page de composants v2 : plein écran clair, hors de la mise en page à onglets v1. */
+/** Page de composants v2 : plein écran clair, hors de la mise en page à onglets. */
 function DevUi() {
   if (!UiScreen) return <Navigate to={HOME_PATH} replace />
   return (
@@ -151,7 +185,7 @@ function Gate() {
   if (settings.error) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 text-center">
-        <p role="alert" className="text-zinc-300">
+        <p role="alert" className="text-ink-muted">
           Impossible d’ouvrir les données de l’app. Ferme-la puis rouvre-la ; si le problème persiste, vérifie
           que le stockage du navigateur n’est pas bloqué.
         </p>
@@ -171,7 +205,7 @@ export function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       {/* fixed inset-0 : colle aux vrais bords de l’écran (en standalone iOS, height: 100% peut s’arrêter avant le bas). */}
-      <div className="fixed inset-0 flex flex-col overflow-hidden bg-v1-bg text-zinc-100">
+      <div className="fixed inset-0 flex flex-col overflow-hidden bg-canvas text-ink">
         <Gate />
       </div>
     </BrowserRouter>

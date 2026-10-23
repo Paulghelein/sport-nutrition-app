@@ -19,7 +19,8 @@ import type { NoticeState } from './parts'
 import { loggedNotice } from './loggedNotice'
 import { PrepareFridgeSheet } from './PrepareFridgeSheet'
 import { RecipeLogSheet } from './RecipeLogSheet'
-import { useFridge, useRecipeLibrary } from './useRecipes'
+import { useFridge } from './useFridge'
+import { useRecipeLibrary } from './useRecipes'
 import type { RecipeLibraryData } from './useRecipes'
 
 type View = 'ingredients' | 'steps'
@@ -80,7 +81,7 @@ function saveState(id: string, state: CookState): void {
 /** Zone collée en bas de <main> (jamais `fixed`) : boutons de 64 px à portée de pouce, fondu sur le fond. */
 function BottomActions({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-col gap-2 bg-canvas px-4 pb-3 pt-3 shadow-[0_-12px_24px_var(--color-canvas)]">
+    <div className="ds-bleed sticky bottom-0 z-10 mt-4 flex flex-col gap-2 bg-canvas pb-3 pt-3 shadow-[0_-12px_24px_var(--color-canvas)]">
       {children}
     </div>
   )
@@ -125,7 +126,7 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
       </div>
       <h1 className="m-0 mt-1 font-display text-title leading-tight">{recipe.name}</h1>
 
-      <div className="mt-3 rounded-ds-lg bg-surface p-3 shadow-card">
+      <div className="mt-3 rounded-lg bg-surface p-3 shadow-card">
         <ChoiceGroup<View>
           legend="Affichage"
           value={state.view}
@@ -146,7 +147,7 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
 
       {state.view === 'ingredients' ? (
         <div className="mt-4 flex flex-col gap-3">
-          <div className="rounded-ds-lg bg-surface p-4 shadow-card">
+          <div className="rounded-lg bg-surface p-4 shadow-card">
             <Stepper
               label="Portions à cuisiner"
               value={state.portions}
@@ -174,14 +175,14 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
                       })
                     }
                     className={cx(
-                      'focus-ring flex min-h-16 w-full items-center gap-3 rounded-ds-md px-4 py-2 text-left text-ink shadow-card active:opacity-70',
+                      'focus-ring flex min-h-16 w-full items-center gap-3 rounded-md px-4 py-2 text-left text-ink shadow-card active:opacity-70',
                       got ? 'bg-surface-sunken' : 'bg-surface',
                     )}
                   >
                     <span
                       aria-hidden="true"
                       className={cx(
-                        'grid size-8 shrink-0 place-items-center rounded-ds-sm border-2',
+                        'grid size-8 shrink-0 place-items-center rounded-sm border-2',
                         got ? 'border-ember bg-ember text-ink' : 'border-ink-muted',
                       )}
                     >
@@ -211,7 +212,7 @@ function Cook({ recipe, lib }: { recipe: LibraryRecipe; lib: RecipeLibraryData }
         </div>
       ) : finished ? (
         <div className="mt-4 flex flex-col gap-3">
-          <div className="rounded-ds-lg bg-surface p-5 shadow-card">
+          <div className="rounded-lg bg-surface p-5 shadow-card">
             <p className="m-0 font-display text-display-l">C’est prêt !</p>
             <p className="m-0 mt-1 text-headline">
               Tu as cuisiné {portionsText(state.portions, recipe.servingUnit)}.

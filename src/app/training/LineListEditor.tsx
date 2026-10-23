@@ -93,7 +93,7 @@ export function LineListEditor({
                 maxLength={maxLength}
                 value={item}
                 onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
-                className="focus-ring min-h-12 min-w-0 flex-1 rounded-ds-md bg-canvas px-3.5 py-2.5 text-input text-ink"
+                className="focus-ring min-h-12 min-w-0 flex-1 rounded-md bg-canvas px-3.5 py-2.5 text-input text-ink"
               />
             </div>
             <div className={`mt-1 flex justify-end gap-2 ${numbered ? 'pl-8' : ''}`}>
@@ -144,7 +144,7 @@ export function LineListEditor({
           setNextKey(nextKey + 1)
           onChange([...items, ''])
         }}
-        className="focus-ring mt-2 min-h-11 rounded-ds-pill px-3 text-body-strong text-ember-ink active:opacity-70 disabled:text-ink-muted"
+        className="focus-ring mt-2 min-h-11 rounded-full px-3 text-body-strong text-ember-ink active:opacity-70 disabled:text-ink-muted"
       >
         + {addLabel}
         {full ? ` (maximum ${maxItems})` : ''}

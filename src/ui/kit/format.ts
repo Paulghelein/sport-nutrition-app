@@ -7,9 +7,16 @@ export function formatInt(value: number): string {
   return intFormat.format(value)
 }
 
-/** Nombre avec décimales à la virgule, sans zéros inutiles : `72,4`. */
+const decimalFormats = new Map<number, Intl.NumberFormat>()
+
+/** Nombre avec décimales à la virgule, sans zéros inutiles : `72,4` (1 décimale au plus par défaut). */
 export function formatDecimal(value: number, maxDecimals = 1): string {
-  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: maxDecimals }).format(value)
+  let format = decimalFormats.get(maxDecimals)
+  if (!format) {
+    format = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: maxDecimals })
+    decimalFormats.set(maxDecimals, format)
+  }
+  return format.format(value)
 }
 
 /** Valeur et unité séparées par une espace insécable : `16 kg`. */

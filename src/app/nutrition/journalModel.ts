@@ -25,8 +25,9 @@ import type {
   Profile,
   WeighIn,
 } from '../../types'
-import { fmtPortions, portionsWord } from '../recipes/format'
-import { SLOT_LABEL, fmtG, fmtInt } from './format'
+import { portionsWord } from '../recipes/format'
+import { SLOT_LABEL } from './format'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 
 export interface JournalInput {
   /** Jour affiché et jour courant. */
@@ -95,9 +96,9 @@ export function dayLabel(date: LocalDate, today: LocalDate): string {
 /** Libellé de quantité d'une entrée. */
 export function entryQuantity(entry: FoodLogEntry, fromFridge: boolean): string {
   const o = entry.origin
-  if (o.kind === 'food') return `${fmtG(o.grams)} g`
+  if (o.kind === 'food') return `${formatDecimal(o.grams)} g`
   if (o.kind === 'recipe') {
-    const base = `${fmtPortions(o.portions)} ${portionsWord(o.portions)}`
+    const base = `${formatDecimal(o.portions, 2)} ${portionsWord(o.portions)}`
     return fromFridge ? `${base} · depuis le frigo` : base
   }
   return o.kind === 'import' ? 'Importé' : 'Saisie libre'
@@ -114,7 +115,7 @@ function rowModel(entry: FoodLogEntry, input: JournalInput): JournalRowModel {
     quantity: entryQuantity(entry, visual.fromFridge),
     macros,
     visual,
-    ariaLabel: `Modifier ${entry.name}, ${fmtInt(macros.kcal)} kcal`,
+    ariaLabel: `Modifier ${entry.name}, ${formatInt(macros.kcal)} kcal`,
   }
 }
 

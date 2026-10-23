@@ -207,7 +207,7 @@ export function BackupSection() {
             : 'Aucun export pour l’instant.'}
         </p>
         {prepared ? (
-          <div className="flex flex-col gap-3 rounded-ds-md bg-canvas p-3.5">
+          <div className="flex flex-col gap-3 rounded-md bg-canvas p-3.5">
             <div>
               <p className="m-0 break-all text-body-strong">{prepared.file.name}</p>
               <p className="m-0 mt-1 text-caption text-ink-muted">{prepared.summary}</p>
@@ -265,7 +265,7 @@ export function BackupSection() {
             modifié avant ta confirmation.
           </p>
         </div>
-        <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-ds-pill bg-canvas px-5 text-body-strong text-ink active:opacity-80 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus">
+        <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-canvas px-5 text-body-strong text-ink active:opacity-80 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus">
           Choisir un fichier
           <input
             ref={fileInput}
@@ -278,7 +278,7 @@ export function BackupSection() {
         </label>
 
         {pending ? (
-          <div className="flex flex-col gap-3 rounded-ds-md bg-canvas p-3.5">
+          <div className="flex flex-col gap-3 rounded-md bg-canvas p-3.5">
             <div>
               <p className="m-0 break-all text-body-strong">{pending.fileName}</p>
               <p className="m-0 mt-1 text-caption text-ink-muted">

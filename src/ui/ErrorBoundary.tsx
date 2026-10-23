@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, { failed: boolean }> {
   override render(): ReactNode {
     if (!this.state.failed) return this.props.children
     return (
-      <div role="alert" className="rounded-ds-lg bg-surface p-4 font-sans text-ink shadow-card">
+      <div role="alert" className="rounded-lg bg-surface p-4 font-sans text-ink shadow-card">
         <p className="m-0 text-body">Impossible de charger cette section.</p>
         <Button variant="dark" className="mt-3" onClick={() => location.reload()}>
           Recharger

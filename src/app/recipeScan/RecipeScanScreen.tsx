@@ -269,20 +269,12 @@ export default function RecipeScanScreen() {
     <div>
       {/* Bandeau caméra : pleine largeur, collant en haut pendant que la liste défile. */}
       <header
-        className="sticky z-20 flex flex-col overflow-hidden bg-inverse text-on-inverse"
+        className="ds-bleed-edge sticky z-20 flex flex-col overflow-hidden bg-inverse text-on-inverse"
         style={{
-          // Couplage avec TabsLayout : <main> a un padding haut de `safe-area-inset-top + 1rem` et un padding latéral de
-          // `safe-area-inset-* + 1rem`. Les marges négatives font déborder le bandeau dans ce padding ; `top` négatif de
-          // la même valeur le garde collé au bord de l'écran (le bloc de référence d'un `sticky` est le contenu de
-          // <main>, remplissage exclu : avec `top: 0` une bande claire de 1rem resterait au-dessus).
-          top: 'calc(-1rem - env(safe-area-inset-top))',
+          // Couplage avec TabsLayout via `--page-*` (src/index.css) : le bandeau déborde dans le remplissage de
+          // <main> (haut, gauche, droite) et `top` négatif le garde collé sous la barre d'état.
           height: 'calc(env(safe-area-inset-top) + 13rem)',
-          marginTop: 'calc(-1rem - env(safe-area-inset-top))',
-          marginLeft: 'calc(-1rem - env(safe-area-inset-left))',
-          marginRight: 'calc(-1rem - env(safe-area-inset-right))',
           paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)',
-          paddingLeft: 'calc(env(safe-area-inset-left) + 1rem)',
-          paddingRight: 'calc(env(safe-area-inset-right) + 1rem)',
           paddingBottom: '1rem',
         }}
       >
@@ -389,7 +381,7 @@ export default function RecipeScanScreen() {
               autoComplete="off"
               enterKeyHint="done"
               onChange={(e) => dispatch({ type: 'set_name', name: e.target.value })}
-              className="focus-ring min-h-11 w-full rounded-ds-sm bg-transparent p-0 font-display text-title text-ink placeholder:text-ink-faint"
+              className="focus-ring min-h-11 w-full rounded-sm bg-transparent p-0 font-display text-title text-ink placeholder:text-ink-faint"
             />
           </div>
           <span className="pb-3 text-caption font-semibold text-ink-muted">
@@ -397,7 +389,7 @@ export default function RecipeScanScreen() {
           </span>
         </div>
 
-        <section aria-label="Ingrédients" className="rounded-ds-lg bg-surface px-3.5 py-1 shadow-card">
+        <section aria-label="Ingrédients" className="rounded-lg bg-surface px-3.5 py-1 shadow-card">
           {draft.ingredients.length === 0 ? (
             <p className="m-0 py-4 text-body text-ink-muted">
               Scanne un produit avec la caméra, saisis son code ou cherche un aliment : la liste se remplit

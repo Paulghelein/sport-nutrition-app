@@ -119,7 +119,7 @@ function previousHandled(session: Session, step: Step): SessionCursor | null {
 }
 
 const menuButton =
-  'focus-ring flex min-h-14 w-full items-center rounded-ds-md bg-canvas px-4 text-left text-headline text-ink active:opacity-70'
+  'focus-ring flex min-h-14 w-full items-center rounded-md bg-canvas px-4 text-left text-headline text-ink active:opacity-70'
 
 function Run({ initial, engine }: { initial: Session; engine: EngineBase }) {
   const navigate = useNavigate()

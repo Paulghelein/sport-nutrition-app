@@ -1,4 +1,4 @@
-import type { Choice } from './ChoiceGroup'
+import type { ChoiceOption } from './kit/ChoiceGroup'
 import type {
   ActivityLevel,
   EquipmentId,
@@ -12,12 +12,12 @@ import type {
 } from '../types'
 import { ownableEquipment } from './drafts'
 
-export const sexes: Choice<Sex>[] = [
+export const sexes: ChoiceOption<Sex>[] = [
   { value: 'male', label: 'Homme' },
   { value: 'female', label: 'Femme' },
 ]
 
-export const activities: Choice<ActivityLevel>[] = [
+export const activities: ChoiceOption<ActivityLevel>[] = [
   { value: 'sedentary', label: 'Sédentaire', hint: 'Travail assis, peu de marche.' },
   {
     value: 'light',
@@ -32,13 +32,13 @@ export const activities: Choice<ActivityLevel>[] = [
   },
 ]
 
-export const goals: Choice<Goal>[] = [
+export const goals: ChoiceOption<Goal>[] = [
   { value: 'bulk', label: 'Prise de masse' },
   { value: 'maintain', label: 'Maintien' },
   { value: 'cut', label: 'Sèche' },
 ]
 
-export const levels: Choice<TrainingLevel>[] = [
+export const levels: ChoiceOption<TrainingLevel>[] = [
   { value: 1, label: 'Débutant' },
   { value: 2, label: 'Intermédiaire' },
   { value: 3, label: 'Avancé' },
@@ -50,7 +50,7 @@ export const levelLabel = (level: TrainingLevel): string =>
 export const activityLabel = (a: ActivityLevel): string => activities.find((x) => x.value === a)?.label ?? a
 export const sexLabel = (s: Sex): string => sexes.find((x) => x.value === s)?.label ?? s
 
-export const patterns: Choice<MovementPattern>[] = [
+export const patterns: ChoiceOption<MovementPattern>[] = [
   { value: 'hinge', label: 'Charnière' },
   { value: 'squat', label: 'Squat' },
   { value: 'lunge', label: 'Fente' },
@@ -63,7 +63,7 @@ export const patterns: Choice<MovementPattern>[] = [
   { value: 'calves', label: 'Mollets' },
 ]
 
-export const muscles: Choice<MuscleGroup>[] = [
+export const muscles: ChoiceOption<MuscleGroup>[] = [
   { value: 'chest', label: 'Pectoraux' },
   { value: 'back', label: 'Dos' },
   { value: 'shoulders', label: 'Épaules' },
@@ -79,13 +79,13 @@ export const muscles: Choice<MuscleGroup>[] = [
   { value: 'calves', label: 'Mollets' },
 ]
 
-export const loadTypes: Choice<LoadType>[] = [
+export const loadTypes: ChoiceOption<LoadType>[] = [
   { value: 'kettlebell', label: 'Kettlebell' },
   { value: 'bodyweight', label: 'Poids du corps' },
   { value: 'timed', label: 'Chronométré' },
 ]
 
-export const preferences: Choice<ExercisePreference>[] = [
+export const preferences: ChoiceOption<ExercisePreference>[] = [
   { value: 'liked', label: 'J’aime' },
   { value: 'neutral', label: 'Neutre' },
   { value: 'disliked', label: 'Je n’aime pas' },
@@ -93,7 +93,7 @@ export const preferences: Choice<ExercisePreference>[] = [
 ]
 
 /** Tout le matériel que peut requérir un exercice (kettlebell comprise), dans l'ordre d'affichage. */
-export const equipmentChoices: Choice<EquipmentId>[] = [
+export const equipmentChoices: ChoiceOption<EquipmentId>[] = [
   { value: 'kettlebell', label: 'Kettlebell' },
   ...ownableEquipment.map((e) => ({ value: e.id, label: e.label })),
 ]

@@ -1,8 +1,9 @@
 import { muscleLabel } from '../../ui'
 import { Card } from '../../ui/kit'
+import { formatDecimal } from '../../ui/kit/format'
 import type { GroupVolume } from '../../types'
 import { Note, ScreenSection } from './parts'
-import { VOLUME_STATUS_LABEL, formatNumber } from './progressModel'
+import { VOLUME_STATUS_LABEL } from './progressModel'
 
 const COLOR: Record<GroupVolume['status'], string> = {
   below: 'text-ember-ink',
@@ -26,7 +27,7 @@ export function VolumeSection({ volumes }: { volumes: readonly GroupVolume[] }) 
             >
               <span className="text-body-strong">{muscleLabel(v.group)}</span>
               <span className="text-right text-caption tabular-nums text-ink-muted">
-                <span className="font-display text-base font-bold text-ink">{formatNumber(v.sets)}</span>
+                <span className="font-display text-base font-bold text-ink">{formatDecimal(v.sets, 2)}</span>
                 {` / ${v.target[0]}–${v.target[1]} séries · `}
                 <span className={`font-bold ${COLOR[v.status]}`}>{VOLUME_STATUS_LABEL[v.status]}</span>
               </span>
@@ -36,7 +37,7 @@ export function VolumeSection({ volumes }: { volumes: readonly GroupVolume[] }) 
         {untracked.length > 0 ? (
           <Note className="border-t border-line py-2.5 text-caption">
             {VOLUME_STATUS_LABEL.untracked} (pas de cible) :{' '}
-            {untracked.map((v) => `${muscleLabel(v.group)} ${formatNumber(v.sets)}`).join(', ')}.
+            {untracked.map((v) => `${muscleLabel(v.group)} ${formatDecimal(v.sets, 2)}`).join(', ')}.
           </Note>
         ) : null}
       </Card>

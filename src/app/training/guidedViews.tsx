@@ -57,7 +57,7 @@ function ElapsedClock({ startedAt }: { startedAt: string }) {
     <span
       role="timer"
       aria-label="Durée de la séance"
-      className="font-display text-[15px] font-bold tabular-nums text-on-inverse-muted"
+      className="font-display text-body font-bold tabular-nums text-on-inverse-muted"
     >
       {mmss((now - start) / 1000)}
     </span>
@@ -162,7 +162,7 @@ export function WarmupView({
     >
       <FocusHeading className="font-display text-display-l">Échauffement</FocusHeading>
       {minutes ? <p className="m-0 text-body text-on-inverse-muted">environ {minutes} min</p> : null}
-      <ol className="m-0 flex list-decimal flex-col gap-4 pl-6 text-[20px] leading-7">
+      <ol className="m-0 flex list-decimal flex-col gap-4 pl-6 text-lead">
         {warmup.map((w, i) => (
           <li key={i}>{w}</li>
         ))}
@@ -458,19 +458,19 @@ export function SetView({
             : ''}
       </p>
       <div className="flex items-center gap-3.5">
-        <ExerciseThumb primary={ex?.muscles.primary ?? []} size={96} tone="dark" className="rounded-ds-md" />
+        <ExerciseThumb primary={ex?.muscles.primary ?? []} size={96} tone="dark" className="rounded-md" />
         <div className="flex min-w-0 flex-col items-start gap-1.5">
           <span className={caption}>
             Exercice {position.current} sur {position.total}
           </span>
-          <FocusHeading className="font-display text-[28px] font-extrabold leading-8">
+          <FocusHeading className="font-display text-number-l font-extrabold">
             {ex?.name ?? info.se.exerciseId}
           </FocusHeading>
           {ex ? (
             <button
               type="button"
               onClick={onHelp}
-              className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-ds-pill bg-on-inverse/10 px-3.5 text-caption font-semibold text-on-inverse"
+              className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-full bg-on-inverse/10 px-3.5 text-caption font-semibold text-on-inverse"
             >
               <CircleHelp size={16} strokeWidth={1.75} aria-hidden="true" />
               Comment faire ?
@@ -485,19 +485,19 @@ export function SetView({
         </span>
         <SetDots states={dotStates(info.se, info.cursor.set)} />
         {superset ? (
-          <span className="rounded-ds-pill bg-on-inverse/10 px-2.5 py-0.5 text-caption font-semibold">
+          <span className="rounded-full bg-on-inverse/10 px-2.5 py-0.5 text-caption font-semibold">
             Superset · tour {info.cursor.set + 1}
           </span>
         ) : null}
         {finisher ? (
-          <span className="rounded-ds-pill bg-ember px-2.5 py-0.5 text-caption font-bold text-ink">
+          <span className="rounded-full bg-ember px-2.5 py-0.5 text-caption font-bold text-ink">
             Finisher
           </span>
         ) : null}
       </div>
 
       {type === 'amrap' ? (
-        <p className="m-0 rounded-ds-md bg-on-inverse/8 px-4 py-3 text-body-strong">
+        <p className="m-0 rounded-md bg-on-inverse/8 px-4 py-3 text-body-strong">
           Arrête-toi dès que la forme se dégrade ; descends contrôlé.
         </p>
       ) : null}
@@ -623,13 +623,13 @@ export function RestView({
         {announce}
       </p>
       {next ? (
-        <div className="flex items-center justify-between gap-3 rounded-ds-lg bg-on-inverse/8 px-[18px] py-3.5">
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-on-inverse/8 px-[18px] py-3.5">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className={caption}>Ensuite · {next.setLabel.toLowerCase()}</span>
             <span className="text-headline">{next.name}</span>
           </div>
           {next.detail ? (
-            <span className="whitespace-nowrap font-display text-[26px] font-extrabold leading-[30px] text-ember">
+            <span className="whitespace-nowrap font-display text-number-m font-extrabold text-ember">
               {next.detail}
             </span>
           ) : null}
@@ -670,7 +670,7 @@ export function FinishedView({
       }
     >
       <FocusHeading className="font-display text-display-l">Bravo, c’est fini !</FocusHeading>
-      <p className="m-0 text-[20px] leading-7">
+      <p className="m-0 text-lead">
         {done} série{done > 1 ? 's' : ''} faite{done > 1 ? 's' : ''}
         {skipped > 0 ? `, ${skipped} passée${skipped > 1 ? 's' : ''}` : ''}.
       </p>

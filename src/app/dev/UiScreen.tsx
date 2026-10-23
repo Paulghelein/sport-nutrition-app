@@ -40,10 +40,11 @@ import {
 import { CalendarHeatmap } from '../../ui/kit/CalendarHeatmap'
 import { FoodRow } from '../../ui/kit/FoodRow'
 import { DaySummarySheet } from '../../ui/kit/DaySummarySheet'
+import { SETTINGS_PATH } from '../routes'
 import { SessionDemos } from './SessionDemos'
 import type { DaySummaryView, LogAction, LogEntry, LogMealOption, TabId, WeekStripDay } from '../../ui/kit'
 
-/** Page de démonstration du kit v2 (`/dev/ui`). Hors de la mise en page à onglets v1. */
+/** Page de démonstration du kit v2 (`/dev/ui`). Hors de la mise en page à onglets. */
 
 const MEALS = [
   { id: 'breakfast', label: 'petit-déjeuner', phrase: 'au petit-déjeuner' },
@@ -52,7 +53,7 @@ const MEALS = [
   { id: 'snack', label: 'collation', phrase: 'à la collation' },
 ] as const satisfies readonly LogMealOption[]
 
-/** Entrées des sections « Créer » et « Autres » telles que la v1 de la navigation les branche (R1). */
+/** Entrées des sections « Créer » et « Autres » telles que la navigation les branche. */
 const DEMO_CREATE: readonly LogEntry[] = [
   { action: 'recipe-new', label: 'Nouvelle recette', Icon: UtensilsCrossed },
   { action: 'food-new', label: 'Nouvel aliment', Icon: FilePlus },
@@ -219,11 +220,11 @@ const COLORS: { name: string; swatch: string }[] = [
 ]
 
 const RADII: { name: string; cls: string }[] = [
-  { name: 'ds-sm · 10', cls: 'rounded-ds-sm' },
-  { name: 'ds-md · 16', cls: 'rounded-ds-md' },
-  { name: 'ds-lg · 24', cls: 'rounded-ds-lg' },
-  { name: 'ds-xl · 32', cls: 'rounded-ds-xl' },
-  { name: 'ds-pill · 999', cls: 'rounded-ds-pill' },
+  { name: 'sm · 10', cls: 'rounded-sm' },
+  { name: 'md · 16', cls: 'rounded-md' },
+  { name: 'lg · 24', cls: 'rounded-lg' },
+  { name: 'xl · 32', cls: 'rounded-xl' },
+  { name: 'full · 999', cls: 'rounded-full' },
 ]
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -270,8 +271,8 @@ export default function UiScreen() {
       >
         <header className="flex flex-col gap-3">
           <Link
-            to="/reglages"
-            className="focus-ring -ml-2 inline-flex min-h-11 items-center gap-1 self-start rounded-ds-pill px-2 text-body-strong text-ember-ink"
+            to={SETTINGS_PATH}
+            className="focus-ring -ml-2 inline-flex min-h-11 items-center gap-1 self-start rounded-full px-2 text-body-strong text-ember-ink"
           >
             <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
             Réglages
@@ -322,17 +323,17 @@ export default function UiScreen() {
               <li key={c.name} className="flex items-center gap-3">
                 <span
                   aria-hidden="true"
-                  className={`size-10 shrink-0 rounded-ds-sm ring-1 ring-line ${c.swatch}`}
+                  className={`size-10 shrink-0 rounded-sm ring-1 ring-line ${c.swatch}`}
                 />
                 <span className="text-caption">{c.name}</span>
               </li>
             ))}
           </ul>
           <Demo label="Translucides du mode séance (on-inverse/6, /10, /18)">
-            <div className="flex gap-2 rounded-ds-lg bg-inverse p-4">
-              <span className="size-12 rounded-ds-md bg-on-inverse/6" />
-              <span className="size-12 rounded-ds-md bg-on-inverse/10" />
-              <span className="size-12 rounded-ds-md bg-on-inverse/18" />
+            <div className="flex gap-2 rounded-lg bg-inverse p-4">
+              <span className="size-12 rounded-md bg-on-inverse/6" />
+              <span className="size-12 rounded-md bg-on-inverse/10" />
+              <span className="size-12 rounded-md bg-on-inverse/18" />
             </div>
           </Demo>
         </Section>
@@ -347,7 +348,7 @@ export default function UiScreen() {
                 {r.name}
               </div>
             ))}
-            <div className="flex h-16 min-w-24 items-center justify-center rounded-ds-lg bg-surface-raised px-3 text-caption shadow-float">
+            <div className="flex h-16 min-w-24 items-center justify-center rounded-lg bg-surface-raised px-3 text-caption shadow-float">
               ombre float
             </div>
           </div>
@@ -389,7 +390,7 @@ export default function UiScreen() {
             </Button>
           </Demo>
           <Demo label="Focus : appuie sur Tab, ou lien habillé en bouton">
-            <Link to="/reglages" className={buttonClass('secondary')}>
+            <Link to={SETTINGS_PATH} className={buttonClass('secondary')}>
               Lien en bouton
             </Link>
           </Demo>
@@ -398,7 +399,7 @@ export default function UiScreen() {
         <Section title="Cartes et lignes">
           <Card as="div" padding="none" className="px-4 py-1">
             <ListRow
-              leading={<span aria-hidden="true" className="block size-[52px] rounded-ds-sm bg-canvas" />}
+              leading={<span aria-hidden="true" className="block size-[52px] rounded-sm bg-canvas" />}
               title="Swing à deux mains"
               subtitle={
                 <>
@@ -408,7 +409,7 @@ export default function UiScreen() {
               trailing={<span className="font-display text-body-strong">{withUnit(636, 'kcal')}</span>}
             />
             <ListRow
-              leading={<span aria-hidden="true" className="block size-10 rounded-ds-sm bg-canvas" />}
+              leading={<span aria-hidden="true" className="block size-10 rounded-sm bg-canvas" />}
               title="Ligne cliquable"
               subtitle="Toute la ligne est un bouton"
               onPress={() => setSelectedRow((v) => !v)}
@@ -625,7 +626,7 @@ export default function UiScreen() {
                 />
               ))}
             </Card>
-            <div className="rounded-ds-lg bg-inverse p-4 text-on-inverse">
+            <div className="rounded-lg bg-inverse p-4 text-on-inverse">
               <ul className="m-0 flex list-none flex-col gap-3 p-0">
                 {SAMPLE_EXERCISES.map((e) => (
                   <li key={e.name} className="flex items-center gap-3">

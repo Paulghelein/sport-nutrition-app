@@ -54,7 +54,7 @@ function Block({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section aria-label={label} className="flex flex-col gap-1">
       <h3 className="m-0 text-label uppercase text-ink-muted">{label}</h3>
-      <div className="rounded-ds-md bg-surface px-4">{children}</div>
+      <div className="rounded-md bg-surface px-4">{children}</div>
     </section>
   )
 }
@@ -74,7 +74,7 @@ export function DaySummarySheet({ day, onClose, onPrev, onNext }: DaySummaryShee
             type="button"
             onClick={onPrev}
             disabled={!onPrev}
-            className="focus-ring flex min-h-11 items-center justify-start gap-1 rounded-ds-pill bg-surface px-3 text-body-strong text-ink active:opacity-70 disabled:text-ink-muted disabled:opacity-60"
+            className="focus-ring flex min-h-11 items-center justify-start gap-1 rounded-full bg-surface px-3 text-body-strong text-ink active:opacity-70 disabled:text-ink-muted disabled:opacity-60"
           >
             <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
             Jour précédent
@@ -83,7 +83,7 @@ export function DaySummarySheet({ day, onClose, onPrev, onNext }: DaySummaryShee
             type="button"
             onClick={onNext}
             disabled={!onNext}
-            className="focus-ring flex min-h-11 items-center justify-end gap-1 rounded-ds-pill bg-surface px-3 text-body-strong text-ink active:opacity-70 disabled:text-ink-muted disabled:opacity-60"
+            className="focus-ring flex min-h-11 items-center justify-end gap-1 rounded-full bg-surface px-3 text-body-strong text-ink active:opacity-70 disabled:text-ink-muted disabled:opacity-60"
           >
             Jour suivant
             <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" />

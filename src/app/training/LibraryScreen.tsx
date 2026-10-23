@@ -16,7 +16,7 @@ import { Card, ExerciseThumb, cx } from '../../ui/kit'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
 import type { ChoiceOption } from '../../ui/kit/ChoiceGroup'
 import { Note } from '../../ui/kit/Note'
-import { LIBRARY_PATH, TRAINING_PATH } from '../routes'
+import { DELETED_EXERCISES_PATH, LIBRARY_PATH, NEW_EXERCISE_PATH, TRAINING_PATH } from '../routes'
 import { LevelBadge, PreferenceIcon, ScreenTitle, Tag } from './parts'
 import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
@@ -45,7 +45,7 @@ function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="focus-ring flex min-h-12 w-full items-center justify-between gap-3 rounded-ds-md bg-canvas px-3.5 py-2 text-left"
+      className="focus-ring flex min-h-12 w-full items-center justify-between gap-3 rounded-md bg-canvas px-3.5 py-2 text-left"
     >
       <span className="text-body-strong">{label}</span>
       <span
@@ -144,7 +144,7 @@ export default function LibraryScreen() {
       <div className="flex items-center justify-between gap-3">
         <ScreenTitle>Exercices</ScreenTitle>
         <Link
-          to={`${LIBRARY_PATH}/nouveau`}
+          to={NEW_EXERCISE_PATH}
           aria-label="Créer un exercice"
           className="focus-ring grid size-12 shrink-0 place-items-center rounded-full bg-ember text-ink no-underline active:opacity-80"
         >
@@ -175,7 +175,7 @@ export default function LibraryScreen() {
               setQuery(e.target.value)
               setParam('q', e.target.value)
             }}
-            className="focus-ring min-h-12 w-full rounded-ds-pill bg-surface pl-11 pr-11 text-input text-ink shadow-card placeholder:text-ink-muted"
+            className="focus-ring min-h-12 w-full rounded-full bg-surface pl-11 pr-11 text-input text-ink shadow-card placeholder:text-ink-muted"
           />
           {query !== '' ? (
             <button
@@ -197,7 +197,7 @@ export default function LibraryScreen() {
           aria-controls="library-filters"
           onClick={() => setParam('f', panelOpen ? null : '1')}
           className={cx(
-            'focus-ring flex min-h-12 shrink-0 items-center gap-1.5 rounded-ds-pill px-4 text-body-strong shadow-card',
+            'focus-ring flex min-h-12 shrink-0 items-center gap-1.5 rounded-full px-4 text-body-strong shadow-card',
             activeCount > 0 || panelOpen ? 'bg-ember-soft text-ink' : 'bg-surface text-ink',
           )}
         >
@@ -214,7 +214,7 @@ export default function LibraryScreen() {
       </div>
 
       <div role="group" aria-label="Filtrer par schéma de mouvement">
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <div className="ds-bleed flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
           {([undefined, ...PATTERN_ORDER] as (MovementPattern | undefined)[]).map((p) => {
             const active = p === pattern
             return (
@@ -224,7 +224,7 @@ export default function LibraryScreen() {
                 aria-pressed={active}
                 onClick={() => setParam('p', p ?? null)}
                 className={cx(
-                  'focus-ring min-h-11 shrink-0 rounded-ds-pill px-4 text-body-strong',
+                  'focus-ring min-h-11 shrink-0 rounded-full px-4 text-body-strong',
                   active ? 'bg-inverse text-on-inverse' : 'bg-surface text-ink',
                 )}
               >
@@ -282,7 +282,7 @@ export default function LibraryScreen() {
                 <button
                   type="button"
                   onClick={reset}
-                  className="focus-ring min-h-11 rounded-ds-pill px-4 text-body-strong text-ember-ink active:opacity-70"
+                  className="focus-ring min-h-11 rounded-full px-4 text-body-strong text-ember-ink active:opacity-70"
                 >
                   Réinitialiser les filtres
                 </button>
@@ -310,8 +310,8 @@ export default function LibraryScreen() {
             ))
           )}
           <Link
-            to={`${LIBRARY_PATH}/supprimes`}
-            className="focus-ring mt-4 flex min-h-12 items-center justify-center rounded-ds-pill text-body-strong text-ink-muted underline"
+            to={DELETED_EXERCISES_PATH}
+            className="focus-ring mt-4 flex min-h-12 items-center justify-center rounded-full text-body-strong text-ink-muted underline"
           >
             Exercices supprimés ({deletedCount})
           </Link>

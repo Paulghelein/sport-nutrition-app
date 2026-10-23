@@ -5,20 +5,44 @@ import { checkExercise, validateRecipeInput } from '../../db/validation'
 import type { ImportExerciseRef } from './importTraining'
 
 const exercises: ImportExerciseRef[] = [
-  { id: 'box-goblet-squat', name: 'Goblet squat sur boîte', pattern: 'squat', level: 1, loadType: 'kettlebell', restSec: 90, repRange: [8, 12] },
-  { id: 'incline-push-up', name: 'Pompes inclinées', pattern: 'push_h', level: 1, loadType: 'bodyweight', restSec: 60, repRange: [8, 15] },
+  {
+    id: 'box-goblet-squat',
+    name: 'Goblet squat sur boîte',
+    pattern: 'squat',
+    level: 1,
+    loadType: 'kettlebell',
+    restSec: 90,
+    repRange: [8, 12],
+  },
+  {
+    id: 'incline-push-up',
+    name: 'Pompes inclinées',
+    pattern: 'push_h',
+    level: 1,
+    loadType: 'bodyweight',
+    restSec: 60,
+    repRange: [8, 15],
+  },
 ]
-const ctx = { today: '2026-10-16', ciqual: [], exercises, validateRecipe: validateRecipeInput, validateExercise: checkExercise }
+const ctx = {
+  today: '2026-10-16',
+  ciqual: [],
+  exercises,
+  validateRecipe: validateRecipeInput,
+  validateExercise: checkExercise,
+}
 
 describe('COACH_PROJECT_INSTRUCTIONS', () => {
   const blocks = [...COACH_PROJECT_INSTRUCTIONS.matchAll(/```json\n([\s\S]*?)```/g)].map((m) => m[1] ?? '')
   it('contient un exemple par type', () => {
     expect(blocks.length).toBeGreaterThanOrEqual(5)
-    const types = new Set(blocks.flatMap((b) => {
-      const v = extractJsonPayload(b)
-      if (!v.ok) return []
-      return (Array.isArray(v.value) ? v.value : [v.value]).map((x) => (x as { type: string }).type)
-    }))
+    const types = new Set(
+      blocks.flatMap((b) => {
+        const v = extractJsonPayload(b)
+        if (!v.ok) return []
+        return (Array.isArray(v.value) ? v.value : [v.value]).map((x) => (x as { type: string }).type)
+      }),
+    )
     expect([...types].sort()).toEqual(['exercise', 'exercisePreference', 'meal', 'recipe', 'sessionPlan'])
   })
   it('chaque exemple est valide pour parseImport (aucun invalid, aucun unsupported)', () => {

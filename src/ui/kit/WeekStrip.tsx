@@ -54,7 +54,7 @@ export function WeekStrip({ days, onSelectDay, selectedDate = null, className }:
             <span
               aria-hidden="true"
               className={cx(
-                'box-border size-8 rounded-ds-sm',
+                'box-border size-8 rounded-sm',
                 day.future ? 'border border-line' : HEAT[day.level],
                 day.today && 'ring-2 ring-ink ring-offset-2 ring-offset-canvas',
               )}
@@ -78,7 +78,7 @@ export function WeekStrip({ days, onSelectDay, selectedDate = null, className }:
                 aria-current={day.date === selectedDate ? 'date' : undefined}
                 data-testid="week-day"
                 onClick={() => onSelectDay(day.date)}
-                className="focus-ring flex min-h-14 w-full flex-col items-center justify-center gap-1.5 rounded-ds-sm active:opacity-70"
+                className="focus-ring flex min-h-14 w-full flex-col items-center justify-center gap-1.5 rounded-sm active:opacity-70"
               >
                 {content}
               </button>

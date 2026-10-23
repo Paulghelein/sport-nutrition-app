@@ -82,7 +82,9 @@ function decodedSize(base64: string): number {
 
 const backupPhotoSchema = z.strictObject({
   foodId: z.string().min(1),
-  mime: z.custom<PhotoMime>((v) => (PHOTO_MIMES as readonly unknown[]).includes(v), { error: 'format non pris en charge' }),
+  mime: z.custom<PhotoMime>((v) => (PHOTO_MIMES as readonly unknown[]).includes(v), {
+    error: 'format non pris en charge',
+  }),
   base64: z
     .string()
     .min(4)

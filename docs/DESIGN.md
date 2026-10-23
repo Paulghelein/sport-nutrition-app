@@ -52,19 +52,28 @@ Translucides du mode séance : panneaux `rgba(245,244,241,0.06–0.10)`, pistes 
 
 | Style | Police | Taille / interligne | Graisse | Usage |
 |---|---|---|---|---|
-| display-xl | Archivo | 64/64 (76 pour le minuteur) | 800, -0.02em | charge, reps, minuteur en séance |
+| display-2xl | Archivo | 76/76 | 800, -0.02em | minuteur de repos |
+| display-xl | Archivo | 64/64 | 800, -0.02em | charge, reps en séance |
 | display-l | Archivo | 34/38 | 800, -0.015em | titre d'écran (un par écran) |
+| display-m | Archivo | 30/34 | 800, -0.015em | titre de l'aperçu de séance |
 | number-l | Archivo | 28/32 | 700–800 | chiffre clé d'une carte |
+| number-m | Archivo | 26/30 | 700 | chiffre secondaire d'une carte |
 | title | Archivo | 20–22/26 | 700 | titre de carte |
 | headline | Figtree | 16–17/22 | 600 | nom d'exercice / d'aliment |
+| lead | Figtree | 20/28 | 400 | texte mis en avant (mode séance) |
 | body | Figtree | 15/22 | 400 | texte courant |
+| input | Figtree | 16/22 | 400 | champs de saisie (16 px minimum : sinon iOS zoome au focus) |
+| body-sm | Figtree | 14/20 | 400 | texte courant serré |
 | caption | Figtree | 12–13/18 | 500 | détails, ink-muted |
 | label | Figtree | 11/14 | 700, capitales, +0.06em | étiquettes au-dessus d'un chiffre |
+| tiny | Figtree | 11/14 | 600 | libellés de la barre d'onglets |
+| micro | Figtree | 10/12 | héritée | étiquettes de grille du calendrier |
 
 ### Espacement, rayons, ombres
 
 - Espacements : 4, 8, 12, 16, 20, 24, 32, 48 px. Marge latérale des écrans 16, écart entre cartes 14–24, padding de carte 16–20.
 - Rayons : 10 (miniatures, cases), 16 (lignes, tuiles), 24 (cartes), 32 (feuilles, barre d'onglets), pastille 999.
+  En code : `rounded-sm|md|lg|xl` (échelle Tailwind redéfinie dans `@theme`) et `rounded-full` pour la pastille.
 - Ombres : `card` = `0 1px 2px rgba(29,28,26,.06), 0 6px 18px rgba(29,28,26,.05)` ; `float` = `0 10px 30px rgba(29,28,26,.16)`.
 - Cibles tactiles ≥ 44 px ; 64 px en mode séance.
 

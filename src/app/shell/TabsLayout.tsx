@@ -45,13 +45,8 @@ export function TabsLayout({ children }: { children: ReactNode }) {
     >
       <main
         ref={mainRef}
-        className="ds-page relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top) + 1rem)',
-          paddingBottom: clearance,
-          paddingLeft: 'calc(env(safe-area-inset-left) + 1rem)',
-          paddingRight: 'calc(env(safe-area-inset-right) + 1rem)',
-        }}
+        className="ds-page relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain ds-main-pad"
+        style={{ paddingBottom: clearance }}
       >
         <div className="mx-auto max-w-xl">{children}</div>
       </main>

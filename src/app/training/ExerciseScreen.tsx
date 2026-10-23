@@ -6,15 +6,8 @@ import { illustrations, seedExercises } from '../../content'
 import { deleteExercise, restoreExercise, setExercisePreference } from '../../db'
 import { deletedSeedExercises, missingEquipment, variantsOf } from '../../domain/training'
 import type { ExercisePreference, LibraryExercise } from '../../types'
-import {
-  clearExerciseDraft,
-  equipmentLabel,
-  errorMessage,
-  loadTypeLabel,
-  muscleLabel,
-  patternLabel,
-  preferences,
-} from '../../ui'
+import { equipmentLabel, errorMessage, loadTypeLabel, muscleLabel, patternLabel, preferences } from '../../ui'
+import { clearExerciseDraft } from '../../ui/exerciseDraft'
 import { Button, Card, buttonClass } from '../../ui/kit'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
@@ -50,7 +43,7 @@ function Bullets({ items }: { items: string[] }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-ds-md bg-canvas px-3.5 py-2.5">
+    <div className="rounded-md bg-canvas px-3.5 py-2.5">
       <dt className="text-caption text-ink-muted">{label}</dt>
       <dd className="m-0 mt-0.5 text-headline">{value}</dd>
     </div>
@@ -67,7 +60,7 @@ function Variants({ title, items }: { title: string; items: LibraryExercise[] })
           <li key={v.id}>
             <Link
               to={`${LIBRARY_PATH}/${v.id}`}
-              className="focus-ring flex min-h-12 items-center justify-between gap-3 rounded-ds-md bg-surface px-3.5 py-2 text-body-strong text-ink no-underline shadow-card active:opacity-80"
+              className="focus-ring flex min-h-12 items-center justify-between gap-3 rounded-md bg-surface px-3.5 py-2 text-body-strong text-ink no-underline shadow-card active:opacity-80"
             >
               <span>{v.name}</span>
               <LevelBadge level={v.level} />

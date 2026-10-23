@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { SEED_RECIPES } from '../../content/recipes'
-import { listFridge, listRecipeRows } from '../../db'
+import { listRecipeRows } from '../../db'
 import { mergeRecipes, recipeNutrition } from '../../domain/nutrition'
 import type { FoodIndex } from '../../domain/nutrition'
-import type { FoodLookup, FridgeItem, LibraryRecipe, Recipe } from '../../types'
+import type { FoodLookup, LibraryRecipe, Recipe } from '../../types'
 import { useLiveQuery } from '../../ui'
 import { useFoods } from '../nutrition/useFoods'
 
@@ -44,11 +44,6 @@ export function useRecipeLibrary(): { data: RecipeLibraryData | undefined; error
     }
   }, [rows.data, foods.foods, foods.index, foods.error, foods.retry, ready])
   return { data, error: rows.error }
-}
-
-export function useFridge(): { data: FridgeItem[] | undefined; error: unknown } {
-  const live = useLiveQuery(() => listFridge(), [])
-  return { data: live.data, error: live.error }
 }
 
 /** Ids des recettes dont au moins un ingrédient n'a pas de données (macros sous-estimées). */

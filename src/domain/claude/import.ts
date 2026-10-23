@@ -3,7 +3,14 @@
 import { z } from 'zod'
 import type { Id, IsoDateTime, LocalDate } from '../../types/common'
 import type { ImportedMeal, ImportParseResult, ImportPreviewItem, RecipeInput } from '../../types/recipes'
-import type { Aisle, CiqualFood, FoodLogEntry, MealSlot, Per100g, RecipeIngredient } from '../../types/nutrition'
+import type {
+  Aisle,
+  CiqualFood,
+  FoodLogEntry,
+  MealSlot,
+  Per100g,
+  RecipeIngredient,
+} from '../../types/nutrition'
 import { normalizeFoodSearch } from '../nutrition/search'
 import { addDays, isValidLocalDate } from '../shared/dates'
 import type { ExerciseInput, TemplateBlock } from '../../types/training'
@@ -90,7 +97,9 @@ export function extractJsonPayload(text: string): ExtractResult {
   }
   return {
     ok: false,
-    error: sawBlock ? 'Le bloc JSON est illisible (virgule, guillemet ou crochet manquant ?).' : 'Aucun JSON trouvé dans le texte.',
+    error: sawBlock
+      ? 'Le bloc JSON est illisible (virgule, guillemet ou crochet manquant ?).'
+      : 'Aucun JSON trouvé dans le texte.',
   }
 }
 
@@ -147,7 +156,8 @@ function toNumber(v: unknown): number | undefined {
   return undefined
 }
 
-const isAbsent = (v: unknown): boolean => v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
+const isAbsent = (v: unknown): boolean =>
+  v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
 
 interface NumOpts {
   /** Valeur minimale incluse (défaut 0) ; `positive` exige > 0. */
@@ -155,96 +165,117 @@ interface NumOpts {
 }
 
 function num(opts: NumOpts = {}) {
-  return z.unknown().optional().transform((v, ctx): number => {
-    if (isAbsent(v)) {
-      ctx.issues.push({ code: 'custom', message: MISSING, input: v })
-      return z.NEVER
-    }
-    const n = toNumber(v)
-    if (n === undefined || n < 0 || (opts.positive === true && n <= 0)) {
-      ctx.issues.push({ code: 'custom', message: INVALID, input: v })
-      return z.NEVER
-    }
-    return n
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): number => {
+      if (isAbsent(v)) {
+        ctx.issues.push({ code: 'custom', message: MISSING, input: v })
+        return z.NEVER
+      }
+      const n = toNumber(v)
+      if (n === undefined || n < 0 || (opts.positive === true && n <= 0)) {
+        ctx.issues.push({ code: 'custom', message: INVALID, input: v })
+        return z.NEVER
+      }
+      return n
+    })
 }
 
 function optNum(opts: NumOpts = {}) {
-  return z.unknown().optional().transform((v, ctx): number | undefined => {
-    if (isAbsent(v)) return undefined
-    const n = toNumber(v)
-    if (n === undefined || n < 0 || (opts.positive === true && n <= 0)) {
-      ctx.issues.push({ code: 'custom', message: INVALID, input: v })
-      return z.NEVER
-    }
-    return n
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): number | undefined => {
+      if (isAbsent(v)) return undefined
+      const n = toNumber(v)
+      if (n === undefined || n < 0 || (opts.positive === true && n <= 0)) {
+        ctx.issues.push({ code: 'custom', message: INVALID, input: v })
+        return z.NEVER
+      }
+      return n
+    })
 }
 
 function str() {
-  return z.unknown().optional().transform((v, ctx): string => {
-    if (typeof v !== 'string' && typeof v !== 'number') {
-      ctx.issues.push({ code: 'custom', message: isAbsent(v) ? MISSING : INVALID, input: v })
-      return z.NEVER
-    }
-    const s = String(v).trim()
-    if (s === '') {
-      ctx.issues.push({ code: 'custom', message: MISSING, input: v })
-      return z.NEVER
-    }
-    return s
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): string => {
+      if (typeof v !== 'string' && typeof v !== 'number') {
+        ctx.issues.push({ code: 'custom', message: isAbsent(v) ? MISSING : INVALID, input: v })
+        return z.NEVER
+      }
+      const s = String(v).trim()
+      if (s === '') {
+        ctx.issues.push({ code: 'custom', message: MISSING, input: v })
+        return z.NEVER
+      }
+      return s
+    })
 }
 
 function optStr() {
-  return z.unknown().optional().transform((v, ctx): string | undefined => {
-    if (isAbsent(v)) return undefined
-    if (typeof v !== 'string' && typeof v !== 'number') {
-      ctx.issues.push({ code: 'custom', message: INVALID, input: v })
-      return z.NEVER
-    }
-    return String(v).trim()
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): string | undefined => {
+      if (isAbsent(v)) return undefined
+      if (typeof v !== 'string' && typeof v !== 'number') {
+        ctx.issues.push({ code: 'custom', message: INVALID, input: v })
+        return z.NEVER
+      }
+      return String(v).trim()
+    })
 }
 
 function slot() {
-  return z.unknown().optional().transform((v, ctx): MealSlot => {
-    if (isAbsent(v)) {
-      ctx.issues.push({ code: 'custom', message: MISSING, input: v })
-      return z.NEVER
-    }
-    const s = typeof v === 'string' ? SLOTS[key(v)] : undefined
-    if (s === undefined) {
-      ctx.issues.push({ code: 'custom', message: `UNKNOWN:${String(v)}`, input: v })
-      return z.NEVER
-    }
-    return s
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): MealSlot => {
+      if (isAbsent(v)) {
+        ctx.issues.push({ code: 'custom', message: MISSING, input: v })
+        return z.NEVER
+      }
+      const s = typeof v === 'string' ? SLOTS[key(v)] : undefined
+      if (s === undefined) {
+        ctx.issues.push({ code: 'custom', message: `UNKNOWN:${String(v)}`, input: v })
+        return z.NEVER
+      }
+      return s
+    })
 }
 
 function aisle() {
-  return z.unknown().optional().transform((v, ctx): Aisle => {
-    if (isAbsent(v)) return 'other'
-    const a = typeof v === 'string' ? AISLES[key(v)] : undefined
-    if (a === undefined) {
-      ctx.issues.push({ code: 'custom', message: `UNKNOWN:${String(v)}`, input: v })
-      return z.NEVER
-    }
-    return a
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): Aisle => {
+      if (isAbsent(v)) return 'other'
+      const a = typeof v === 'string' ? AISLES[key(v)] : undefined
+      if (a === undefined) {
+        ctx.issues.push({ code: 'custom', message: `UNKNOWN:${String(v)}`, input: v })
+        return z.NEVER
+      }
+      return a
+    })
 }
 
 /** Tableau de chaînes ; absent → []. Une chaîne seule devient un tableau d'un élément. */
 function strList() {
-  return z.unknown().optional().transform((v, ctx): string[] => {
-    if (isAbsent(v)) return []
-    const arr = Array.isArray(v) ? v : [v]
-    if (!arr.every((x) => typeof x === 'string')) {
-      ctx.issues.push({ code: 'custom', message: INVALID, input: v })
-      return z.NEVER
-    }
-    return arr.map((x) => (x as string).trim()).filter((x) => x !== '')
-  })
+  return z
+    .unknown()
+    .optional()
+    .transform((v, ctx): string[] => {
+      if (isAbsent(v)) return []
+      const arr = Array.isArray(v) ? v : [v]
+      if (!arr.every((x) => typeof x === 'string')) {
+        ctx.issues.push({ code: 'custom', message: INVALID, input: v })
+        return z.NEVER
+      }
+      return arr.map((x) => (x as string).trim()).filter((x) => x !== '')
+    })
 }
 
 const per100gSchema = z.object({
@@ -263,23 +294,26 @@ const ingredientSchema = z.object({
   per100g: per100gSchema.optional(),
 })
 
-const mealList = z.unknown().optional().transform((v, ctx): MealSlot[] => {
-  if (isAbsent(v) || (Array.isArray(v) && v.length === 0)) {
-    ctx.issues.push({ code: 'custom', message: MISSING, input: v })
-    return z.NEVER
-  }
-  const arr = Array.isArray(v) ? v : [v]
-  const out: MealSlot[] = []
-  for (const x of arr) {
-    const s = typeof x === 'string' ? SLOTS[key(x)] : undefined
-    if (s === undefined) {
-      ctx.issues.push({ code: 'custom', message: `UNKNOWN:${String(x)}`, input: x })
+const mealList = z
+  .unknown()
+  .optional()
+  .transform((v, ctx): MealSlot[] => {
+    if (isAbsent(v) || (Array.isArray(v) && v.length === 0)) {
+      ctx.issues.push({ code: 'custom', message: MISSING, input: v })
       return z.NEVER
     }
-    if (!out.includes(s)) out.push(s)
-  }
-  return out
-})
+    const arr = Array.isArray(v) ? v : [v]
+    const out: MealSlot[] = []
+    for (const x of arr) {
+      const s = typeof x === 'string' ? SLOTS[key(x)] : undefined
+      if (s === undefined) {
+        ctx.issues.push({ code: 'custom', message: `UNKNOWN:${String(x)}`, input: x })
+        return z.NEVER
+      }
+      if (!out.includes(s)) out.push(s)
+    }
+    return out
+  })
 
 const recipeSchema = z.object({
   name: str(),
@@ -297,14 +331,17 @@ const mealSchema = z.object({
   name: str(),
   date: optStr(),
   slot: slot(),
-  estimated: z.unknown().optional().transform((v, ctx): boolean => {
-    if (isAbsent(v)) return true
-    if (typeof v !== 'boolean') {
-      ctx.issues.push({ code: 'custom', message: INVALID, input: v })
-      return z.NEVER
-    }
-    return v
-  }),
+  estimated: z
+    .unknown()
+    .optional()
+    .transform((v, ctx): boolean => {
+      if (isAbsent(v)) return true
+      if (typeof v !== 'boolean') {
+        ctx.issues.push({ code: 'custom', message: INVALID, input: v })
+        return z.NEVER
+      }
+      return v
+    }),
   totals: z.object({ kcal: num(), protein: optNum(), carbs: optNum(), fat: optNum() }),
 })
 
@@ -393,21 +430,60 @@ function translateIssue(issue: z.core.$ZodIssue, raw: unknown): string {
 
 // ---------- Appariement Ciqual par le nom ----------
 
-const STOP = new Set(['de', 'du', 'des', 'd', 'la', 'le', 'les', 'l', 'un', 'une', 'et', 'ou', 'au', 'aux', 'a', 'en', 'sans', 'avec', 'pour'])
+const STOP = new Set([
+  'de',
+  'du',
+  'des',
+  'd',
+  'la',
+  'le',
+  'les',
+  'l',
+  'un',
+  'une',
+  'et',
+  'ou',
+  'au',
+  'aux',
+  'a',
+  'en',
+  'sans',
+  'avec',
+  'pour',
+])
 /** États de cuisson : ignorés pour la couverture, mais « cru » départage les égalités. */
 const STATE = new Set(['cru', 'crue', 'crus', 'crues', 'cuit', 'cuite', 'cuits', 'cuites', 'nature'])
 const RAW = new Set(['cru', 'crue', 'crus', 'crues'])
 /** Noms Ciqual de produits transformés, écartés sauf si le nom d'ingrédient contient le mot. */
 const EXCLUDED = new Set([
-  'huile', 'beurre', 'nectar', 'jus', 'sirop', 'fecule', 'poudre', 'seche', 'seches', 'sechee', 'sechees',
-  'dehydrate', 'dehydratee', 'fume', 'fumee', 'son', 'foie', 'dragee', 'coco', 'cola',
+  'huile',
+  'beurre',
+  'nectar',
+  'jus',
+  'sirop',
+  'fecule',
+  'poudre',
+  'seche',
+  'seches',
+  'sechee',
+  'sechees',
+  'dehydrate',
+  'dehydratee',
+  'fume',
+  'fumee',
+  'son',
+  'foie',
+  'dragee',
+  'coco',
+  'cola',
 ])
 
 /** Égalité de mots au pluriel près (≥ 5 lettres) ; « pâtes » et « pâté » ne sont jamais confondus. */
 function sameWord(a: string, b: string): boolean {
   if (a === b) return true
   if (a.startsWith('pate') && b.startsWith('pate')) return false
-  const sing = (w: string): string => (w.length >= 5 && (w.endsWith('s') || w.endsWith('x')) ? w.slice(0, -1) : w)
+  const sing = (w: string): string =>
+    w.length >= 5 && (w.endsWith('s') || w.endsWith('x')) ? w.slice(0, -1) : w
   return sing(a) === sing(b)
 }
 
@@ -501,7 +577,9 @@ function parseRecipe(
         // Valeurs recalculées depuis Ciqual : celles fournies sont ignorées.
         return clean({ name: ing.name, grams: ing.grams, ciqualCode: code, aisle: ing.aisle })
       }
-      warnings.push(`${ing.name} : code Ciqual ${code} inconnu${per100g ? ', valeurs fournies conservées' : ''}`)
+      warnings.push(
+        `${ing.name} : code Ciqual ${code} inconnu${per100g ? ', valeurs fournies conservées' : ''}`,
+      )
       if (!per100g) code = undefined
     }
     if (code === undefined && per100g === undefined) {
@@ -542,7 +620,8 @@ function parseMeal(
   if (!r.success) return { kind: 'invalid', index, errors }
   const d = r.data
   const date = d.date === undefined ? today : d.date
-  if (!isValidLocalDate(date)) return { kind: 'invalid', index, errors: [`date invalide « ${date} » (format AAAA-MM-JJ)`] }
+  if (!isValidLocalDate(date))
+    return { kind: 'invalid', index, errors: [`date invalide « ${date} » (format AAAA-MM-JJ)`] }
   if (date > addDays(today, 1)) return { kind: 'invalid', index, errors: [`date dans le futur : ${date}`] }
   const warnings: string[] = []
   const miss = (v: number | undefined, label: string): number => {
@@ -561,7 +640,8 @@ function parseMeal(
       fat: miss(d.totals.fat, 'lipides'),
     },
   }
-  const bad = validate?.(importedMealEntry(meal, { id: 'preview', createdAt: `${today}T00:00:00.000Z` })) ?? null
+  const bad =
+    validate?.(importedMealEntry(meal, { id: 'preview', createdAt: `${today}T00:00:00.000Z` })) ?? null
   if (bad !== null) return { kind: 'invalid', index, errors: [bad] }
   return { kind: 'meal', index, meal, warnings }
 }
@@ -570,7 +650,11 @@ export function parseImport(text: string, ctx: ImportContext): ImportParseResult
   const ex = extractJsonPayload(text)
   if (!ex.ok) return ex
   const value = ex.value
-  const list: unknown[] = Array.isArray(value) ? value : typeof value === 'object' && value !== null ? [value] : []
+  const list: unknown[] = Array.isArray(value)
+    ? value
+    : typeof value === 'object' && value !== null
+      ? [value]
+      : []
   if (!Array.isArray(value) && (typeof value !== 'object' || value === null)) {
     return { ok: false, error: 'Le JSON doit être un tableau ou un objet.' }
   }
@@ -616,7 +700,8 @@ export function parseImport(text: string, ctx: ImportContext): ImportParseResult
     }
     const raw = stripNulls(el)
     const type = (raw as Record<string, unknown>).type
-    if (typeof type !== 'string' || type.trim() === '') return { kind: 'invalid', index, errors: ['type manquant'] }
+    if (typeof type !== 'string' || type.trim() === '')
+      return { kind: 'invalid', index, errors: ['type manquant'] }
     if (type === 'recipe') return parseRecipe(raw, index, byCode, getIndex, ctx.validateRecipe)
     if (type === 'meal') return parseMeal(raw, index, ctx.today, ctx.validateEntry)
     if (UNSUPPORTED.has(type)) {
@@ -635,7 +720,11 @@ export function parseImport(text: string, ctx: ImportContext): ImportParseResult
   })
   const finalItems = items.map((it, i): ImportPreviewItem =>
     it.kind === 'sessionPlan' && i !== lastPlan
-      ? { kind: 'invalid', index: it.index, errors: ['plusieurs séances dans la réponse : seule la dernière est retenue'] }
+      ? {
+          kind: 'invalid',
+          index: it.index,
+          errors: ['plusieurs séances dans la réponse : seule la dernière est retenue'],
+        }
       : it,
   )
   if (training) annotate(finalItems, ctx.exercises ?? [])
@@ -674,7 +763,10 @@ function annotate(items: readonly ImportPreviewItem[], known: readonly ImportExe
   for (const it of items) {
     if (it.kind !== 'sessionPlan') continue
     for (const b of it.plan.blocks) {
-      if (hidden.has(b.exerciseId)) it.warnings.push(`« ${known.find((e) => e.id === b.exerciseId)?.name ?? b.exerciseId} » est masqué par la même réponse mais figure dans la séance`)
+      if (hidden.has(b.exerciseId))
+        it.warnings.push(
+          `« ${known.find((e) => e.id === b.exerciseId)?.name ?? b.exerciseId} » est masqué par la même réponse mais figure dans la séance`,
+        )
     }
   }
 }

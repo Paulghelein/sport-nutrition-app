@@ -128,6 +128,29 @@ nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ;
   commit F3 et a cassé le build de main, réparé en e0e1895 ; le site en ligne n'a pas été touché). Jalons parallèles
   committés séparément depuis une copie de travail isolée.
 
+- 2026-10-23 (R5) : plus aucun écran v1. Homonymes v1 de `src/ui/` supprimés (restent useLiveQuery, choices, drafts,
+  format, exerciseDraft — hors barrel, il tirait le catalogue dans le démarrage —, ErrorBoundary, UpdatePrompt) ;
+  jetons `v1-*` supprimés, racine/body sur canvas, `color-scheme: light`, theme-color `#e8e6e1` (égalité index.html /
+  vite.config.ts / `--color-canvas` vérifiée par test). **Remplace les décisions R0 « rounded-ds-* » et « v1-bg »** :
+  rayons = échelle Tailwind redéfinie dans `@theme` (`rounded-sm|md|lg|xl` = 10/16/24/32, pastille `rounded-full`) ;
+  nouveaux styles typographiques `display-2xl`, `display-m`, `number-m`, `lead`, `input` (16 px : iOS zoome au focus
+  sous 16 px), `body-sm`, `tiny` (DESIGN.md §2). Marges du shell : `--page-gutter`, utilitaires `ds-main-pad`, `ds-bleed`,
+  `ds-bleed-edge` (bandeau caméra) ; dans une Sheet, `-mx-4 px-4` reste couplé au `px-4` de la Sheet.
+- 2026-10-23 (R5) : kit : BackLink, SearchBox, DateField uniques ; une seule feuille de log de recette (RecipeLogSheet) ;
+  cartes d'aperçu partagées import / réponse de Claude (`src/app/claude/previewCards.tsx`) ; format numérique unique
+  `src/ui/kit/format.ts` (formatInt, formatDecimal, withUnit) ; NutritionTabs sur `pillClass` partagé avec PillTabs, compteur
+  du frigo en prop (`useFridgePortions` dans `src/app/recipes/useFridge.ts`, module léger). Routes et motifs `:id` en
+  constantes de `routes.ts`. Garde-fou couleurs sur tout `src/` (seul le bloc `@theme` d'index.css est exempté ;
+  Vitest lit maintenant le vrai CSS : `test.css.include`).
+- 2026-10-23 (R5) : `/dev/ui` seulement si `import.meta.env.DEV || VITE_DEV_UI === '1'` (Playwright construit avec
+  `VITE_DEV_UI=1` ; déploiement sans) ; condition écrite sur place dans l'`import()` sinon Rolldown garde le chunk.
+  UpdatePrompt en haut de l'écran (ne recouvre plus la barre ni les zones collantes). Toast « Pesée enregistrée » après
+  une pesée depuis +. Réglages : boutons Enregistrer en variante sombre (une seule couleur ember par écran).
+  Meta `apple-mobile-web-app-status-bar-style` gardée en `black-translucent` (passer à `default` casserait les safe
+  areas du bandeau caméra et du mode séance) : lisibilité de l'heure sur canvas à vérifier sur iPhone.
+- 2026-10-23 (R5) : outillage : ESLint `defineConfig` (règles identiques), actions GitHub checkout@v7, setup-node@v7,
+  configure-pages@v6, upload-pages-artifact@v5, deploy-pages@v5.
+
 - 2026-10-15 : stack et architecture fixées (voir CLAUDE.md, docs/SPEC.md).
 - 2026-10-15 : utilisateur homme (formule BMR homme).
 - 2026-10-15 : dépôt GitHub public pour l'instant (GitHub Pages gratuit) ; passage en privé possible plus tard avec GitHub Pro.

@@ -189,7 +189,7 @@ function PreviewContent({
                 onClick={t.onClick}
                 disabled={t.disabled}
                 aria-busy={t.busy}
-                className="focus-ring min-h-11 rounded-ds-pill bg-surface px-3.5 text-body-strong text-ink shadow-card disabled:text-ink-muted"
+                className="focus-ring min-h-11 rounded-full bg-surface px-3.5 text-body-strong text-ink shadow-card disabled:text-ink-muted"
               >
                 {t.label}
               </button>
@@ -199,9 +199,7 @@ function PreviewContent({
       </div>
       <div className="flex flex-col gap-0.5">
         <span className="text-caption text-ink-muted">{subtitle}</span>
-        <h1 className="m-0 font-display text-[30px] font-extrabold leading-[34px] tracking-[-0.015em]">
-          {titleOverride ?? title ?? 'Aperçu'}
-        </h1>
+        <h1 className="m-0 font-display text-display-m">{titleOverride ?? title ?? 'Aperçu'}</h1>
       </div>
 
       {!empty ? (
@@ -431,7 +429,7 @@ function PreviewContent({
       )}
 
       {!empty ? (
-        <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-col gap-2 bg-canvas px-4 pb-3 pt-3 shadow-[0_-12px_24px_var(--color-canvas)]">
+        <div className="ds-bleed sticky bottom-0 z-10 mt-4 flex flex-col gap-2 bg-canvas pb-3 pt-3 shadow-[0_-12px_24px_var(--color-canvas)]">
           {error ? <Note tone="error">{error}</Note> : null}
           {active.data ? (
             <>

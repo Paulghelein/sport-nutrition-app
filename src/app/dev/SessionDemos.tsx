@@ -55,13 +55,13 @@ export function SessionDemos() {
         <span className="text-label uppercase text-ink-muted">
           Mode séance (fond sombre) : avancement, pastilles, panneaux géants
         </span>
-        <div className="ds-session flex flex-col gap-4 rounded-ds-lg p-4">
+        <div className="ds-session flex flex-col gap-4 rounded-lg p-4">
           <SessionProgress fractions={[1, 0.25, 0, 0, 0]} current={2} />
           <div className="flex items-center gap-3.5">
-            <ExerciseThumb primary={['quads', 'glutes']} size={96} tone="dark" className="rounded-ds-md" />
+            <ExerciseThumb primary={['quads', 'glutes']} size={96} tone="dark" className="rounded-md" />
             <div className="flex flex-col gap-1.5">
               <span className="text-label uppercase text-on-inverse-muted">Exercice 2 sur 5</span>
-              <span className="font-display text-[28px] font-extrabold leading-8">Goblet squat</span>
+              <span className="font-display text-number-l font-extrabold">Goblet squat</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ export function SessionDemos() {
       </div>
       <div className="flex flex-col gap-2">
         <span className="text-label uppercase text-ink-muted">RestTimer (anneau 260 px, temps 76 px)</span>
-        <div className="ds-session flex justify-center rounded-ds-lg p-4">
+        <div className="ds-session flex justify-center rounded-lg p-4">
           <RestTimer remainingSec={72} totalSec={90} caption="sur 1:30" />
         </div>
       </div>

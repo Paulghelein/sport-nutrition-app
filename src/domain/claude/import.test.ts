@@ -23,7 +23,7 @@ const CIQUAL = [
   ciq('36005', 'Poulet, blanc, cru'),
   ciq('20009', 'Brocoli, cuit'),
   ciq('20010', 'Brocoli, cru'),
-  ciq('20011', 'Brocoli, surgelé, cuit à l\'eau'),
+  ciq('20011', "Brocoli, surgelé, cuit à l'eau"),
   ciq('9100', 'Pâtes alimentaires, cuites'),
 ]
 const ctx = { today: '2026-10-16', ciqual: CIQUAL }
@@ -39,10 +39,20 @@ const RECIPE = {
   tags: ['batch', 'riche-en-proteines'],
   ingredients: [
     { name: 'Blanc de poulet cru', grams: 600, ciqualCode: '36005', aisle: 'boucherie' },
-    { name: 'Riz basmati cru', grams: 320, aisle: 'epicerie', per100g: { kcal: 354, protein: 8.1, carbs: 77.5, fat: 0.9 } },
+    {
+      name: 'Riz basmati cru',
+      grams: 320,
+      aisle: 'epicerie',
+      per100g: { kcal: 354, protein: 8.1, carbs: 77.5, fat: 0.9 },
+    },
     { name: 'Brocoli', grams: 500, aisle: 'fruits-legumes' },
   ],
-  steps: ['Cuire le riz.', 'Saisir le poulet en dés.', 'Cuire le brocoli à la vapeur 6 min.', 'Répartir en 4 boîtes.'],
+  steps: [
+    'Cuire le riz.',
+    'Saisir le poulet en dés.',
+    'Cuire le brocoli à la vapeur 6 min.',
+    'Répartir en 4 boîtes.',
+  ],
 }
 const MEAL = {
   type: 'meal',
@@ -58,7 +68,7 @@ describe('extractJsonPayload', () => {
     expect(extractJsonPayload('[1,2]')).toEqual({ ok: true, value: [1, 2] })
     expect(extractJsonPayload(' {"a":1} ')).toEqual({ ok: true, value: { a: 1 } })
   })
-  it('dernier bloc json d\'un texte avec prose', () => {
+  it("dernier bloc json d'un texte avec prose", () => {
     const t = 'Voici.\n```json\n[{"a":1}]\n```\nOu plutôt :\n```json\n[{"a":2}]\n```\nBon appétit [!]'
     expect(extractJsonPayload(t)).toEqual({ ok: true, value: [{ a: 2 }] })
   })
@@ -93,7 +103,13 @@ describe('parseImport : exemple IMPORT_FORMAT.md', () => {
       kind: 'meal',
       index: 1,
       warnings: [],
-      meal: { name: 'Burger frites au resto', date: '2026-10-15', slot: 'dinner', estimated: true, totals: { kcal: 1150, fat: 58 } },
+      meal: {
+        name: 'Burger frites au resto',
+        date: '2026-10-15',
+        slot: 'dinner',
+        estimated: true,
+        totals: { kcal: 1150, fat: 58 },
+      },
     })
   })
 })
@@ -112,18 +128,49 @@ describe('recettes : cas limites', () => {
       name: ' Omelette ',
       meal: 'Petit-déj',
       servings: '2',
-      ingredients: [{ name: 'Oeuf', grams: '120,5', aisle: 'Crèmerie' }, { name: 'Pois surgelés', grams: 50, aisle: 'surgelés' }],
+      ingredients: [
+        { name: 'Oeuf', grams: '120,5', aisle: 'Crèmerie' },
+        { name: 'Pois surgelés', grams: 50, aisle: 'surgelés' },
+      ],
     })
     expect(it0).toMatchObject({
       kind: 'recipe',
-      recipe: { name: 'Omelette', meal: ['breakfast'], servings: 2, prepMinutes: 0, cookMinutes: 0, tags: [], steps: [] },
+      recipe: {
+        name: 'Omelette',
+        meal: ['breakfast'],
+        servings: 2,
+        prepMinutes: 0,
+        cookMinutes: 0,
+        tags: [],
+        steps: [],
+      },
     })
     if (it0.kind !== 'recipe') return
-    expect(it0.recipe.ingredients.map((i) => [i.grams, i.aisle])).toEqual([[120.5, 'dairy'], [50, 'frozen']])
+    expect(it0.recipe.ingredients.map((i) => [i.grams, i.aisle])).toEqual([
+      [120.5, 'dairy'],
+      [50, 'frozen'],
+    ])
     expect(it0.recipe.fridgeDays).toBeUndefined()
-    expect(one({ type: 'recipe', name: 'x', meal: ['Dîner', 'english'], servings: 1, ingredients: [{ name: 'a', grams: 1 }] })).toMatchObject({ kind: 'invalid' })
-    const noAisle = one({ type: 'recipe', name: 'x', meal: ['dîner'], servings: 1, ingredients: [{ name: 'a', grams: 1, per100g: { kcal: 1, protein: 1, carbs: 1, fat: 1 } }] })
-    expect(noAisle).toMatchObject({ kind: 'recipe', recipe: { meal: ['dinner'], ingredients: [{ aisle: 'other' }] } })
+    expect(
+      one({
+        type: 'recipe',
+        name: 'x',
+        meal: ['Dîner', 'english'],
+        servings: 1,
+        ingredients: [{ name: 'a', grams: 1 }],
+      }),
+    ).toMatchObject({ kind: 'invalid' })
+    const noAisle = one({
+      type: 'recipe',
+      name: 'x',
+      meal: ['dîner'],
+      servings: 1,
+      ingredients: [{ name: 'a', grams: 1, per100g: { kcal: 1, protein: 1, carbs: 1, fat: 1 } }],
+    })
+    expect(noAisle).toMatchObject({
+      kind: 'recipe',
+      recipe: { meal: ['dinner'], ingredients: [{ aisle: 'other' }] },
+    })
   })
   it('erreurs lisibles en français', () => {
     const bad = one({
@@ -143,10 +190,25 @@ describe('recettes : cas limites', () => {
     expect(bad.errors).toContain('portions invalides')
     const noIng = one({ type: 'recipe', name: 'x', meal: ['diner'], servings: 1 })
     expect(noIng).toMatchObject({ kind: 'invalid', errors: ['aucun ingrédient'] })
-    const badAisle = one({ type: 'recipe', name: 'x', meal: ['diner'], servings: 1, ingredients: [{ name: 'a', grams: 1, aisle: 'cave' }] })
+    const badAisle = one({
+      type: 'recipe',
+      name: 'x',
+      meal: ['diner'],
+      servings: 1,
+      ingredients: [{ name: 'a', grams: 1, aisle: 'cave' }],
+    })
     expect(badAisle).toMatchObject({ kind: 'invalid', errors: ['ingrédient 1 : rayon inconnu « cave »'] })
-    const badMacro = one({ type: 'recipe', name: 'x', meal: ['diner'], servings: 1, ingredients: [{ name: 'a', grams: 1, per100g: { kcal: 1, protein: 1, carbs: 1 } }] })
-    expect(badMacro).toMatchObject({ kind: 'invalid', errors: ['ingrédient 1, valeurs pour 100 g : lipides manquants'] })
+    const badMacro = one({
+      type: 'recipe',
+      name: 'x',
+      meal: ['diner'],
+      servings: 1,
+      ingredients: [{ name: 'a', grams: 1, per100g: { kcal: 1, protein: 1, carbs: 1 } }],
+    })
+    expect(badMacro).toMatchObject({
+      kind: 'invalid',
+      errors: ['ingrédient 1, valeurs pour 100 g : lipides manquants'],
+    })
   })
   it('code Ciqual valide : per100g ignoré ; inconnu : conservé en repli + warning', () => {
     const p = { kcal: 1, protein: 1, carbs: 1, fat: 1 }
@@ -172,7 +234,10 @@ describe('recettes : cas limites', () => {
   })
   it('appariement prudent : tous les mots requis, pas de demi-correspondance', () => {
     const it0 = one({
-      type: 'recipe', name: 'x', meal: ['diner'], servings: 1,
+      type: 'recipe',
+      name: 'x',
+      meal: ['diner'],
+      servings: 1,
       ingredients: [
         { name: 'Poulet rôti', grams: 1 },
         { name: 'Pâtes cuites', grams: 1 },
@@ -182,8 +247,17 @@ describe('recettes : cas limites', () => {
     if (it0.kind !== 'recipe') throw new Error()
     expect(it0.recipe.ingredients.map((i) => i.ciqualCode)).toEqual([undefined, '9100', '20011'])
   })
-  it('sans ctx.ciqual : pas d\'appariement, warning sans valeurs', () => {
-    const it0 = one({ type: 'recipe', name: 'x', meal: ['diner'], servings: 1, ingredients: [{ name: 'Brocoli', grams: 1 }] }, { today: '2026-10-16' })
+  it("sans ctx.ciqual : pas d'appariement, warning sans valeurs", () => {
+    const it0 = one(
+      {
+        type: 'recipe',
+        name: 'x',
+        meal: ['diner'],
+        servings: 1,
+        ingredients: [{ name: 'Brocoli', grams: 1 }],
+      },
+      { today: '2026-10-16' },
+    )
     expect(it0).toMatchObject({ kind: 'recipe', warnings: ['Brocoli : pas de valeurs nutritionnelles'] })
   })
 })
@@ -198,7 +272,10 @@ describe('repas', () => {
   }
   it('défauts : date du jour, estimated true, macros manquantes à 0 avec warning', () => {
     const m = one({ date: undefined, estimated: undefined, totals: { kcal: 600 } })
-    expect(m).toMatchObject({ kind: 'meal', meal: { date: '2026-10-16', estimated: true, totals: { kcal: 600, protein: 0, carbs: 0, fat: 0 } } })
+    expect(m).toMatchObject({
+      kind: 'meal',
+      meal: { date: '2026-10-16', estimated: true, totals: { kcal: 600, protein: 0, carbs: 0, fat: 0 } },
+    })
     if (m.kind === 'meal') expect(m.warnings).toHaveLength(3)
   })
   it('date invalide ou trop future', () => {
@@ -207,7 +284,10 @@ describe('repas', () => {
     expect(one({ date: '2026-10-17' })).toMatchObject({ kind: 'meal' })
   })
   it('kcal manquant ou négatif', () => {
-    expect(one({ totals: { protein: 3 } })).toMatchObject({ kind: 'invalid', errors: ['totaux : kcal manquants'] })
+    expect(one({ totals: { protein: 3 } })).toMatchObject({
+      kind: 'invalid',
+      errors: ['totaux : kcal manquants'],
+    })
     expect(one({ totals: { kcal: -5 } })).toMatchObject({ kind: 'invalid' })
   })
   it('importedMealEntry fige les macros', () => {
@@ -241,9 +321,22 @@ describe('parseImport : tableau mixte et robustesse', () => {
     const text = `Voici ta recette !\n\n\`\`\`json\n${JSON.stringify(arr, null, 2)}\n\`\`\`\nBon courage.`
     const r = parseImport(text, ctx)
     if (!r.ok) throw new Error(r.error)
-    expect(r.items.map((i) => i.kind)).toEqual(['recipe', 'invalid', 'unsupported', 'unsupported', 'unsupported', 'invalid', 'invalid', 'invalid', 'meal'])
+    expect(r.items.map((i) => i.kind)).toEqual([
+      'recipe',
+      'invalid',
+      'unsupported',
+      'unsupported',
+      'unsupported',
+      'invalid',
+      'invalid',
+      'invalid',
+      'meal',
+    ])
     expect(r.items.map((i) => i.index)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8])
-    expect(r.items[2]).toMatchObject({ type: 'exercisePreference', message: expect.stringContaining('Coller la réponse de Claude') })
+    expect(r.items[2]).toMatchObject({
+      type: 'exercisePreference',
+      message: expect.stringContaining('Coller la réponse de Claude'),
+    })
     expect(r.items[5]).toMatchObject({ errors: ['type inconnu « banane »'] })
   })
   it('objet seul, null ignorés', () => {
@@ -262,7 +355,9 @@ describe('appariement Ciqual sur le vrai jeu', () => {
   const real = ciqualDatasetToFoods(dataset as unknown as CiqualDataset)
   const link = (name: string): string | undefined => {
     const r = parseImport(
-      JSON.stringify([{ type: 'recipe', name: 'x', meal: ['diner'], servings: 1, ingredients: [{ name, grams: 100 }] }]),
+      JSON.stringify([
+        { type: 'recipe', name: 'x', meal: ['diner'], servings: 1, ingredients: [{ name, grams: 100 }] },
+      ]),
       { today: '2026-10-16', ciqual: real },
     )
     if (!r.ok) throw new Error(r.error)
@@ -275,7 +370,7 @@ describe('appariement Ciqual sur le vrai jeu', () => {
     const bad: Record<string, RegExp> = {
       Avocat: /huile/i,
       Cacao: /beurre|poudre/i,
-      'Pâtes': /pât[ée]\b(?!s)|breton/i,
+      Pâtes: /pât[ée]\b(?!s)|breton/i,
       Pates: /breton|^pâté/i,
       Lait: /coco/i,
       Banane: /nectar/i,

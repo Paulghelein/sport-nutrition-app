@@ -65,7 +65,7 @@ export function ExercisePickerSheet({
                 <button
                   type="button"
                   onClick={() => onPick(c)}
-                  className="focus-ring flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-ds-md bg-canvas px-3.5 py-2 text-left active:opacity-70"
+                  className="focus-ring flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-md bg-canvas px-3.5 py-2 text-left active:opacity-70"
                 >
                   <span className="text-headline">{c.name}</span>
                   <span className="flex items-center gap-2 text-caption text-ink-muted">
@@ -76,7 +76,7 @@ export function ExercisePickerSheet({
                   type="button"
                   onClick={() => setHelp(c)}
                   aria-label={`Comment faire ? ${c.name}`}
-                  className="focus-ring grid min-h-14 w-14 shrink-0 place-items-center rounded-ds-md bg-canvas text-ember-ink active:opacity-70"
+                  className="focus-ring grid min-h-14 w-14 shrink-0 place-items-center rounded-md bg-canvas text-ember-ink active:opacity-70"
                 >
                   <CircleHelp size={22} strokeWidth={1.75} aria-hidden="true" />
                 </button>

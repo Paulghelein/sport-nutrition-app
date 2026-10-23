@@ -224,7 +224,12 @@ describe('strengthByExercise : unilatéral et cas limites', () => {
 
   it('séries à 0 rep / 0 s : pas de record', () => {
     const ex = strengthByExercise(
-      [session('z', '2026-10-01', [block('b1', 'incline-push-up', [reps(0)]), block('b2', 'plank', [hold(0)])])],
+      [
+        session('z', '2026-10-01', [
+          block('b1', 'incline-push-up', [reps(0)]),
+          block('b2', 'plank', [hold(0)]),
+        ]),
+      ],
       byId,
     )
     expect(find(ex, 'incline-push-up').records).toEqual({})
@@ -275,9 +280,14 @@ describe('F3 : séries en temps fixe et AMRAP', () => {
 
   it('AMRAP : compte comme une série normale (reps max)', () => {
     const rows = [
-      session('a1', '2026-10-01', [block('b1', 'incline-push-up', [reps(12), { ...reps(19), setType: 'amrap' }])]),
+      session('a1', '2026-10-01', [
+        block('b1', 'incline-push-up', [reps(12), { ...reps(19), setType: 'amrap' }]),
+      ]),
     ]
-    expect(find(strengthByExercise(rows, byId), 'incline-push-up').records.reps).toEqual({ value: 19, date: '2026-10-01' })
+    expect(find(strengthByExercise(rows, byId), 'incline-push-up').records.reps).toEqual({
+      value: 19,
+      date: '2026-10-01',
+    })
   })
 
   it('recordsInRange : record temps fixe avec windowSec, jamais fusionné avec le record de reps normal', () => {

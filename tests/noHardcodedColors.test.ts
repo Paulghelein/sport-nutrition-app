@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import viteConfig from '../vite.config.ts?raw'
 
 // Lecture via Vite (pas de types Node dans ce projet) : chemins absolus depuis la racine du dépôt.
 const all = import.meta.glob<string>('/src/**/*.{ts,tsx,css,svg}', {
@@ -8,29 +9,19 @@ const all = import.meta.glob<string>('/src/**/*.{ts,tsx,css,svg}', {
 })
 const html = import.meta.glob<string>('/index.html', { query: '?raw', import: 'default', eager: true })
 
-const V2_DIRS = [
-  '/src/ui/kit/',
-  '/src/app/dev/',
-  '/src/app/today/',
-  '/src/app/progress/',
-  '/src/app/shell/',
-  '/src/app/settings/',
-  '/src/app/screens/SettingsScreen.tsx',
-  '/src/app/forms/',
-  '/src/app/Onboarding.tsx',
-  '/src/ui/UpdatePrompt.tsx',
-  '/src/ui/ErrorBoundary.tsx',
-  '/src/app/training/',
-  '/src/content/visuals/',
-  '/src/app/nutrition/',
-  '/src/app/scan/',
-  '/src/app/recipes/',
-  '/src/app/claude/',
-  '/src/app/recipeScan/',
-]
-const isV2 = (path: string) => V2_DIRS.some((d) => path.startsWith(d))
-const entries = (pred: (path: string) => boolean): [string, string][] =>
-  Object.entries(all).filter(([path]) => pred(path))
+// Exemptions, chacune pour une raison précise :
+// - bloc `@theme { … }` de src/index.css : il DÉFINIT les jetons (#hex) et les ombres (--shadow-*: rgb()). Le reste
+//   du fichier est scanné comme le code.
+// - fichiers *.test.* de src : cas de test (chaînes de couleurs), pas du rendu.
+const THEME_BLOCK = /@theme\s*\{[\s\S]*?\n\}\n/
+const entries = (): [string, string][] => Object.entries(all)
+const covered = (): [string, string][] =>
+  entries()
+    .filter(([path]) => !path.includes('.test.'))
+    .map(([path, text]): [string, string] => [
+      path,
+      path === '/src/index.css' ? text.replace(THEME_BLOCK, '') : text,
+    ])
 
 const PALETTE =
   '(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)'
@@ -51,9 +42,9 @@ function scan(files: [string, string][], rules: [string, RegExp][]): string[] {
   return out
 }
 
-describe('garde-fou : aucune couleur en dur dans le code v2', () => {
+describe('garde-fou : aucune couleur en dur dans src/', () => {
   it('le parcours couvre bien des fichiers', () => {
-    expect(entries(isV2).length).toBeGreaterThan(15)
+    expect(covered().length).toBeGreaterThan(100)
   })
   it('les règles détectent bien les violations (auto-test)', () => {
     for (const bad of [
@@ -85,77 +76,38 @@ describe('garde-fou : aucune couleur en dur dans le code v2', () => {
         ok,
       ).toBe(false)
   })
-  it('src/ui/kit, src/app/dev, src/content/visuals : aucune couleur codée en dur', () => {
-    expect(scan(entries(isV2), RULES)).toEqual([])
+  it('aucune couleur codée en dur (#hex, rgb/hsl, palette Tailwind, white/black)', () => {
+    expect(scan(covered(), RULES)).toEqual([])
+  })
+  it('plus aucun jeton ni nom « v1- » dans src/ et index.html', () => {
+    const v1 = /(?<![\w])v1-/
+    expect(v1.test('bg-v1-bg')).toBe(true)
+    expect(scan([...entries(), ...Object.entries(html)], [['jeton v1', v1]])).toEqual([])
   })
 })
 
-describe('garde-fou : jetons v2 absents des écrans v1', () => {
-  // Les noms de jetons v2 (surface, line, canvas, ink…) ont remplacé ceux de la v1 (renommés v1-*) : dans un écran
-  // v1 ils changeraient silencieusement le rendu. À étendre à chaque jalon : ajouter ici chaque écran refait en v2.
-  const V2_SCREENS = [
-    '/src/ui/kit/',
-    '/src/app/dev/',
-    '/src/app/today/',
-    '/src/app/progress/',
-    '/src/app/shell/',
-    '/src/app/settings/',
-    '/src/app/screens/SettingsScreen.tsx',
-    '/src/app/forms/',
-    '/src/app/Onboarding.tsx',
-    '/src/ui/UpdatePrompt.tsx',
-    '/src/ui/ErrorBoundary.tsx',
-    '/src/app/training/',
-    '/src/app/screens/SessionScreen.tsx',
-    '/src/app/nutrition/',
-    '/src/app/scan/',
-    '/src/app/recipes/',
-    '/src/app/claude/',
-    '/src/app/recipeScan/',
-  ]
-  const inV2Screen = (path: string) => V2_SCREENS.some((d) => path.startsWith(d))
-  const V2_TOKEN = new RegExp(
-    '(?<![\\w-])(?:[\\w[\\]-]+:)*(?:bg|text|border|divide|ring|fill|stroke)-(?:surface|line|canvas|ink)(?:-(?:raised|sunken|muted|faint))?(?![\\w-])',
-  )
-  it('auto-test', () => {
-    for (const bad of [
-      'bg-surface',
-      'active:bg-surface-raised/50',
-      'border-line',
-      'text-ink-muted',
-      'divide-line',
-      'fill-surface-sunken',
-    ])
-      expect(V2_TOKEN.test(`x ${bad} y`), bad).toBe(true)
-    for (const ok of ['bg-v1-surface', 'border-v1-line', 'bg-v1-surface-hi', 'text-zinc-100', 'incline-push'])
-      expect(V2_TOKEN.test(`x ${ok} y`), ok).toBe(false)
-  })
-  it('aucune classe de jeton v2 hors des écrans v2', () => {
-    const files = entries(
-      (p) => !inV2Screen(p) && !p.endsWith('.css') && !p.includes('.test.') && !p.startsWith('/src/content/'),
-    )
-    expect(scan(files, [['jeton v2 dans un écran v1', V2_TOKEN]])).toEqual([])
-  })
-})
-
-describe('garde-fou : jetons v1 et réseau', () => {
-  const v1Files = (): [string, string][] => [...entries((p) => !isV2(p)), ...Object.entries(html)]
-
-  it('aucun ancien nom de jeton v1 (sans préfixe v1-) dans les fichiers v1', () => {
-    const old = new RegExp(
-      `\\b(?:bg|text|border|ring|divide|fill|stroke|from|to|via|outline|placeholder)-(?:bg|surface-hi|line)\\b|var\\(--color-(?:bg|surface-hi)\\)`,
-    )
-    const hits = scan(
-      v1Files().filter(([p]) => !p.endsWith('.css')),
-      [['ancien jeton', old]],
-    )
-    expect(hits).toEqual([])
-  })
-
+describe('garde-fou : réseau', () => {
   it('aucune URL de police ou de CDN dans src/ et index.html', () => {
     const net =
       /fonts\.googleapis|fonts\.gstatic|cdn\.jsdelivr|cdnjs|unpkg\.com|use\.typekit|@import\s+url\(\s*['"]?https?:/
-    const hits = scan(v1Files().concat(entries(isV2)), [['réseau', net]])
+    const hits = scan([...entries(), ...Object.entries(html)], [['réseau', net]])
     expect(hits).toEqual([])
+  })
+})
+
+describe('garde-fou : couleur du thème', () => {
+  const first = (text: string | undefined, re: RegExp): string | undefined =>
+    text?.match(re)?.[1]?.toLowerCase()
+  it('canvas = theme-color (index.html) = themeColor du manifest (vite.config.ts)', () => {
+    const css = all['/src/index.css']
+    const canvas = first(css, /--color-canvas:\s*(#[0-9a-fA-F]{6})\s*;/)
+    expect(canvas).toMatch(/^#[0-9a-f]{6}$/)
+    expect(first(Object.values(html)[0], /<meta\s+name="theme-color"\s+content="(#[0-9a-fA-F]{6})"/)).toBe(
+      canvas,
+    )
+    const config = viteConfig
+    expect(first(config, /const themeColor = '(#[0-9a-fA-F]{6})'/)).toBe(canvas)
+    expect(config).toMatch(/theme_color:\s*themeColor/)
+    expect(config).toMatch(/background_color:\s*themeColor/)
   })
 })

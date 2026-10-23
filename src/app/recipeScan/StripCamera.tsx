@@ -75,7 +75,7 @@ export function StripCamera({
           <>
             <div
               aria-hidden="true"
-              className={`relative h-[92px] w-60 rounded-ds-md ring-2 ring-inset transition-colors ${
+              className={`relative h-[92px] w-60 rounded-md ring-2 ring-inset transition-colors ${
                 flash ? 'bg-ember/20 ring-ember' : 'ring-on-inverse/35'
               }`}
             >

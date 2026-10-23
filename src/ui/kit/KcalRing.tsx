@@ -44,10 +44,12 @@ export function KcalRing({ consumed, target, size = 96 }: KcalRingProps) {
         )}
       </svg>
       <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-[20px] font-extrabold leading-[22px] tabular-nums">
+        <span className="font-display text-title font-extrabold leading-[22px] tabular-nums">
           {formatInt(Math.abs(remaining))}
         </span>
-        <span className="text-[11px] font-medium text-ink-muted">{over ? 'en trop' : 'restantes'}</span>
+        <span className="text-tiny font-medium leading-normal text-ink-muted">
+          {over ? 'en trop' : 'restantes'}
+        </span>
       </div>
     </div>
   )

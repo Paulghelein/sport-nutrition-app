@@ -37,7 +37,7 @@ export default function ProgressScreen() {
       {error ? (
         <p
           role="alert"
-          className="m-0 rounded-ds-md bg-surface px-4 py-3 text-body font-semibold text-critical shadow-card"
+          className="m-0 rounded-md bg-surface px-4 py-3 text-body font-semibold text-critical shadow-card"
         >
           Impossible de lire tes données de progression.
         </p>

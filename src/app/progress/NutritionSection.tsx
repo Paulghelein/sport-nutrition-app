@@ -1,7 +1,7 @@
 import { Card, StatTile } from '../../ui/kit'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import type { NutritionWeek } from '../../types'
 import { Note, ScreenSection, Unit } from './parts'
-import { formatNumber } from './progressModel'
 
 export function NutritionSection({
   week,
@@ -17,7 +17,7 @@ export function NutritionSection({
       '—'
     ) : (
       <>
-        {formatNumber(Math.round(v))}
+        {formatInt(v)}
         <Unit> {unit}</Unit>
       </>
     )
@@ -37,7 +37,7 @@ export function NutritionSection({
               <StatTile align="start" size="lg" label="Calories moyennes" value={avg(week.avgKcal, 'kcal')} />
               {hasTargets ? (
                 <p className="m-0 text-caption text-ink-muted">
-                  objectif {formatNumber(week.targetKcal)} kcal
+                  objectif {formatDecimal(week.targetKcal, 2)} kcal
                 </p>
               ) : null}
             </div>
@@ -50,7 +50,7 @@ export function NutritionSection({
               />
               {hasTargets ? (
                 <p className="m-0 text-caption text-ink-muted">
-                  objectif {formatNumber(week.targetProtein)} g
+                  objectif {formatDecimal(week.targetProtein, 2)} g
                 </p>
               ) : null}
             </div>

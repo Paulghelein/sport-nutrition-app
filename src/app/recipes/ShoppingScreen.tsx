@@ -17,10 +17,12 @@ import { DecimalField, SelectField, TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { NutritionTabs } from '../nutrition/NutritionTabs'
 import { usePhotoUrls } from '../nutrition/usePhotoUrls'
-import { fmtGrams, fmtPortions, portionsText } from './format'
+import { fmtGrams, portionsText } from './format'
 import { Loading } from './parts'
 import { SearchBox } from '../../ui/kit/SearchBox'
+import { formatDecimal } from '../../ui/kit/format'
 import { addManualItem, loadCurrentList, rebuildList } from './shoppingList'
+import { useFridgePortions } from './useFridge'
 import { useRecipeLibrary } from './useRecipes'
 
 const aisleOptions = AISLE_ORDER.map((a) => ({ value: a, label: AISLE_LABELS[a] }))
@@ -106,7 +108,7 @@ function PickRecipesSheet({
                     <Minus size={20} strokeWidth={1.75} aria-hidden="true" />
                   </button>
                   <span className="min-w-9 text-center font-display text-title tabular-nums">
-                    <span aria-hidden="true">{fmtPortions(portions)}</span>
+                    <span aria-hidden="true">{formatDecimal(portions, 2)}</span>
                     <span className="sr-only">{`${portionsText(portions, r.servingUnit)} de ${r.name}`}</span>
                   </span>
                   <button
@@ -126,6 +128,7 @@ function PickRecipesSheet({
           <li className="py-2 text-body text-ink-muted">Aucune recette trouvée.</li>
         ) : null}
       </ul>
+      {/* Dans une Sheet : -mx-4 px-4 est couplé au px-4 de src/ui/kit/Sheet.tsx (pas à la marge de page). */}
       <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 bg-surface-raised px-4 pb-1 pt-2">
         {error ? <Note tone="error">{error}</Note> : null}
         <Button fullWidth onClick={() => void apply()} disabled={busy}>
@@ -188,6 +191,7 @@ function ManualItemSheet({
 }
 
 export default function ShoppingScreen() {
+  const fridgePortions = useFridgePortions()
   const { data: lib, error: libError } = useRecipeLibrary()
   const live = useLiveQuery(() => loadCurrentList(), [])
   const [sheet, setSheet] = useState<'recipes' | 'manual' | null>(null)
@@ -234,7 +238,7 @@ export default function ShoppingScreen() {
       <header>
         <h1 className="m-0 font-display text-display-l">Courses</h1>
       </header>
-      <NutritionTabs current="shopping" />
+      <NutritionTabs current="shopping" fridgePortions={fridgePortions} />
 
       {live.error || libError ? (
         <Note tone="error">Impossible de lire la liste. Ferme l’app puis rouvre-la.</Note>
@@ -329,12 +333,12 @@ export default function ShoppingScreen() {
                             onClick={() =>
                               void run(() => setShoppingItemChecked(list.id, item.id, !item.checked))
                             }
-                            className="focus-ring flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-ds-sm py-2 text-left text-ink active:opacity-70"
+                            className="focus-ring flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-sm py-2 text-left text-ink active:opacity-70"
                           >
                             <span
                               aria-hidden="true"
                               className={cx(
-                                'grid size-8 shrink-0 place-items-center rounded-ds-sm border-2',
+                                'grid size-8 shrink-0 place-items-center rounded-sm border-2',
                                 item.checked ? 'border-ember bg-ember text-ink' : 'border-ink-muted',
                               )}
                             >
@@ -369,7 +373,7 @@ export default function ShoppingScreen() {
                           {item.manual === true ? (
                             <button
                               type="button"
-                              className="focus-ring grid min-h-16 w-12 shrink-0 place-items-center rounded-ds-sm text-ink-muted active:opacity-70"
+                              className="focus-ring grid min-h-16 w-12 shrink-0 place-items-center rounded-sm text-ink-muted active:opacity-70"
                               aria-label={`Supprimer ${item.name}`}
                               disabled={busy}
                               onClick={() =>

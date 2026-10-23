@@ -33,7 +33,7 @@ export function SearchBox({ id, label, value, onChange, onClear, autoFocus }: Se
         placeholder={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="focus-ring min-h-12 w-full appearance-none rounded-ds-md bg-surface pl-11 pr-11 font-sans text-input text-ink shadow-card placeholder:text-ink-muted [&::-webkit-search-cancel-button]:appearance-none"
+        className="focus-ring min-h-12 w-full appearance-none rounded-md bg-surface pl-11 pr-11 font-sans text-input text-ink shadow-card placeholder:text-ink-muted [&::-webkit-search-cancel-button]:appearance-none"
       />
       {value !== '' ? (
         <button

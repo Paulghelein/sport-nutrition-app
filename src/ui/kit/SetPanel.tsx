@@ -79,7 +79,7 @@ export function SetPanel({
       role="group"
       aria-label={groupLabel ?? label}
       className={cx(
-        'flex min-h-[168px] items-center justify-between gap-3 rounded-ds-lg bg-on-inverse/6 px-[18px] py-4',
+        'flex min-h-[168px] items-center justify-between gap-3 rounded-lg bg-on-inverse/6 px-[18px] py-4',
         className,
       )}
     >
@@ -94,7 +94,7 @@ export function SetPanel({
           )}
         >
           {value}
-          {unit ? <span className="text-[26px] font-bold text-on-inverse-muted">{` ${unit}`}</span> : null}
+          {unit ? <span className="text-number-m font-bold text-on-inverse-muted">{` ${unit}`}</span> : null}
         </ValueTag>
         {hint ? (
           <span

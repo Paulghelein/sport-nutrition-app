@@ -33,7 +33,11 @@ export const seedExercises: readonly Exercise[] = [
   ...calvesExercises,
 ]
 
-const svgFiles = import.meta.glob<string>('./illustrations/*.svg', { query: '?raw', import: 'default', eager: true })
+const svgFiles = import.meta.glob<string>('./illustrations/*.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+})
 
 export const illustrations: Readonly<Record<string, string>> = Object.fromEntries(
   Object.entries(svgFiles).map(([path, svg]) => [path.replace(/^.*\/(.+)\.svg$/, '$1'), svg]),

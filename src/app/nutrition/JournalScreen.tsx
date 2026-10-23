@@ -18,14 +18,16 @@ import { errorMessage, useLiveQuery } from '../../ui'
 import { Button, Card, cx } from '../../ui/kit'
 import { FoodRow } from '../../ui/kit/FoodRow'
 import { Note } from '../../ui/kit/Note'
+import { formatInt } from '../../ui/kit/format'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { DaySummary } from './DaySummary'
 import { EntrySheet } from './EntrySheet'
 import { Toast } from './JournalToast'
 import type { ToastState } from './JournalToast'
 import { ADD_FOOD_PATH } from '../routes'
+import { useFridgePortions } from '../recipes/useFridge'
 import { NutritionTabs } from './NutritionTabs'
-import { SLOT_LABEL, fmtInt } from './format'
+import { SLOT_LABEL } from './format'
 import { buildJournalModel, dayLabel, mealCopies } from './journalModel'
 import type { JournalMealModel } from './journalModel'
 import { usePhotoUrls } from './usePhotoUrls'
@@ -36,7 +38,7 @@ let suggestionHidden = false
 const dayButton =
   'focus-ring grid size-11 shrink-0 place-items-center rounded-full text-ink disabled:text-ink-faint'
 const textAction =
-  'focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-ds-pill px-3 text-body-strong no-underline active:opacity-70'
+  'focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-body-strong no-underline active:opacity-70'
 
 function MealCard({
   meal,
@@ -69,12 +71,12 @@ function MealCard({
       <div
         role="group"
         aria-label={meal.label}
-        className="flex items-center gap-1 rounded-ds-pill bg-surface pr-2 shadow-card"
+        className="flex items-center gap-1 rounded-full bg-surface pr-2 shadow-card"
       >
         <Link
           to={addTo}
           aria-label={`Ajouter au repas : ${meal.label}`}
-          className="focus-ring flex min-h-[52px] min-w-0 flex-1 items-center justify-between gap-3 rounded-ds-pill pl-[18px] pr-2 text-body-strong text-ink no-underline active:opacity-70"
+          className="focus-ring flex min-h-[52px] min-w-0 flex-1 items-center justify-between gap-3 rounded-full pl-[18px] pr-2 text-body-strong text-ink no-underline active:opacity-70"
         >
           <span>{meal.label}</span>
           <span className="text-ember-ink">+ Ajouter</span>
@@ -89,7 +91,7 @@ function MealCard({
       <div className="flex items-baseline justify-between gap-3 pb-1.5">
         <h2 className="m-0 font-display text-title">{meal.label}</h2>
         <p className="m-0 font-display text-body-strong tabular-nums">
-          {fmtInt(meal.kcal)}
+          {formatInt(meal.kcal)}
           <span className="font-sans text-caption font-medium text-ink-muted">{' kcal'}</span>
         </p>
       </div>
@@ -142,6 +144,7 @@ function useToday(): LocalDate {
 }
 
 export default function JournalScreen() {
+  const fridgePortions = useFridgePortions()
   const [params, setParams] = useSearchParams()
   const today = useToday()
   const asked = params.get('date')
@@ -259,7 +262,7 @@ export default function JournalScreen() {
         </div>
       </header>
 
-      <NutritionTabs current="journal" />
+      <NutritionTabs current="journal" fridgePortions={fridgePortions} />
 
       {date !== today ? (
         <div className="flex justify-center">

@@ -85,7 +85,8 @@ export const pushHExercises: Exercise[] = [
     compound: true,
     unilateral: true,
     loadStepKg: 1,
-    progressionCriteria: '3 × 12 propres par bras à la même charge sur 2 séances → augmente la charge de 1 kg',
+    progressionCriteria:
+      '3 × 12 propres par bras à la même charge sur 2 séances → augmente la charge de 1 kg',
     technique: {
       setup:
         'Allongé sur le dos, genoux fléchis, pieds à plat. Tiens le kettlebell d’une main, poignet droit, coude posé au sol.',

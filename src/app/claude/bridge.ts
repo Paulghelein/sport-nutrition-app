@@ -1,4 +1,4 @@
-// Pont vers Claude (J9) : choix de l'URL à ouvrir. Fonction pure, partagée par la feuille v1 et l'écran « Recette d'une vidéo ».
+// Pont vers Claude (J9) : choix de l'URL à ouvrir. Fonction pure, partagée par la feuille d'aperçu et l'écran « Recette d'une vidéo ».
 import { isAllowedCoachUrl } from '../../domain/claude/coachUrl'
 import { CLAUDE_DEFAULT_URL } from '../../types/claude'
 

@@ -51,10 +51,7 @@ export function Segmented<T extends string | number>({
       role="radiogroup"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
-      className={cx(
-        'grid gap-1.5 bg-canvas p-1',
-        cols < options.length ? 'rounded-ds-lg' : 'rounded-ds-pill',
-      )}
+      className={cx('grid gap-1.5 bg-canvas p-1', cols < options.length ? 'rounded-lg' : 'rounded-full')}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {options.map((o) => {
@@ -73,7 +70,7 @@ export function Segmented<T extends string | number>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(o.value)}
             className={cx(
-              'focus-ring min-h-11 rounded-ds-pill font-sans text-[14px] leading-5 disabled:text-ink-muted',
+              'focus-ring min-h-11 rounded-full font-sans text-body-sm disabled:text-ink-muted',
               selected
                 ? 'bg-surface font-bold text-ink shadow-card'
                 : 'bg-transparent font-semibold text-ink-muted',

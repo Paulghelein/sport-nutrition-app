@@ -16,7 +16,7 @@ import { useClaudeBridge } from './useClaudeBridge'
 import { INVALID_LINK_MESSAGE, PLATFORM_LABEL, linkState, pasteOutcome } from './videoFlow'
 
 const areaClass =
-  'focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-sans text-input text-ink placeholder:text-ink-muted'
+  'focus-ring w-full rounded-md bg-canvas px-3.5 py-3 font-sans text-input text-ink placeholder:text-ink-muted'
 
 function Step({ n, children }: { n: number; children: string }) {
   return (
@@ -65,7 +65,7 @@ export default function VideoRecipeScreen() {
   const areaVisible = showArea || text !== ''
   const invalid = state.status === 'invalid'
   const linkClass =
-    'focus-ring flex min-h-11 items-center justify-center rounded-ds-md text-body-strong text-ember-ink underline underline-offset-4'
+    'focus-ring flex min-h-11 items-center justify-center rounded-md text-body-strong text-ember-ink underline underline-offset-4'
 
   return (
     <div>

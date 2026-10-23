@@ -10,7 +10,7 @@ import type { LocalDate } from '../../types'
 import { NUTRITION_PATH } from '../routes'
 import { CardError } from './SectionBoundary'
 
-const CARD = 'rounded-ds-lg bg-surface text-ink shadow-card no-underline focus-ring'
+const CARD = 'rounded-lg bg-surface text-ink shadow-card no-underline focus-ring'
 const MIN_H = 'min-h-[134px]'
 
 /** Carte « Calories du jour » : anneau + 3 macros, toute la carte mène au journal. */

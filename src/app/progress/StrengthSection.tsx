@@ -5,14 +5,7 @@ import { ErrorBoundary, levelLabel, patternLabel } from '../../ui'
 import { Card, formatDecimal } from '../../ui/kit'
 import { Note, ScreenSection } from './parts'
 import type { ProgressModel } from './progressModel'
-import {
-  METRIC_LABEL,
-  METRIC_UNIT,
-  formatNumber,
-  lastMetricValue,
-  recordLines,
-  strengthChartData,
-} from './progressModel'
+import { METRIC_LABEL, METRIC_UNIT, lastMetricValue, recordLines, strengthChartData } from './progressModel'
 
 const StrengthChart = lazy(() => import('./StrengthChart').then((m) => ({ default: m.StrengthChart })))
 
@@ -33,7 +26,7 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
       ) : (
         <Note>
           {points.length === 1
-            ? `Une seule séance pour l’instant : ${formatNumber(points[0]?.value ?? 0)} ${METRIC_UNIT[row.metric]}. La courbe apparaît à la deuxième.`
+            ? `Une seule séance pour l’instant : ${formatDecimal(points[0]?.value ?? 0, 2)} ${METRIC_UNIT[row.metric]}. La courbe apparaît à la deuxième.`
             : 'Pas de mesure à tracer pour cet exercice.'}
         </Note>
       )}
@@ -80,7 +73,7 @@ export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strengt
                       aria-expanded={open}
                       aria-controls={`strength-${row.exerciseId}`}
                       onClick={() => setOpenId(open ? null : row.exerciseId)}
-                      className="focus-ring flex min-h-14 w-full items-center justify-between gap-3 rounded-ds-sm py-2 text-left text-ink active:opacity-70"
+                      className="focus-ring flex min-h-14 w-full items-center justify-between gap-3 rounded-sm py-2 text-left text-ink active:opacity-70"
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-headline">{row.name}</span>

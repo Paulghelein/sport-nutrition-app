@@ -7,9 +7,22 @@ import type { PatternLevels } from '../../types/engine'
 import type { PersonalRecord } from '../../types/guided'
 import type { DayLog, MealSlot, Macros, NutritionTargets, Recipe } from '../../types/nutrition'
 import type { Equipment, Goal, Profile, TrainingLevel } from '../../types/profile'
-import type { ExerciseStrength, GroupVolume, NutritionWeek, Regularity, WeeklyReview } from '../../types/progress'
+import type {
+  ExerciseStrength,
+  GroupVolume,
+  NutritionWeek,
+  Regularity,
+  WeeklyReview,
+} from '../../types/progress'
 import type { RecipeNutrition } from '../../types/recipes'
-import type { Feeling, LibraryExercise, MuscleGroup, MovementPattern, Session, SetEntry } from '../../types/training'
+import type {
+  Feeling,
+  LibraryExercise,
+  MuscleGroup,
+  MovementPattern,
+  Session,
+  SetEntry,
+} from '../../types/training'
 import { addDays } from '../shared/dates'
 import { isAvailable } from '../training/library'
 import { setTypeOf, timedMaxWindowOf } from '../training/setTypes'
@@ -180,13 +193,17 @@ const SCREEN_TITLES: Record<ClaudeContextKind, string> = {
 }
 
 export const DEFAULT_REQUESTS: Record<ClaudeContextKind, string> = {
-  journal: 'Analyse ma journée : est-ce que je suis dans mes objectifs et que me conseilles-tu pour la suite de la journée ?',
-  session_before: 'Relis cette séance : est-elle adaptée à mon niveau et au temps dont je dispose ? Propose des ajustements si besoin.',
-  session_after: 'Fais le bilan de cette séance : comment j’ai progressé et que dois-je viser la prochaine fois ?',
+  journal:
+    'Analyse ma journée : est-ce que je suis dans mes objectifs et que me conseilles-tu pour la suite de la journée ?',
+  session_before:
+    'Relis cette séance : est-elle adaptée à mon niveau et au temps dont je dispose ? Propose des ajustements si besoin.',
+  session_after:
+    'Fais le bilan de cette séance : comment j’ai progressé et que dois-je viser la prochaine fois ?',
   recipe: 'Que penses-tu de cette recette pour ma prise de masse ? Propose une variante si utile.',
   progress: 'Analyse mes progrès (poids, régularité, volume, nutrition) et dis-moi ce que je dois ajuster.',
   review: 'Commente mon bilan de la semaine et propose-moi un plan pour la semaine prochaine.',
-  video_recipe: 'Extrais la recette de cette vidéo, telle qu’elle est faite, avec un nombre de portions réaliste.',
+  video_recipe:
+    'Extrais la recette de cette vidéo, telle qu’elle est faite, avec un nombre de portions réaliste.',
 }
 
 const FORMAT_EXAMPLES: Record<string, string> = {
@@ -197,7 +214,8 @@ const FORMAT_EXAMPLES: Record<string, string> = {
     '{"type":"sessionPlan","durationMin":30,"blocks":[{"exerciseId":"…","sets":3,"reps":[8,12],"loadKg":16,"restSec":90}]}',
   exercise:
     '{"type":"exercise","name":"…","pattern":"hinge","level":1,"muscles":{"primary":["fessiers"],"secondary":["ischios"]},"loadType":"kettlebell","repRange":[10,15],"restSec":75}',
-  exercisePreference: '{"type":"exercisePreference","exerciseId":"…","preference":"liked|neutral|disliked|hidden","reason":"…"}',
+  exercisePreference:
+    '{"type":"exercisePreference","exerciseId":"…","preference":"liked|neutral|disliked|hidden","reason":"…"}',
 }
 
 const USEFUL_TYPES: Record<ClaudeContextKind, readonly string[]> = {
@@ -241,7 +259,10 @@ export function profileSummary(base: ClaudeBaseInput): string {
   const { profile, equipment, targets } = base
   const kb = equipment.kettlebell
   const owned = equipment.owned.map((e) => EQUIPMENT_FR[e] ?? e)
-  const gear = [`kettlebell réglable ${String(kb.minKg)}–${String(kb.maxKg)} kg (pas ${fr(kb.stepKg)} kg)`, ...owned]
+  const gear = [
+    `kettlebell réglable ${String(kb.minKg)}–${String(kb.maxKg)} kg (pas ${fr(kb.stepKg)} kg)`,
+    ...owned,
+  ]
   return [
     `Profil : ${profile.sex === 'male' ? 'homme' : 'femme'}, ${String(targets.ageYears)} ans, ${String(profile.heightCm)} cm, ${fr(targets.weightKg)} kg (moyenne 7 j), objectif ${GOALS[profile.goal]}, niveau ${LEVELS[profile.level]}, ${String(profile.weeklySessionsTarget)} séances/sem. Matériel : ${gear.join(', ')}.`,
     `Objectifs du jour : ${String(r0(targets.kcal))} kcal, protéines ${String(r0(targets.protein))} g, glucides ${String(r0(targets.carbs))} g, lipides ${String(r0(targets.fat))} g.`,
@@ -299,9 +320,12 @@ export function buildJournalMessage(input: JournalContextInput): ClaudeMessage {
 
 // ---------- séance ----------
 
-function setTarget(
-  s: SetEntry | undefined,
-): { reps?: [number, number]; dureeSec?: number; type?: 'tempsMax'; fenetreSec?: number } {
+function setTarget(s: SetEntry | undefined): {
+  reps?: [number, number]
+  dureeSec?: number
+  type?: 'tempsMax'
+  fenetreSec?: number
+} {
   if (s === undefined) return {}
   // F3 : max de répétitions en temps fixe ; la durée est une fenêtre, pas une tenue.
   const w = timedMaxWindowOf(s)
@@ -330,7 +354,10 @@ export function availableExerciseLines(
           e.deleted !== true &&
           (include.has(e.id) || (e.preference !== 'hidden' && e.level <= cap && isAvailable(e, equipment))),
       )
-            .map((e) => `${e.source === 'user' || UUID.test(e.id) ? e.name : `${e.id} = ${e.name}`} (n${String(e.level)}${e.loadType === 'kettlebell' ? ', KB' : e.loadType === 'timed' ? ', durée' : ''})`)
+      .map(
+        (e) =>
+          `${e.source === 'user' || UUID.test(e.id) ? e.name : `${e.id} = ${e.name}`} (n${String(e.level)}${e.loadType === 'kettlebell' ? ', KB' : e.loadType === 'timed' ? ', durée' : ''})`,
+      )
     if (items.length > 0) out.push(`${PATTERN_FR[p]} : ${items.join(' ; ')}`)
   }
   return out
@@ -365,7 +392,13 @@ export function buildSessionBeforeMessage(input: SessionBeforeContextInput): Cla
     },
   }
   const inPlan = new Set(plan.blocks.flatMap((b) => b.exercises.map((e) => e.exerciseId)))
-  const lines = availableExerciseLines(library, input.equipment, input.profile.level, input.patternLevels, inPlan)
+  const lines = availableExerciseLines(
+    library,
+    input.equipment,
+    input.profile.level,
+    input.patternLevels,
+    inPlan,
+  )
   const extra = ['Exercices disponibles (id = nom, niveau ; KB = avec kettlebell) :', ...lines].join('\n')
   return assemble('session_before', input, data, extra)
 }
@@ -407,7 +440,9 @@ export function buildSessionAfterMessage(input: SessionAfterContextInput): Claud
           ...(skipped > 0 ? { passees: skipped } : {}),
         }
       }),
-      ...(session.notes !== undefined && session.notes.trim() !== '' ? { notes: short(session.notes.trim(), 300) } : {}),
+      ...(session.notes !== undefined && session.notes.trim() !== ''
+        ? { notes: short(session.notes.trim(), 300) }
+        : {}),
     },
     records: records.map((r) => ({
       ...idField(exercises, r.exerciseId),
@@ -451,7 +486,14 @@ function recentRecords(
   max = 8,
 ): { exerciseId?: Id; nom: string; type: string; valeur: number; chargeKg?: number; date: LocalDate }[] {
   const since = addDays(today, -28)
-  const out: { exerciseId?: Id; nom: string; type: string; valeur: number; chargeKg?: number; date: LocalDate }[] = []
+  const out: {
+    exerciseId?: Id
+    nom: string
+    type: string
+    valeur: number
+    chargeKg?: number
+    date: LocalDate
+  }[] = []
   for (const s of strength) {
     for (const kind of ['load', 'reps', 'duration'] as const) {
       const rec = s.records[kind]
@@ -485,7 +527,9 @@ function nutritionWeekJson(n: NutritionWeek): Record<string, unknown> {
 export function buildProgressMessage(input: ProgressContextInput): ClaudeMessage {
   const { weight, regularity, volume, nutritionWeek, strength, exercises } = input
   const change =
-    weight.avg7Kg !== null && weight.avg7Kg28DaysAgo !== null ? r1(weight.avg7Kg - weight.avg7Kg28DaysAgo) : null
+    weight.avg7Kg !== null && weight.avg7Kg28DaysAgo !== null
+      ? r1(weight.avg7Kg - weight.avg7Kg28DaysAgo)
+      : null
   const data = {
     poids: {
       moy7jKg: weight.avg7Kg === null ? null : r1(weight.avg7Kg),
@@ -500,7 +544,12 @@ export function buildProgressMessage(input: ProgressContextInput): ClaudeMessage
     },
     volume7j: volume
       .filter((v) => v.status !== 'untracked')
-      .map((v) => ({ groupe: MUSCLE_FR[v.group], series: r1(v.sets), cible: [v.target[0], v.target[1]], statut: v.status })),
+      .map((v) => ({
+        groupe: MUSCLE_FR[v.group],
+        series: r1(v.sets),
+        cible: [v.target[0], v.target[1]],
+        statut: v.status,
+      })),
     nutritionSemaine: nutritionWeekJson(nutritionWeek),
     recordsRecents: recentRecords(strength, exercises, input.today),
   }

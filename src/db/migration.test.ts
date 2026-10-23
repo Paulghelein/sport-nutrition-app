@@ -94,7 +94,9 @@ describe('migration Dexie v1 → v3', () => {
     await old.table('profile').put(makeProfile())
     await old.table('foods').bulkPut(tables.foods)
     await old.table('recipes').bulkPut(tables.recipes)
-    await old.table('ciqual').put({ id: 'c1', code: '1', name: 'Pomme', per100g: { kcal: 52, protein: 0, carbs: 14, fat: 0 } })
+    await old
+      .table('ciqual')
+      .put({ id: 'c1', code: '1', name: 'Pomme', per100g: { kcal: 52, protein: 0, carbs: 14, fat: 0 } })
     old.close()
 
     const upgraded = new AppDB(name)

@@ -17,7 +17,7 @@ import { recipePreviewNutrition } from './selection'
 
 /** Zone de texte monospace où l'on colle une réponse ou un JSON. */
 export const pasteAreaClass =
-  'focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-mono text-input text-ink placeholder:text-ink-muted'
+  'focus-ring w-full rounded-md bg-canvas px-3.5 py-3 font-mono text-input text-ink placeholder:text-ink-muted'
 
 /** Liste d'avertissements (icône ET texte). */
 export function PreviewWarnings({ list, id }: { list: readonly string[]; id?: string }) {
@@ -54,7 +54,7 @@ export function SelectableCard({
   return (
     <label
       className={cx(
-        'flex cursor-pointer items-start gap-3 rounded-ds-lg bg-surface p-4 shadow-card',
+        'flex cursor-pointer items-start gap-3 rounded-lg bg-surface p-4 shadow-card',
         'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus',
         checked && 'ring-2 ring-ink',
       )}

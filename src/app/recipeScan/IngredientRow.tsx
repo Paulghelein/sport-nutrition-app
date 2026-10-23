@@ -33,7 +33,7 @@ export function IngredientRow({
         type="button"
         onClick={onEdit}
         aria-label={`Quantité de ${ingredient.name} : ${grams}. Modifier`}
-        className="focus-ring min-h-11 min-w-16 shrink-0 rounded-ds-pill bg-surface-sunken px-3 text-center font-display text-body-strong tabular-nums"
+        className="focus-ring min-h-11 min-w-16 shrink-0 rounded-full bg-surface-sunken px-3 text-center font-display text-body-strong tabular-nums"
       >
         {grams}
       </button>

@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import type { KeyboardEvent } from 'react'
-import { cx } from './cx'
+import { pillClass } from './pillClass'
 
 export interface PillTab<T extends string> {
   id: T
@@ -55,10 +55,7 @@ export function PillTabs<T extends string>({
             aria-controls={panelIdPrefix ? `${panelIdPrefix}-${t.id}` : undefined}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(t.id)}
-            className={cx(
-              'focus-ring min-h-11 rounded-ds-pill px-4 font-sans text-body-strong',
-              selected ? 'bg-inverse text-on-inverse' : 'bg-surface text-ink',
-            )}
+            className={pillClass(selected)}
           >
             {t.label}
           </button>

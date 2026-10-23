@@ -10,12 +10,12 @@ import {
 } from '../../db'
 import { MAX_KCAL_ADJUSTMENT, nutritionTargets, targetWeight } from '../../domain/nutrition'
 import { toLocalDate } from '../../domain/shared/dates'
-import { fmtInt } from '../nutrition/format'
 import type { NutritionParams, Profile } from '../../types'
 import { errorMessage, parseDecimal, toInputNumber, useLiveQuery } from '../../ui'
 import { Button, Card, Stepper } from '../../ui/kit'
 import { DecimalField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
+import { formatInt } from '../../ui/kit/format'
 import { SettingsSection } from './SettingsSection'
 
 const ADJUST_STEP = 50
@@ -50,7 +50,8 @@ function toParams(d: Draft, base: NutritionParams): NutritionParams | null {
   }
 }
 
-const signed = (n: number): string => (n > 0 ? `+${fmtInt(n)}` : n < 0 ? `−${fmtInt(Math.abs(n))}` : '0')
+const signed = (n: number): string =>
+  n > 0 ? `+${formatInt(n)}` : n < 0 ? `−${formatInt(Math.abs(n))}` : '0'
 
 function GoalsEditor({ profile, weightKg }: { profile: Profile; weightKg: number | undefined }) {
   const [draft, setDraft] = useState(() => toDraft(profile.nutrition))
@@ -127,13 +128,14 @@ function GoalsEditor({ profile, weightKg }: { profile: Profile; weightKg: number
             onChange={(v) => edit({ adjust: v })}
           />
 
-          <div className="rounded-ds-md bg-canvas p-3.5" aria-live="polite">
+          <div className="rounded-md bg-canvas p-3.5" aria-live="polite">
             <p className="m-0 text-label uppercase text-ink-muted">Objectifs par jour</p>
             {targets ? (
               <div data-testid="goals-preview" className="mt-1.5">
-                <p className="m-0 font-display text-number-l tabular-nums">{fmtInt(targets.kcal)} kcal</p>
+                <p className="m-0 font-display text-number-l tabular-nums">{formatInt(targets.kcal)} kcal</p>
                 <p className="m-0 text-body tabular-nums text-ink-muted">
-                  P {fmtInt(targets.protein)} g · G {fmtInt(targets.carbs)} g · L {fmtInt(targets.fat)} g
+                  P {formatInt(targets.protein)} g · G {formatInt(targets.carbs)} g · L{' '}
+                  {formatInt(targets.fat)} g
                 </p>
               </div>
             ) : weightKg === undefined ? (

@@ -13,7 +13,7 @@ export function CheckRow({ label, hint, checked, onChange, disabled = false }: C
   return (
     <label
       className={cx(
-        'flex min-h-12 items-center gap-3 rounded-ds-md bg-canvas px-3.5 py-2.5',
+        'flex min-h-12 items-center gap-3 rounded-md bg-canvas px-3.5 py-2.5',
         'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus',
         disabled ? 'cursor-not-allowed text-ink-muted' : 'cursor-pointer text-ink',
       )}

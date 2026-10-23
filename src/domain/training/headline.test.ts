@@ -20,7 +20,11 @@ import { MAJOR_GROUPS, MUSCLE_GROUPS, emptyVolume, volumeTargets, weeklyVolume }
 const library = seedLibrary()
 const targets = volumeTargets(defaultSettings(), makeEquipment())
 
-function plan(blocks: readonly (readonly string[])[], over: Partial<SessionPlan> = {}, finisher?: string): SessionPlan {
+function plan(
+  blocks: readonly (readonly string[])[],
+  over: Partial<SessionPlan> = {},
+  finisher?: string,
+): SessionPlan {
   const toBlock = (ids: readonly string[], i: number, kind: SessionBlock['kind']): SessionBlock => ({
     id: `b${i + 1}`,
     kind,
@@ -148,7 +152,12 @@ describe('sessionHeadline : raison', () => {
   })
 
   it('1. deload et séance vide', () => {
-    const h = sessionHeadline(plan([], { deload: true, deloadReason: 'fatigue' }), library, balanced(), targets)
+    const h = sessionHeadline(
+      plan([], { deload: true, deloadReason: 'fatigue' }),
+      library,
+      balanced(),
+      targets,
+    )
     expect(h).toEqual({ title: EMPTY_SESSION_TITLE, reason: REASON_DELOAD_FATIGUE, laggingGroups: [] })
   })
 
@@ -266,8 +275,12 @@ describe('sessionHeadline : raison', () => {
       REASON_DELOAD_FATIGUE,
       REASON_DELOAD_SCHEDULED,
       REASON_RESTART,
-      sessionHeadline(plan([['one-arm-row', 'goblet-squat']]), library, balanced({ back: 1, quads: 1 }), targets)
-        .reason,
+      sessionHeadline(
+        plan([['one-arm-row', 'goblet-squat']]),
+        library,
+        balanced({ back: 1, quads: 1 }),
+        targets,
+      ).reason,
     ]
     for (const r of reasons) {
       expect(r.endsWith('.')).toBe(true)

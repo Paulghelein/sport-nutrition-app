@@ -1,5 +1,6 @@
 // Mise en forme (texte) des champs d'un exercice. Aucune règle métier.
 import type { Exercise, Range } from '../../types'
+import { formatDecimal } from '../../ui/kit/format'
 
 export function formatSeconds(sec: number): string {
   if (sec < 60) return `${sec} s`
@@ -40,5 +41,5 @@ export function tempoText(tempo: string): string {
 
 /** Charge en kg sans « ,0 » inutile : « 12 », « 12,5 ». */
 export function kgText(kg: number): string {
-  return Number.isInteger(kg) ? String(kg) : kg.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
+  return Number.isInteger(kg) ? String(kg) : formatDecimal(kg, 2)
 }

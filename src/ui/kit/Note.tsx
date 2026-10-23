@@ -21,7 +21,7 @@ export function Note({ tone = 'error', children, className }: NoteProps) {
   return (
     <div
       role={role}
-      className={cx('flex gap-2.5 rounded-ds-md bg-surface p-3 text-body text-ink shadow-card', className)}
+      className={cx('flex gap-2.5 rounded-md bg-surface p-3 text-body text-ink shadow-card', className)}
     >
       <Icon size={20} strokeWidth={1.75} aria-hidden="true" className={cx('mt-0.5 shrink-0', icon)} />
       <div className="min-w-0 flex-1">{children}</div>

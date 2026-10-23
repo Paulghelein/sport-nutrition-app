@@ -95,12 +95,17 @@ export async function createRecipeWithFridge(
   if (portions > input.recipe.servings) {
     throw new ValidationError('Le frigo ne peut pas contenir plus de portions que la recette.')
   }
-  if (portions > 0 && !isValidLocalDate(input.preparedOn)) throw new ValidationError('Date de préparation invalide.')
+  if (portions > 0 && !isValidLocalDate(input.preparedOn))
+    throw new ValidationError('Date de préparation invalide.')
   const recipe = buildRecipeRow(newId(), 'user', input.recipe, now, false)
   const fridgeItem =
     portions > 0
       ? checkFridge(
-          fridgeItemFromPrep({ recipeId: recipe.id, portions, preparedOn: input.preparedOn }, recipe, newId()),
+          fridgeItemFromPrep(
+            { recipeId: recipe.id, portions, preparedOn: input.preparedOn },
+            recipe,
+            newId(),
+          ),
         )
       : undefined
   await db.transaction('rw', [db.recipes, db.fridge], async () => {

@@ -56,7 +56,7 @@ export function FoodSearchSheet({
           placeholder="Rechercher un aliment"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="focus-ring min-h-12 w-full rounded-ds-md bg-canvas pl-11 pr-3.5 font-sans text-input text-ink placeholder:text-ink-muted"
+          className="focus-ring min-h-12 w-full rounded-md bg-canvas pl-11 pr-3.5 font-sans text-input text-ink placeholder:text-ink-muted"
         />
       </div>
       {failed ? (

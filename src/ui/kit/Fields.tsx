@@ -4,7 +4,7 @@ import type { InputHTMLAttributes } from 'react'
 import { cx } from './cx'
 
 const controlClass =
-  'focus-ring w-full rounded-ds-md bg-canvas px-3.5 font-sans text-input text-ink placeholder:text-ink-muted'
+  'focus-ring w-full rounded-md bg-canvas px-3.5 font-sans text-input text-ink placeholder:text-ink-muted'
 
 export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
   label: string

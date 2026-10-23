@@ -1,10 +1,5 @@
 import { servingLabel } from '../../domain/nutrition/scan'
-import { fmtG, fmtInt } from '../nutrition/format'
-
-const portionsFmt = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
-
-/** Portions : « 1 », « 0,5 », « 2,5 ». */
-export const fmtPortions = (n: number): string => portionsFmt.format(n)
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 
 /** « portion » ou « portions » selon la quantité (pluriel dès 2, « 0,5 portion »). */
 export const portionsWord = (n: number): string => (n >= 2 ? 'portions' : 'portion')
@@ -19,7 +14,7 @@ export function fmtMinutes(min: number): string {
 
 /** Grammes, ou kg à partir de 1 000 g (« 1,2 kg »). */
 export function fmtGrams(g: number): string {
-  return g >= 1000 ? `${fmtG(g / 1000)} kg` : `${fmtInt(g)} g`
+  return g >= 1000 ? `${formatDecimal(g / 1000)} kg` : `${formatInt(g)} g`
 }
 
 /** Libellé de péremption ; `daysLeft` négatif = périmé. */
@@ -38,5 +33,5 @@ export function portionUnit(n: number, unit: string | undefined): string {
 
 /** « 6 muffins », « 4 portions », « 1 portion », « 0,5 portion » (virgule française pour les demi-portions). */
 export function portionsText(n: number, unit: string | undefined): string {
-  return Number.isInteger(n) ? servingLabel(n, unit) : `${fmtPortions(n)} ${portionUnit(n, unit)}`
+  return Number.isInteger(n) ? servingLabel(n, unit) : `${formatDecimal(n, 2)} ${portionUnit(n, unit)}`
 }

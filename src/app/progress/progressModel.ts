@@ -43,9 +43,9 @@ import type {
 } from '../../types'
 import type { ProgressData } from '../../db'
 import type { WeekStripDay } from '../../ui/kit'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import { heatmapRange, makeTargetsFor, recordRows, toStripDays } from './calendarModel'
 import type { RecordRowModel } from './calendarModel'
-import { formatNumber } from './format'
 
 export interface StrengthRow {
   exerciseId: string
@@ -164,8 +164,6 @@ export const METRIC_LABEL: Record<StrengthMetric, string> = {
   reps: 'Répétitions max',
 }
 
-export { formatNumber }
-
 export interface RecordLine {
   label: string
   text: string
@@ -177,19 +175,27 @@ export function recordLines(s: ExerciseStrength): RecordLine[] {
   const { load, reps, duration, tonnage } = s.records
   const lines: RecordLine[] = []
   if (load)
-    lines.push({ label: 'Charge la plus lourde', text: `${formatNumber(load.value)} kg`, date: load.date })
+    lines.push({
+      label: 'Charge la plus lourde',
+      text: `${formatDecimal(load.value, 2)} kg`,
+      date: load.date,
+    })
   if (reps) {
-    const at = reps.loadKg !== undefined ? ` à ${formatNumber(reps.loadKg)} kg` : ''
-    lines.push({ label: 'Répétitions max', text: `${formatNumber(reps.value)}${at}`, date: reps.date })
+    const at = reps.loadKg !== undefined ? ` à ${formatDecimal(reps.loadKg, 2)} kg` : ''
+    lines.push({ label: 'Répétitions max', text: `${formatDecimal(reps.value, 2)}${at}`, date: reps.date })
   }
   if (duration) {
-    const at = duration.loadKg !== undefined ? ` à ${formatNumber(duration.loadKg)} kg` : ''
-    lines.push({ label: 'Durée max', text: `${formatNumber(duration.value)} s${at}`, date: duration.date })
+    const at = duration.loadKg !== undefined ? ` à ${formatDecimal(duration.loadKg, 2)} kg` : ''
+    lines.push({
+      label: 'Durée max',
+      text: `${formatDecimal(duration.value, 2)} s${at}`,
+      date: duration.date,
+    })
   }
   if (tonnage) {
     lines.push({
       label: 'Meilleur tonnage',
-      text: `${formatNumber(Math.round(tonnage.value))} kg`,
+      text: `${formatInt(tonnage.value)} kg`,
       date: tonnage.date,
     })
   }
@@ -204,18 +210,18 @@ export function personalRecordText(
   /** Record de répétitions d'une série en temps fixe : la fenêtre en secondes (« en 45 s »). */
   windowSec?: number,
 ): string {
-  const at = loadKg !== undefined ? ` à ${formatNumber(loadKg)} kg` : ''
+  const at = loadKg !== undefined ? ` à ${formatDecimal(loadKg, 2)} kg` : ''
   switch (kind) {
     case 'load':
-      return `charge max ${formatNumber(value)} kg`
+      return `charge max ${formatDecimal(value, 2)} kg`
     case 'reps':
       if (windowSec !== undefined)
-        return `${formatNumber(value)} répétitions en ${formatNumber(windowSec)} s${at}`
-      return `${formatNumber(value)} répétitions${at}`
+        return `${formatDecimal(value, 2)} répétitions en ${formatDecimal(windowSec, 2)} s${at}`
+      return `${formatDecimal(value, 2)} répétitions${at}`
     case 'duration':
-      return `${formatNumber(value)} s${at}`
+      return `${formatDecimal(value, 2)} s${at}`
     case 'tonnage':
-      return `tonnage ${formatNumber(Math.round(value))} kg`
+      return `tonnage ${formatInt(value)} kg`
   }
 }
 

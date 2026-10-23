@@ -20,12 +20,13 @@ import { Button, Card } from '../../ui/kit'
 import { CheckRow } from '../../ui/kit/CheckRow'
 import { IntegerField, SelectField, TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
-import { fmtG, fmtInt, slotChoices } from '../nutrition/format'
+import { slotChoices } from '../nutrition/format'
 import { RECIPES_PATH, recipePath } from '../routes'
 import { LineListEditor } from '../training/LineListEditor'
 import { FoodPickerSheet } from './FoodPickerSheet'
 import { CiqualBanner, Loading, NotFound } from './parts'
 import { BackLink } from '../../ui/kit/BackLink'
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 import {
   clearRecipeDraft,
   draftToInput,
@@ -235,12 +236,12 @@ function LiveMacros({ draft, lookup }: { draft: RecipeDraft; lookup: FoodLookup 
   }, [draft, lookup])
   const m = roundMacros(nutrition.perServing)
   return (
-    <div aria-live="polite" className="rounded-ds-md bg-canvas p-3.5" data-testid="live-macros">
+    <div aria-live="polite" className="rounded-md bg-canvas p-3.5" data-testid="live-macros">
       <p className="m-0 text-caption text-ink-muted">Par portion (calculé en direct)</p>
       <p className="m-0 mt-1 font-display text-number-l tabular-nums">
-        {fmtInt(m.kcal)} kcal
+        {formatInt(m.kcal)} kcal
         <span className="ml-2 font-sans text-body font-medium text-ink-muted">
-          P {fmtG(m.protein)} · G {fmtG(m.carbs)} · L {fmtG(m.fat)}
+          P {formatDecimal(m.protein)} · G {formatDecimal(m.carbs)} · L {formatDecimal(m.fat)}
         </span>
       </p>
       {nutrition.missing.length > 0 ? (

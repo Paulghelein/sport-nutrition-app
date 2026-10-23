@@ -37,22 +37,43 @@ const ciqual: CiqualFood = {
 describe('ingrédients', () => {
   it('quantité par défaut : paquet, puis portion, puis 100 g', () => {
     const a = scanIngredientFromFood(off, { key: 'a' })
-    expect(a).toMatchObject({ grams: 1000, wholePackage: true, origin: 'scan', foodId: 'off-1', packageG: 1000, aisle: 'other' })
+    expect(a).toMatchObject({
+      grams: 1000,
+      wholePackage: true,
+      origin: 'scan',
+      foodId: 'off-1',
+      packageG: 1000,
+      aisle: 'other',
+    })
     const b = scanIngredientFromFood({ ...off, packageG: undefined }, { key: 'b' })
     expect(b.grams).toBe(30)
     expect(b.wholePackage).toBeUndefined()
-    const c = scanIngredientFromFood({ ...off, packageG: undefined, defaultPortionG: undefined }, { key: 'c' })
+    const c = scanIngredientFromFood(
+      { ...off, packageG: undefined, defaultPortionG: undefined },
+      { key: 'c' },
+    )
     expect(c.grams).toBe(100)
   })
   it('aliment perso sans EAN : origin food ; grams imposés', () => {
-    const f = scanIngredientFromFood({ ...off, source: 'user', ean: undefined, packageG: undefined, aisle: 'dairy' }, { key: 'k', grams: 50 })
+    const f = scanIngredientFromFood(
+      { ...off, source: 'user', ean: undefined, packageG: undefined, aisle: 'dairy' },
+      { key: 'k', grams: 50 },
+    )
     expect(f).toMatchObject({ origin: 'food', grams: 50, aisle: 'dairy' })
   })
   it('Ciqual', () => {
     expect(scanIngredientFromCiqual(ciqual, { key: 'x' })).toEqual({
-      key: 'x', name: 'Oeuf', grams: 100, origin: 'ciqual', ciqualCode: '1', aisle: 'other',
+      key: 'x',
+      name: 'Oeuf',
+      grams: 100,
+      origin: 'ciqual',
+      ciqualCode: '1',
+      aisle: 'other',
     })
-    expect(scanIngredientFromCiqual(ciqual, { key: 'x', grams: 60, aisle: 'dairy' })).toMatchObject({ grams: 60, aisle: 'dairy' })
+    expect(scanIngredientFromCiqual(ciqual, { key: 'x', grams: 60, aisle: 'dairy' })).toMatchObject({
+      grams: 60,
+      aisle: 'dairy',
+    })
   })
   it('wholePackage suit la quantité', () => {
     const a = scanIngredientFromFood(off, { key: 'a' })
@@ -82,7 +103,14 @@ describe('draftToRecipeInput', () => {
   it('convertit et réutilise recipeNutrition', () => {
     const input = draftToRecipeInput(draft())
     expect(input).toMatchObject({
-      name: 'Muffins', meal: ['lunch'], servings: 6, servingUnit: 'muffins', prepMinutes: 0, cookMinutes: 0, tags: [], steps: [SCAN_DEFAULT_STEP],
+      name: 'Muffins',
+      meal: ['lunch'],
+      servings: 6,
+      servingUnit: 'muffins',
+      prepMinutes: 0,
+      cookMinutes: 0,
+      tags: [],
+      steps: [SCAN_DEFAULT_STEP],
     })
     expect(input.ingredients[0]).toEqual({ name: 'Farine', grams: 300, aisle: 'other', foodId: 'off-1' })
     expect(input.ingredients[1]).toEqual({ name: 'Oeuf', grams: 100, aisle: 'other', ciqualCode: '1' })
@@ -136,10 +164,13 @@ describe('compatibilité avec src/db/validation', () => {
     expect(validateRecipeInput(draftToRecipeInput(draft()))).toBeNull()
     expect(validateRecipeInput(draftToRecipeInput(draft({ servingUnit: '', meal: ['snack'] })))).toBeNull()
   })
-  it('noms d\'ingrédients vides : repli non vide', () => {
+  it("noms d'ingrédients vides : repli non vide", () => {
     const a = { ...scanIngredientFromFood(off, { key: 'a' }), name: '  ' }
     const b = { ...scanIngredientFromCiqual(ciqual, { key: 'b' }), name: '' }
-    const c = { ...scanIngredientFromFood({ ...off, id: 'uuid-1', source: 'user', ean: undefined }, { key: 'c' }), name: '' }
+    const c = {
+      ...scanIngredientFromFood({ ...off, id: 'uuid-1', source: 'user', ean: undefined }, { key: 'c' }),
+      name: '',
+    }
     const input = draftToRecipeInput(draft({ ingredients: [a, b, c] }))
     expect(input.ingredients.map((i) => i.name)).toEqual(['Produit 1', 'Aliment Ciqual 1', 'Ingrédient'])
     expect(validateRecipeInput(input)).toBeNull()

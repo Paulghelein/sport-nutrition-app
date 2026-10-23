@@ -152,4 +152,3 @@ describe('daySummary', () => {
     expect(s.targets).toBeNull()
   })
 })
-

@@ -128,7 +128,7 @@ export function AddHost({ open, onClose }: { open: boolean; onClose: () => void 
         <p
           role="alert"
           style={{ bottom: 'var(--bar-clearance)' }}
-          className="fixed inset-x-4 z-50 m-0 rounded-ds-md bg-inverse px-4 py-3 text-body-strong text-on-inverse shadow-float"
+          className="fixed inset-x-4 z-50 m-0 rounded-md bg-inverse px-4 py-3 text-body-strong text-on-inverse shadow-float"
         >
           Impossible de lire tes pesées. Réessaie dans un instant.
         </p>

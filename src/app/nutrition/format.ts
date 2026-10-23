@@ -1,13 +1,5 @@
 import type { Macros, MealSlot } from '../../types'
-
-const integer = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
-const oneDecimal = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 })
-
-/** Entier avec séparateur de milliers (« 3 047 »). */
-export const fmtInt = (n: number): string => integer.format(Math.round(n))
-
-/** Grammes au dixième, sans zéro inutile (« 31,2 », « 150 »). */
-export const fmtG = (n: number): string => oneDecimal.format(Math.round(n * 10) / 10)
+import { formatDecimal, formatInt } from '../../ui/kit/format'
 
 export const SLOT_LABEL: Record<MealSlot, string> = {
   breakfast: 'Petit-déjeuner',
@@ -44,5 +36,5 @@ export function slotForNow(date = new Date()): MealSlot {
 
 /** « 183 kcal · P 31,2 · G 0 · L 6,5 » (valeurs déjà arrondies par l'appelant). */
 export function macroLine(m: Macros): string {
-  return `${fmtInt(m.kcal)} kcal · P ${fmtG(m.protein)} · G ${fmtG(m.carbs)} · L ${fmtG(m.fat)}`
+  return `${formatInt(m.kcal)} kcal · P ${formatDecimal(m.protein)} · G ${formatDecimal(m.carbs)} · L ${formatDecimal(m.fat)}`
 }

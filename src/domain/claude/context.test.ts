@@ -31,7 +31,16 @@ const profile: Profile = {
   createdAt: T,
   updatedAt: T,
 }
-const targets: NutritionTargets = { kcal: 2851.4, protein: 130.2, carbs: 380, fat: 85, bmr: 1800, tdee: 2700, weightKg: 72.43, ageYears: 25 }
+const targets: NutritionTargets = {
+  kcal: 2851.4,
+  protein: 130.2,
+  carbs: 380,
+  fat: 85,
+  bmr: 1800,
+  tdee: 2700,
+  weightKg: 72.43,
+  ageYears: 25,
+}
 const base: ClaudeBaseInput = { profile, equipment: makeEquipment(['mat']), targets, today: '2026-10-16' }
 const SLOTS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
@@ -48,10 +57,18 @@ const day = (perMeal: number): DayLog => {
   const meals = SLOTS.map((slot, s) => {
     const entries = Array.from({ length: perMeal }, (_, i) => entry(s * 100 + i, slot))
     const sum = (k: 'kcal' | 'protein' | 'carbs' | 'fat') => entries.reduce((a, e) => a + e.macros[k], 0)
-    return { slot, entries, totals: { kcal: sum('kcal'), protein: sum('protein'), carbs: sum('carbs'), fat: sum('fat') } }
+    return {
+      slot,
+      entries,
+      totals: { kcal: sum('kcal'), protein: sum('protein'), carbs: sum('carbs'), fat: sum('fat') },
+    }
   })
   const sum = (k: 'kcal' | 'protein' | 'carbs' | 'fat') => meals.reduce((a, m) => a + m.totals[k], 0)
-  return { date: '2026-10-16', meals, totals: { kcal: sum('kcal'), protein: sum('protein'), carbs: sum('carbs'), fat: sum('fat') } }
+  return {
+    date: '2026-10-16',
+    meals,
+    totals: { kcal: sum('kcal'), protein: sum('protein'), carbs: sum('carbs'), fat: sum('fat') },
+  }
 }
 
 /** JSON du bloc de données du message. */
@@ -66,7 +83,9 @@ describe('structure commune', () => {
   it('en-tête, profil, objectifs, données, demande, format', () => {
     expect(msg.kind).toBe('journal')
     expect(msg.text).toContain('Contexte envoyé par mon app Forge')
-    expect(msg.text).toContain('homme, 25 ans, 178 cm, 72,4 kg (moyenne 7 j), objectif prise de masse, niveau débutant, 5 séances/sem')
+    expect(msg.text).toContain(
+      'homme, 25 ans, 178 cm, 72,4 kg (moyenne 7 j), objectif prise de masse, niveau débutant, 5 séances/sem',
+    )
     expect(msg.text).toContain('kettlebell réglable 12–24 kg (pas 1 kg), tapis')
     expect(msg.text).toContain('2851 kcal, protéines 130 g, glucides 380 g, lipides 85 g')
     expect(msg.text).toContain('Ma demande : Que manger ce soir ?')
@@ -83,9 +102,9 @@ describe('structure commune', () => {
   })
   it('demande vide ou blanche → demande par défaut', () => {
     for (const request of [undefined, '', '   \n']) {
-      expect(buildJournalMessage({ ...base, day: day(1), ...(request === undefined ? {} : { request }) }).text).toContain(
-        `Ma demande : ${DEFAULT_REQUESTS.journal}`,
-      )
+      expect(
+        buildJournalMessage({ ...base, day: day(1), ...(request === undefined ? {} : { request }) }).text,
+      ).toContain(`Ma demande : ${DEFAULT_REQUESTS.journal}`)
     }
   })
 })
@@ -106,7 +125,11 @@ describe('journal', () => {
     expect(data.reste.kcal).toBe(2358)
   })
   it('repas vides omis ; journal vide valide', () => {
-    const empty: DayLog = { date: '2026-10-16', meals: SLOTS.map((slot) => ({ slot, entries: [], totals: { kcal: 0, protein: 0, carbs: 0, fat: 0 } })), totals: { kcal: 0, protein: 0, carbs: 0, fat: 0 } }
+    const empty: DayLog = {
+      date: '2026-10-16',
+      meals: SLOTS.map((slot) => ({ slot, entries: [], totals: { kcal: 0, protein: 0, carbs: 0, fat: 0 } })),
+      totals: { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+    }
     const data = dataOf(buildJournalMessage({ ...base, day: empty }).text) as { repas: unknown[] }
     expect(data.repas).toEqual([])
   })
@@ -117,9 +140,19 @@ describe('journal', () => {
 })
 
 describe('séance avant', () => {
-  const library = seedLibrary({ 'plank': 'hidden' })
+  const library = seedLibrary({ plank: 'hidden' })
   const blocks: Session['blocks'] = [
-    { id: 'b1', kind: 'single', exercises: [{ exerciseId: 'goblet-squat', restSec: 90, sets: [1, 2, 3].map(() => ({ targetReps: [8, 12], loadKg: 16 })) }] },
+    {
+      id: 'b1',
+      kind: 'single',
+      exercises: [
+        {
+          exerciseId: 'goblet-squat',
+          restSec: 90,
+          sets: [1, 2, 3].map(() => ({ targetReps: [8, 12], loadKg: 16 })),
+        },
+      ],
+    },
     {
       id: 'b2',
       kind: 'superset',
@@ -129,11 +162,27 @@ describe('séance avant', () => {
       ],
     },
   ]
-  const msg = buildSessionBeforeMessage({ ...base, plan: { durationMin: 30, estimatedMin: 31, deload: false, blocks }, library })
+  const msg = buildSessionBeforeMessage({
+    ...base,
+    plan: { durationMin: 30, estimatedMin: 31, deload: false, blocks },
+    library,
+  })
   it('blocs avec exerciseId, nom, séries, cible, charge, repos', () => {
-    const data = dataOf(msg.text) as { seance: { dureeMin: number; blocs: { bloc: number; type?: string; exercices: Record<string, unknown>[] }[] } }
+    const data = dataOf(msg.text) as {
+      seance: {
+        dureeMin: number
+        blocs: { bloc: number; type?: string; exercices: Record<string, unknown>[] }[]
+      }
+    }
     expect(data.seance.dureeMin).toBe(30)
-    expect(data.seance.blocs[0]?.exercices[0]).toEqual({ exerciseId: 'goblet-squat', nom: 'Goblet squat', series: 3, reps: [8, 12], chargeKg: 16, reposSec: 90 })
+    expect(data.seance.blocs[0]?.exercices[0]).toEqual({
+      exerciseId: 'goblet-squat',
+      nom: 'Goblet squat',
+      series: 3,
+      reps: [8, 12],
+      chargeKg: 16,
+      reposSec: 90,
+    })
     expect(data.seance.blocs[1]?.type).toBe('superset')
     expect(data.seance.blocs[1]?.exercices[1]).toMatchObject({ series: 2, dureeSec: 20 })
   })
@@ -151,8 +200,24 @@ describe('séance avant', () => {
     expect(msg.text.length).toBeLessThan(6000)
   })
   it('niveau par schéma relevé → exercices de niveau supérieur proposés', () => {
-    const levels = { hinge: 1, squat: 3, lunge: 1, push_h: 1, push_v: 1, pull: 1, core: 1, carry: 1, arms: 1, calves: 1 } as const
-    const hi = buildSessionBeforeMessage({ ...base, plan: { durationMin: 30, estimatedMin: 31, deload: false, blocks }, library, patternLevels: levels })
+    const levels = {
+      hinge: 1,
+      squat: 3,
+      lunge: 1,
+      push_h: 1,
+      push_v: 1,
+      pull: 1,
+      core: 1,
+      carry: 1,
+      arms: 1,
+      calves: 1,
+    } as const
+    const hi = buildSessionBeforeMessage({
+      ...base,
+      plan: { durationMin: 30, estimatedMin: 31, deload: false, blocks },
+      library,
+      patternLevels: levels,
+    })
     expect(hi.text.length).toBeGreaterThan(msg.text.length)
   })
 })
@@ -195,10 +260,24 @@ describe('séance après', () => {
       records: [{ exerciseId: 'goblet-squat', kind: 'load', value: 16, previous: 14 }],
       request: 'Je monte la charge ?',
     })
-    const data = dataOf(msg.text) as { seance: { dureeReelleMin: number; exercices: unknown[]; notes: string }; records: unknown[] }
+    const data = dataOf(msg.text) as {
+      seance: { dureeReelleMin: number; exercices: unknown[]; notes: string }
+      records: unknown[]
+    }
     expect(data.seance.dureeReelleMin).toBe(33)
-    expect(data.seance.exercices[0]).toEqual({ exerciseId: 'goblet-squat', nom: 'Goblet squat', series: ['12×16kg ok', '10×16kg dur'], passees: 1 })
-    expect(data.records[0]).toEqual({ exerciseId: 'goblet-squat', nom: 'Goblet squat', type: 'charge', valeur: 16, avant: 14 })
+    expect(data.seance.exercices[0]).toEqual({
+      exerciseId: 'goblet-squat',
+      nom: 'Goblet squat',
+      series: ['12×16kg ok', '10×16kg dur'],
+      passees: 1,
+    })
+    expect(data.records[0]).toEqual({
+      exerciseId: 'goblet-squat',
+      nom: 'Goblet squat',
+      type: 'charge',
+      valeur: 16,
+      avant: 14,
+    })
     expect(msg.text).not.toContain('sess-uuid')
     expect(msg.text).toContain('Types utiles ici : exercisePreference, exercise.')
   })
@@ -225,14 +304,22 @@ describe('recette', () => {
     const msg = buildRecipeMessage({
       ...base,
       recipe,
-      nutrition: { ingredients: [], total: { kcal: 2400, protein: 160, carbs: 280, fat: 40 }, perServing: { kcal: 600, protein: 40.04, carbs: 70, fat: 10.55 }, missing: ['Riz'] },
+      nutrition: {
+        ingredients: [],
+        total: { kcal: 2400, protein: 160, carbs: 280, fat: 40 },
+        perServing: { kcal: 600, protein: 40.04, carbs: 70, fat: 10.55 },
+        missing: ['Riz'],
+      },
     })
     const data = dataOf(msg.text) as { recette: Record<string, unknown> }
     expect(data.recette).toMatchObject({
       nom: 'Poulet riz',
       repas: ['déjeuner', 'dîner'],
       portions: 4,
-      ingredients: [{ nom: 'Poulet', g: 600 }, { nom: 'Riz', g: 320 }],
+      ingredients: [
+        { nom: 'Poulet', g: 600 },
+        { nom: 'Riz', g: 320 },
+      ],
       parPortion: { kcal: 600, prot: 40, gluc: 70, lip: 10.6 },
       sansValeurs: ['Riz'],
     })
@@ -241,7 +328,16 @@ describe('recette', () => {
   })
 })
 
-const nutritionWeek = { from: '2026-10-05', to: '2026-10-11', daysLogged: 5, avgKcal: 2710.6, avgProtein: 118.2, targetKcal: 2851, targetProtein: 130, daysInTarget: 3 }
+const nutritionWeek = {
+  from: '2026-10-05',
+  to: '2026-10-11',
+  daysLogged: 5,
+  avgKcal: 2710.6,
+  avgProtein: 118.2,
+  targetKcal: 2851,
+  targetProtein: 130,
+  daysInTarget: 3,
+}
 
 describe('progrès', () => {
   it('poids, régularité, volume, nutrition, records récents', () => {
@@ -249,7 +345,11 @@ describe('progrès', () => {
       ...base,
       weight: { avg7Kg: 72.43, avg7Kg28DaysAgo: 71.2, weighIns28d: 20 },
       regularity: {
-        weeks: Array.from({ length: 12 }, (_, i) => ({ weekStart: `2026-0${String(i < 7 ? 8 : 9)}-01`, sessions: i % 4, minutes: 60 })),
+        weeks: Array.from({ length: 12 }, (_, i) => ({
+          weekStart: `2026-0${String(i < 7 ? 8 : 9)}-01`,
+          sessions: i % 4,
+          minutes: 60,
+        })),
         currentStreak: 2,
         bestStreak: 5,
         totalMinutes: 700,
@@ -260,16 +360,30 @@ describe('progrès', () => {
       ],
       nutritionWeek,
       strength: [
-        { exerciseId: 'goblet-squat', points: [], lastPerformedOn: '2026-10-14', records: { load: { value: 16, date: '2026-10-14' }, reps: { value: 12, date: '2026-08-01', loadKg: 14 } } },
+        {
+          exerciseId: 'goblet-squat',
+          points: [],
+          lastPerformedOn: '2026-10-14',
+          records: {
+            load: { value: 16, date: '2026-10-14' },
+            reps: { value: 12, date: '2026-08-01', loadKg: 14 },
+          },
+        },
       ],
       exercises: [{ id: 'goblet-squat', name: 'Goblet squat' }],
     })
-    const data = dataOf(msg.text) as Record<string, unknown> & { regularite: { seancesParSemaine8: number[] }; volume7j: unknown[]; recordsRecents: unknown[] }
+    const data = dataOf(msg.text) as Record<string, unknown> & {
+      regularite: { seancesParSemaine8: number[] }
+      volume7j: unknown[]
+      recordsRecents: unknown[]
+    }
     expect(data.poids).toMatchObject({ moy7jKg: 72.4, variation28jKg: 1.2 })
     expect(data.regularite.seancesParSemaine8).toHaveLength(8)
     expect(data.volume7j).toEqual([{ groupe: 'pectoraux', series: 6.5, cible: [8, 14], statut: 'below' }])
     expect(data.nutritionSemaine).toMatchObject({ kcalMoy: 2711, joursDansLaCible: 3 })
-    expect(data.recordsRecents).toEqual([{ exerciseId: 'goblet-squat', nom: 'Goblet squat', type: 'charge', valeur: 16, date: '2026-10-14' }])
+    expect(data.recordsRecents).toEqual([
+      { exerciseId: 'goblet-squat', nom: 'Goblet squat', type: 'charge', valeur: 16, date: '2026-10-14' },
+    ])
   })
   it('pesées insuffisantes : null, pas d’exception', () => {
     const msg = buildProgressMessage({
@@ -297,9 +411,18 @@ describe('bilan', () => {
       nutrition: nutritionWeek,
       suggestion: { rule: 'low_protein', message: 'Ajoute une source de protéines.' },
     }
-    const msg = buildReviewMessage({ ...base, review, exercises: [{ id: 'goblet-squat', name: 'Goblet squat' }] })
+    const msg = buildReviewMessage({
+      ...base,
+      review,
+      exercises: [{ id: 'goblet-squat', name: 'Goblet squat' }],
+    })
     const data = dataOf(msg.text)
-    expect(data).toMatchObject({ seances: 4, seancesPrevues: 5, variationPoidsKg: 0.3, suggestionApp: 'Ajoute une source de protéines.' })
+    expect(data).toMatchObject({
+      seances: 4,
+      seancesPrevues: 5,
+      variationPoidsKg: 0.3,
+      suggestionApp: 'Ajoute une source de protéines.',
+    })
     expect((data.records as unknown[])[0]).toMatchObject({ type: 'répétitions', chargeKg: 16 })
     expect(msg.text).toContain(`Ma demande : ${DEFAULT_REQUESTS.review}`)
   })
@@ -311,7 +434,12 @@ describe('exercices perso et supprimés', () => {
     const msg = buildReviewMessage({
       ...base,
       review: {
-        weekStart: '2026-10-05', sessions: 1, plannedSessions: 3, minutes: 30, weightChangeKg: null, nutrition: nutritionWeek,
+        weekStart: '2026-10-05',
+        sessions: 1,
+        plannedSessions: 3,
+        minutes: 30,
+        weightChangeKg: null,
+        nutrition: nutritionWeek,
         records: [
           { exerciseId: uuid, kind: 'load', value: 20, previous: 18 },
           { exerciseId: 'gone-id', kind: 'load', value: 20, previous: 18 },
@@ -338,7 +466,11 @@ describe('F3 : types de séries dans le contexte de séance', () => {
           {
             exerciseId: 'incline-push-up',
             restSec: 60,
-            sets: [{ targetReps: [8, 15] }, { targetReps: [8, 15] }, { targetReps: [8, 15], setType: 'amrap' }],
+            sets: [
+              { targetReps: [8, 15] },
+              { targetReps: [8, 15] },
+              { targetReps: [8, 15], setType: 'amrap' },
+            ],
           },
         ],
       },
@@ -354,7 +486,11 @@ describe('F3 : types de séries dans le contexte de séance', () => {
         ],
       },
     ]
-    const msg = buildSessionBeforeMessage({ ...base, plan: { durationMin: 60, estimatedMin: 60, deload: false, blocks }, library })
+    const msg = buildSessionBeforeMessage({
+      ...base,
+      plan: { durationMin: 60, estimatedMin: 60, deload: false, blocks },
+      library,
+    })
     const data = dataOf(msg.text) as { seance: { blocs: { exercices: Record<string, unknown>[] }[] } }
     expect(data.seance.blocs[0]?.exercices[0]).toEqual({
       exerciseId: 'incline-push-up',
@@ -392,7 +528,17 @@ describe('F3 : types de séries dans le contexte de séance', () => {
             {
               exerciseId: 'two-hand-swing',
               restSec: 90,
-              sets: [{ setType: 'timedMax', targetDurationSec: 45, status: 'done', actualReps: 24, actualDurationSec: 45, loadKg: 16, feeling: 'ok' }],
+              sets: [
+                {
+                  setType: 'timedMax',
+                  targetDurationSec: 45,
+                  status: 'done',
+                  actualReps: 24,
+                  actualDurationSec: 45,
+                  loadKg: 16,
+                  feeling: 'ok',
+                },
+              ],
             },
           ],
         },
@@ -408,9 +554,14 @@ describe('F3 : types de séries dans le contexte de séance', () => {
         { id: 'incline-push-up', name: 'Pompes inclinées' },
         { id: 'two-hand-swing', name: 'Swing' },
       ],
-      records: [{ exerciseId: 'two-hand-swing', kind: 'reps', value: 24, previous: 22, loadKg: 16, windowSec: 45 }],
+      records: [
+        { exerciseId: 'two-hand-swing', kind: 'reps', value: 24, previous: 22, loadKg: 16, windowSec: 45 },
+      ],
     })
-    const data = dataOf(msg.text) as { seance: { exercices: { series: string[] }[] }; records: Record<string, unknown>[] }
+    const data = dataOf(msg.text) as {
+      seance: { exercices: { series: string[] }[] }
+      records: Record<string, unknown>[]
+    }
     expect(data.seance.exercices[0]?.series).toEqual(['15 ok', 'amrap 22 dur'])
     expect(data.seance.exercices[1]?.series).toEqual(['24×16kg en 45s ok'])
     expect(data.records[0]).toMatchObject({ valeur: 24, chargeKg: 16, fenetreSec: 45 })
