@@ -12,7 +12,7 @@ R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16
 Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
 (domain/nutrition, src/db) et F5 (domain/claude) — **fait le 2026-10-16** (eeb548d, afc94c4, c5a56c3) ; (2) écrans R2
 et R4 en parallèle — **faits et validés sur iPhone le 2026-10-16** (R4 853e602, R2 e759e74) ; (3) R3 écrans
-nutrition ensuite — **fait le 2026-10-16, à valider sur iPhone** ; R5 en dernier.
+nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ; (4) R5 finitions : prochain jalon.
 
 ## Décisions prises
 
@@ -357,7 +357,8 @@ nutrition ensuite — **fait le 2026-10-16, à valider sur iPhone** ; R5 en dern
 
 ## À faire ensuite
 
-- **Valider R3 sur iPhone**, puis R5 (finitions).
+- R3 validé sur iPhone le 2026-10-23. Prochain : **R5 Finitions** (V2.md) — écrans encore v1, nettoyage des doublons,
+  remarques reportées R0–R3 ci-dessous, suppression des jetons `v1-*` et des homonymes v1 de `src/ui/`.
 - Retour iPhone (2026-10-23) : mise au point du scan « ça marche mieux » après b90c82f.
 - À vérifier sur iPhone (R3) : scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
   scan (caméra en continu, paquet entier, quantité, fermer l'app puis rouvrir : brouillon intact) puis 6 portions au
