@@ -16,6 +16,7 @@ import {
   recordLines,
   strengthChartData,
   strengthMetric,
+  timedMaxText,
 } from './progressModel'
 
 const T0 = '2026-10-15T08:00:00.000Z'
@@ -596,5 +597,46 @@ describe('R4 : tendance du poids (8 semaines)', () => {
     expect(at(70)).toBe('below')
     expect(at(72)).toBe('inside')
     expect(at(74)).toBe('above')
+  })
+})
+
+describe('records en temps fixe dans le modèle de vue', () => {
+  const timedSession = (id: string, date: string, sets: object[]): Session =>
+    ({
+      id,
+      date,
+      status: 'done',
+      blocks: [{ kind: 'single', exercises: [{ exerciseId: 'goblet-squat', restSec: 60, sets }] }],
+    }) as unknown as Session
+  const set = (reps: number, win: number, loadKg?: number) => ({
+    setType: 'timedMax',
+    targetDurationSec: win,
+    actualReps: reps,
+    status: 'done',
+    ...(loadKg !== undefined ? { loadKg } : {}),
+  })
+
+  it('texte de la valeur : fenêtre dans le libellé, 0 kg distinct du poids du corps', () => {
+    expect(timedMaxText({ windowSec: 60, loadKg: 16, reps: 42, date: '2026-10-08' })).toBe('42 reps · 16 kg')
+    expect(timedMaxText({ windowSec: 60, loadKg: 0, reps: 42, date: '2026-10-08' })).toBe('42 reps · 0 kg')
+    expect(timedMaxText({ windowSec: 60, reps: 42, date: '2026-10-08' })).toBe('42 reps')
+  })
+
+  it('la ligne de l’exercice porte ses records ; les autres exercices n’en ont pas', () => {
+    const model = build(
+      data({
+        sessions: [
+          timedSession('a', '2026-10-01', [set(40, 60, 16)]),
+          timedSession('b', '2026-10-08', [set(42, 60, 16), set(30, 45)]),
+          session('c', '2026-10-09', 'other', 10, 8),
+        ],
+      }),
+    )
+    const row = model?.strength.find((r) => r.exerciseId === 'goblet-squat')
+    expect(row?.timedMax.map((r) => `${r.windowSec}: ${timedMaxText(r)}`)).toEqual([
+      '45: 30 reps',
+      '60: 42 reps · 16 kg',
+    ])
+    expect(model?.strength.find((r) => r.exerciseId === 'other')?.timedMax).toEqual([])
   })
 })

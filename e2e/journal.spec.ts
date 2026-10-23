@@ -69,7 +69,7 @@ test('journal : recherche, saisie libre, favori, copie d’hier, objectifs', asy
   await page.getByRole('searchbox', { name: 'Rechercher un aliment' }).fill('poulet cru')
   await chicken.click()
   await expect(sheet.getByLabel('Quantité')).toHaveValue('150') // dernière quantité utilisée
-  await sheet.getByRole('button', { name: 'Mettre en favori' }).click()
+  await sheet.getByRole('button', { name: 'Mettre en favori', exact: true }).click()
   await expect(sheet.getByRole('button', { name: 'Favori' })).toHaveAttribute('aria-pressed', 'true')
   await page.keyboard.press('Escape')
   await page.getByRole('searchbox', { name: 'Rechercher un aliment' }).fill('')
@@ -244,8 +244,8 @@ test('aliment Ciqual : modifier puis rétablir l’original (favori conservé)',
   await page.goto('./nutrition/ajouter?repas=lunch')
   await (await searchChicken(page)).click()
   await page.getByRole('dialog').getByRole('link', { name: 'Voir la fiche' }).click()
-  await page.getByRole('button', { name: 'Mettre en favori' }).click()
-  await expect(page.getByRole('button', { name: 'Retirer des favoris' })).toBeVisible()
+  await page.getByRole('button', { name: 'Mettre en favori', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Retirer des favoris', exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'Modifier' }).click()
   await page.getByLabel('Calories').fill('200')
   await page.getByRole('button', { name: 'Enregistrer' }).click()
@@ -254,7 +254,7 @@ test('aliment Ciqual : modifier puis rétablir l’original (favori conservé)',
   await page.getByRole('dialog').getByRole('button', { name: 'Rétablir' }).click()
   await expect(page.getByText('122 kcal')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Rétablir l’original' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Retirer des favoris' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Retirer des favoris', exact: true })).toBeVisible()
   expect(errors).toEqual([])
 })
 

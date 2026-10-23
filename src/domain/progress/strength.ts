@@ -1,10 +1,23 @@
 // Force (SPEC §8) : courbe par exercice, records de l'historique, records d'une période. Fonctions pures.
 import type { Id, LocalDate } from '../../types/common'
 import type { PersonalRecord } from '../../types/guided'
-import type { ExerciseRecords, ExerciseStrength, RecordValue, StrengthPoint } from '../../types/progress'
+import type {
+  ExerciseRecords,
+  ExerciseStrength,
+  RecordValue,
+  StrengthPoint,
+  TimedMaxRecord,
+} from '../../types/progress'
 import type { Exercise, Session, SetEntry } from '../../types/training'
 import { timedMaxWindowOf } from '../training/setTypes'
-import { compareSessionTime, mergedSets, summarizeSession, tonnageOf } from '../training/summary'
+import {
+  compareSessionTime,
+  mergedSets,
+  slotKey,
+  slotOf,
+  summarizeSession,
+  tonnageOf,
+} from '../training/summary'
 
 /**
  * Index de la bibliothèque par id. Doit contenir les exercices supprimés (surcharges `deleted`, exercices perso
@@ -157,6 +170,37 @@ export function strengthByExercise(
           ? 1
           : 0,
   )
+}
+
+/**
+ * Records de l'historique d'un exercice en temps fixe (F3, `timedMax`), séparés par fenêtre puis par charge (mêmes
+ * emplacements que le récapitulatif : `slotOf` / `slotKey`, 0 kg distinct du poids du corps). Séances `done` et
+ * séries `done` seulement ; une série `timedMax` sans fenêtre valide (`timedMaxWindowOf`) est une série normale et
+ * n'entre pas ici ; 0 rep n'est pas un record. Parcours chronologique (`chronologicalDone`), record remplacé
+ * seulement s'il est strictement battu : à égalité, la séance la plus ancienne reste.
+ * Tri : fenêtre croissante, puis poids du corps d'abord et charge croissante.
+ */
+export function timedMaxHistory(sessions: readonly Session[], exerciseId: Id): TimedMaxRecord[] {
+  const best = new Map<string, TimedMaxRecord>()
+  for (const session of chronologicalDone(sessions)) {
+    for (const set of mergedSets(session).get(exerciseId) ?? []) {
+      if (!isDone(set) || isPlain(set)) continue
+      const reps = set.actualReps
+      if (reps === undefined || !(reps > 0)) continue
+      const slot = slotOf(set, true)
+      const { windowSec } = slot
+      if (windowSec === undefined) continue
+      const key = slotKey(slot)
+      const seen = best.get(key)
+      if (seen !== undefined && reps <= seen.reps) continue
+      const record: TimedMaxRecord = { windowSec, reps, date: session.date }
+      if (slot.loadKg !== undefined) record.loadKg = slot.loadKg
+      best.set(key, record)
+    }
+  }
+  // Poids du corps (sans charge) avant toute charge, 0 kg compris.
+  const loadOrder = (r: TimedMaxRecord): number => (r.loadKg === undefined ? -1 : r.loadKg)
+  return [...best.values()].sort((a, b) => a.windowSec - b.windowSec || loadOrder(a) - loadOrder(b))
 }
 
 /** Clé de fusion : exercice, type, charge et fenêtre (un record `timedMax` ne fusionne pas avec une série normale). */

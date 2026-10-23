@@ -25,11 +25,17 @@ export function VolumeSection({ volumes }: { volumes: readonly GroupVolume[] }) 
               key={v.group}
               className="flex min-h-11 items-center justify-between gap-3 border-t border-line py-1.5 first:border-t-0"
             >
-              <span className="text-body-strong">{muscleLabel(v.group)}</span>
-              <span className="text-right text-caption tabular-nums text-ink-muted">
-                <span className="font-display text-base font-bold text-ink">{formatDecimal(v.sets, 2)}</span>
-                {` / ${v.target[0]}–${v.target[1]} séries · `}
-                <span className={`font-bold ${COLOR[v.status]}`}>{VOLUME_STATUS_LABEL[v.status]}</span>
+              <span className="min-w-0 text-body-strong">{muscleLabel(v.group)}</span>
+              <span className="flex shrink-0 flex-col items-end text-caption tabular-nums text-ink-muted">
+                <span className="whitespace-nowrap">
+                  <span className="font-display text-base font-bold text-ink">
+                    {formatDecimal(v.sets, 2)}
+                  </span>
+                  {` / ${v.target[0]}–${v.target[1]} séries`}
+                </span>
+                <span className={`whitespace-nowrap font-bold ${COLOR[v.status]}`}>
+                  {VOLUME_STATUS_LABEL[v.status]}
+                </span>
               </span>
             </li>
           ))}

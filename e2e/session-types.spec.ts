@@ -168,6 +168,16 @@ test('séance avec série max (AMRAP) puis finisher en temps fixe, de bout en bo
 
   await page.getByRole('button', { name: 'Terminer la séance' }).click()
   await expect(page.getByRole('heading', { name: 'Séance terminée' })).toBeVisible()
+
+  // Progrès > Force : le record « Max en 30 s » du swing, avec le nombre de reps saisi.
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Progrès' })
+    .click()
+  await page.getByRole('button', { name: /swing/i }).first().click()
+  const record = page.locator('li', { has: page.getByText('Max en 30 s', { exact: true }) }).last()
+  await expect(record).toBeVisible()
+  await expect(record).toContainText(new RegExp(`(^|\\D)${typed} reps\\b`))
   expect(errors).toEqual([])
 })
 

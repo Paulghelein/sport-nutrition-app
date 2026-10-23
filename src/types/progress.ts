@@ -67,6 +67,17 @@ export interface ExerciseRecords {
   tonnage?: RecordValue
 }
 
+/**
+ * Meilleur nombre de reps d'un exercice en temps fixe (F3, `timedMax`) sur une fenêtre et à une charge données
+ * (absente = poids du corps ; 0 kg est une charge distincte). `date` = première séance où ce nombre a été atteint.
+ */
+export interface TimedMaxRecord {
+  windowSec: number
+  loadKg?: number
+  reps: number
+  date: LocalDate
+}
+
 export interface ExerciseStrength {
   exerciseId: Id
   /** Un point par séance, dans l'ordre chronologique. */

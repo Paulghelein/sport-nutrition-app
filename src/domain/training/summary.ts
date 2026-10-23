@@ -69,18 +69,22 @@ function summarizeExercise(
   return summary
 }
 
-/** Où un record se mesure : charge (absente = poids du corps) et, pour une série en temps fixe, fenêtre. */
-interface RecordSlot {
+/**
+ * Où un record se mesure : charge (absente = poids du corps ; 0 kg reste une charge distincte) et, pour une série
+ * en temps fixe, fenêtre. Exporté pour l'historique de force (`timedMaxHistory`).
+ */
+export interface RecordSlot {
   loadKg?: number
   windowSec?: number
 }
 
 /** Clé d'un emplacement (comparaison seulement, jamais relue). */
-function slotKey(slot: RecordSlot): string {
+export function slotKey(slot: RecordSlot): string {
   return `${slot.loadKg ?? 'bw'}|${slot.windowSec ?? '-'}`
 }
 
-function slotOf(set: SetEntry, withWindow: boolean): RecordSlot {
+/** Emplacement d'une série ; `withWindow` = tenir compte de la fenêtre `timedMax` (`timedMaxWindowOf`). */
+export function slotOf(set: SetEntry, withWindow: boolean): RecordSlot {
   const slot: RecordSlot = {}
   if (set.loadKg !== undefined) slot.loadKg = set.loadKg
   const w = withWindow ? timedMaxWindowOf(set) : undefined

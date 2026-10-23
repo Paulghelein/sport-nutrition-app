@@ -32,10 +32,10 @@ test('écrans v2 : pas de dépassement à 390 px, formulaire et import sur fond 
   await completeOnboarding(page)
   const screens: Array<{ path: string; heading: string | RegExp; light?: boolean }> = [
     { path: 'reglages', heading: 'Réglages' },
-    { path: 'nutrition/ajouter', heading: /./ },
+    { path: 'nutrition/ajouter', heading: /^Ajouter / },
     { path: 'nutrition/recettes/nouvelle', heading: 'Nouvelle recette', light: true },
-    { path: 'reglages/importer', heading: /./, light: true },
-    { path: 'claude/reponse', heading: /./ },
+    { path: 'reglages/importer', heading: 'Importer', light: true },
+    { path: 'claude/reponse', heading: 'Réponse de Claude' },
   ]
   for (const s of screens) {
     await page.goto(s.path)

@@ -29,6 +29,12 @@ function spaFallback404(): Plugin {
   }
 }
 
+// Tests dans un fuseau fixe non UTC (la CI est en UTC) : les bugs de date locale/UTC ne passent plus inaperçus.
+// Posé ici, avant le démarrage des workers Vitest, qui héritent de l'environnement.
+if (process.env.VITEST || process.argv.some((a) => a.includes('vitest'))) {
+  process.env.TZ = 'America/Los_Angeles'
+}
+
 export default defineConfig({
   base,
   plugins: [

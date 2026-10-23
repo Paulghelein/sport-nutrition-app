@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatKg, formatSignedKg, parseDecimal, toInputNumber } from '../src/ui/format'
-import { upsertWeighIn } from '../src/db'
+import { checkWeighIn } from '../src/db/validation'
 
 describe('parseDecimal', () => {
   it('accepte la virgule et le point', () => {
@@ -18,10 +18,11 @@ describe('parseDecimal', () => {
     expect(parseDecimal('-5')).toBeNaN()
     expect(parseDecimal('72,')).toBeNaN()
   })
-  it('ne laisse pas passer Infinity (NaN ou rejet en aval)', async () => {
+  it('ne laisse pas passer Infinity (NaN ou rejet par checkWeighIn)', () => {
     const n = parseDecimal('Infinity')
     expect(n).toBeNaN()
-    await expect(upsertWeighIn({ date: '2026-10-15', weightKg: n })).rejects.toThrow()
+    expect(checkWeighIn({ date: '2026-10-15', weightKg: n }, '2026-10-15')).toMatch(/30 et 250/)
+    expect(checkWeighIn({ date: '2026-10-15', weightKg: Infinity }, '2026-10-15')).toMatch(/30 et 250/)
   })
 })
 

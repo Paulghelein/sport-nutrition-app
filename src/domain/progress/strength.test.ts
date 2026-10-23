@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Session, SessionBlock, SetEntry } from '../../types/training'
 import { summarizeSession } from '../training/summary'
 import { T0, seedLibrary } from '../training/testkit'
-import { recordsInRange, strengthByExercise } from './strength'
+import { recordsInRange, strengthByExercise, timedMaxHistory } from './strength'
 
 const lib = seedLibrary()
 const byId = new Map(lib.map((e) => [e.id, e]))
@@ -303,5 +303,97 @@ describe('F3 : séries en temps fixe et AMRAP', () => {
       { exerciseId: sw, kind: 'reps', value: 16, previous: 15, loadKg: 16 },
       { exerciseId: sw, kind: 'reps', value: 27, previous: 22, loadKg: 16, windowSec: 45 },
     ])
+  })
+})
+
+describe('timedMaxHistory (F3 : records en temps fixe de l’historique)', () => {
+  const sw = 'two-hand-swing'
+  const timed = (actualReps: number, window: number, over: Partial<SetEntry> = {}): SetEntry => ({
+    setType: 'timedMax',
+    targetDurationSec: window,
+    status: 'done',
+    actualReps,
+    actualDurationSec: window,
+    feeling: 'ok',
+    ...over,
+  })
+  const one = (id: string, date: string, sets: SetEntry[], over: Partial<Session> = {}): Session =>
+    session(id, date, [block('b1', sw, sets)], over)
+
+  it('poids du corps : pas de loadKg dans le record', () => {
+    const out = timedMaxHistory([one('s1', '2026-10-01', [timed(30, 45)])], sw)
+    expect(out).toEqual([{ windowSec: 45, reps: 30, date: '2026-10-01' }])
+    expect(out[0]).not.toHaveProperty('loadKg')
+  })
+
+  it('loadKg 0 distinct du poids du corps (même règle que le récapitulatif)', () => {
+    const rows = [one('s1', '2026-10-01', [timed(30, 45), timed(25, 45, { loadKg: 0 })])]
+    expect(timedMaxHistory(rows, sw)).toEqual([
+      { windowSec: 45, reps: 30, date: '2026-10-01' },
+      { windowSec: 45, loadKg: 0, reps: 25, date: '2026-10-01' },
+    ])
+  })
+
+  it('deux fenêtres et deux charges séparées ; tri fenêtre puis charge', () => {
+    const rows = [
+      one('s2', '2026-10-03', [timed(40, 60, { loadKg: 16 }), timed(28, 45, { loadKg: 16 })]),
+      one('s1', '2026-10-01', [timed(30, 45, { loadKg: 12 }), timed(20, 45, { loadKg: 16 })]),
+    ]
+    expect(timedMaxHistory(rows, sw)).toEqual([
+      { windowSec: 45, loadKg: 12, reps: 30, date: '2026-10-01' },
+      { windowSec: 45, loadKg: 16, reps: 28, date: '2026-10-03' },
+      { windowSec: 60, loadKg: 16, reps: 40, date: '2026-10-03' },
+    ])
+  })
+
+  it('égalité : la séance la plus ancienne reste, quel que soit l’ordre du tableau', () => {
+    const rows = [
+      one('late', '2026-10-05', [timed(30, 45, { loadKg: 16 })]),
+      one('pm', '2026-10-02', [timed(30, 45, { loadKg: 16 })], { startedAt: '2026-10-02T18:00:00.000Z' }),
+      one('am', '2026-10-02', [timed(30, 45, { loadKg: 16 })], { startedAt: '2026-10-02T08:00:00.000Z' }),
+    ]
+    expect(timedMaxHistory(rows, sw)).toEqual([{ windowSec: 45, loadKg: 16, reps: 30, date: '2026-10-02' }])
+    // Battu strictement : la date suit.
+    const beaten = [...rows, one('best', '2026-10-06', [timed(31, 45, { loadKg: 16 })])]
+    expect(timedMaxHistory(beaten, sw)).toEqual([{ windowSec: 45, loadKg: 16, reps: 31, date: '2026-10-06' }])
+  })
+
+  it('séances non done ignorées', () => {
+    const rows = [
+      one('a', '2026-10-01', [timed(50, 45)], { status: 'abandoned' }),
+      one('p', '2026-10-02', [timed(50, 45)], { status: 'in_progress' }),
+      one('d', '2026-10-03', [timed(30, 45)]),
+    ]
+    expect(timedMaxHistory(rows, sw)).toEqual([{ windowSec: 45, reps: 30, date: '2026-10-03' }])
+  })
+
+  it('série skipped ignorée', () => {
+    const rows = [one('s1', '2026-10-01', [timed(50, 45, { status: 'skipped' }), timed(30, 45)])]
+    expect(timedMaxHistory(rows, sw)).toEqual([{ windowSec: 45, reps: 30, date: '2026-10-01' }])
+  })
+
+  it('timedMax sans fenêtre (ou fenêtre invalide) = série normale, ignorée ici ; séries normales ignorées', () => {
+    const noWindow: SetEntry = { setType: 'timedMax', status: 'done', actualReps: 40, feeling: 'ok' }
+    const rows = [
+      one('s1', '2026-10-01', [noWindow, timed(40, 0), reps(50, 16), { ...reps(60), setType: 'amrap' }]),
+    ]
+    expect(timedMaxHistory(rows, sw)).toEqual([])
+  })
+
+  it('0 rep (ou reps absentes) : pas de record', () => {
+    const rows = [one('s1', '2026-10-01', [timed(0, 45), timed(0, 60, { actualReps: undefined })])]
+    expect(timedMaxHistory(rows, sw)).toEqual([])
+  })
+
+  it('autre exercice ignoré ; séries fusionnées sur plusieurs blocs', () => {
+    const rows = [
+      session('s1', '2026-10-01', [
+        block('b1', sw, [timed(20, 45)]),
+        block('b2', 'box-goblet-squat', [timed(99, 45)]),
+        block('b3', sw, [timed(25, 45)]),
+      ]),
+    ]
+    expect(timedMaxHistory(rows, sw)).toEqual([{ windowSec: 45, reps: 25, date: '2026-10-01' }])
+    expect(timedMaxHistory([], sw)).toEqual([])
   })
 })

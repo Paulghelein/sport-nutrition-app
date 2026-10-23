@@ -136,7 +136,9 @@ test('recette perso : créer, modifier, supprimer', async ({ page }) => {
 
   // Validation : une recette vide est refusée.
   await page.getByRole('button', { name: 'Créer la recette' }).click()
-  await expect(page.getByRole('alert').filter({ hasText: /./ }).first()).toBeVisible()
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Le nom de la recette est obligatoire.' }),
+  ).toBeVisible()
 
   await page.getByLabel('Nom', { exact: true }).fill('Bol maison test')
   // Déjeuner est coché par défaut ; on ajoute le dîner.

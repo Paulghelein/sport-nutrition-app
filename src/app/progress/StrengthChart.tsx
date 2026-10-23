@@ -21,6 +21,9 @@ export function StrengthChart({
   const unit = METRIC_UNIT[metric]
   const first = points[0]
   const span = points[points.length - 1]?.day ?? 0
+  // Trois repères au plus (début, milieu, fin) : sans cela Recharts choisit des jours ronds qui se répètent en dates.
+  const ticks =
+    span === 0 ? [0] : span === 1 ? [0, 1] : span < 14 ? [0, span] : [0, Math.round(span / 2), span]
   const dateOf = (day: number) => formatDateFr(first ? addDays(first.date, Math.round(day)) : '')
   const summary = `Courbe ${METRIC_LABEL[metric].toLowerCase()} de ${name} : ${points.length} séance${points.length > 1 ? 's' : ''}, dernière valeur ${formatDecimal(points[points.length - 1]?.value ?? 0, 2)} ${unit}.`
   return (
@@ -32,6 +35,8 @@ export function StrengthChart({
             dataKey="day"
             type="number"
             domain={[0, Math.max(span, 1)]}
+            ticks={ticks}
+            interval={0}
             tickFormatter={dateOf}
             tick={{ fill: INK_MUTED, fontSize: 12 }}
             stroke={LINE}
@@ -43,6 +48,7 @@ export function StrengthChart({
             width={44}
             domain={[0, (max: number) => Math.ceil(max * 1.1)]}
             allowDecimals={false}
+            tickCount={4}
           />
           <Tooltip
             contentStyle={{

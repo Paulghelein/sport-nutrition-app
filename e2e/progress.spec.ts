@@ -112,6 +112,24 @@ test('Progrès : carte du lundi, rappel de sauvegarde, données, mensurations', 
     .getByRole('link', { name: 'Progrès' })
     .click()
 
+  // Ordre des cartes : Régularité (3 chiffres + calendrier), bilan du lundi, rappel de sauvegarde, Poids.
+  const cards = [
+    page.locator('section[aria-label="Régularité"]'),
+    page.locator('section[aria-label="Bilan de la semaine"]'),
+    page.getByLabel('Rappel de sauvegarde'),
+    page.locator('section[aria-label="Poids"]'),
+  ]
+  for (const c of cards) await expect(c).toBeVisible()
+  for (let i = 0; i < cards.length - 1; i++) {
+    const next = await cards[i + 1]?.elementHandle()
+    const before = await cards[i]?.evaluate(
+      (el, other) =>
+        other !== null && (el.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+      next ?? null,
+    )
+    expect(before, `la carte ${i + 1} précède la carte ${i + 2}`).toBe(true)
+  }
+
   // Carte du lundi
   const review = page.getByRole('heading', { name: 'Bilan de la semaine' })
   await expect(review).toBeVisible()

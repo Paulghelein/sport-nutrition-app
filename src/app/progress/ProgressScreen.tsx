@@ -12,15 +12,16 @@ import { Note } from './parts'
 import { RecordsSection } from './RecordsSection'
 import { RegularitySection } from './RegularitySection'
 import { ReviewCard } from './ReviewCard'
-import { StrengthSection } from './StrengthSection'
+import { PatternsSection, StrengthSection } from './StrengthSection'
 import { VolumeSection } from './VolumeSection'
 import { WeighInHistory, WeightSection } from './WeightSection'
 import { useScrollToHash } from '../useScrollToHash'
 import { useProgress } from './useProgress'
 
 /**
- * Écran Progrès (SPEC §8, DESIGN §4). Une question : « est-ce que je progresse ? ». Ordre : bilan du lundi, les trois
- * chiffres et le calendrier, le poids, les records, puis le détail (force, volume, nutrition, mesures).
+ * Écran Progrès (SPEC §8, DESIGN §4). Une question : « est-ce que je progresse ? ». Ordre : les trois chiffres et
+ * le calendrier, le bilan du lundi et le rappel de sauvegarde, le poids, les records et la force, puis le reste
+ * (niveau, volume, nutrition, mesures).
  * Chargé en lazy : `export default`. Les composants n'affichent que `useProgress()`.
  */
 export default function ProgressScreen() {
@@ -47,8 +48,6 @@ export default function ProgressScreen() {
       {model === null ? <Note>Termine d’abord la configuration de ton profil.</Note> : null}
       {model ? (
         <>
-          {model.review ? <ReviewCard review={model.review} nameOf={model.nameOf} /> : null}
-          {model.backup ? <BackupBanner reminder={model.backup} /> : null}
           <RegularitySection
             headline={model.headline}
             days={model.days}
@@ -57,9 +56,12 @@ export default function ProgressScreen() {
             selectedDate={selected}
             onSelectDay={setSelected}
           />
+          {model.review ? <ReviewCard review={model.review} nameOf={model.nameOf} /> : null}
+          {model.backup ? <BackupBanner reminder={model.backup} /> : null}
           <WeightSection weight={model.weight} />
           <RecordsSection records={model.records} />
           <StrengthSection model={model} />
+          <PatternsSection patterns={model.patterns} />
           <VolumeSection volumes={model.volumes} />
           <NutritionSection
             week={model.nutrition}

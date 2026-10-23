@@ -76,3 +76,31 @@ test('pesées : ajout, remplacement à la même date, modification, suppression'
 
   expect(errors).toEqual([])
 })
+
+test('courbe de poids : un appui donne la valeur lisible (tactile, sans survol)', async ({ page }) => {
+  const errors = collectErrors(page)
+  await page.goto('./')
+  await completeOnboarding(page)
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: 'Progrès' })
+    .click()
+  for (const [offset, kg] of [
+    [-6, '71,0'],
+    [-3, '71,6'],
+  ] as const) {
+    await page.getByRole('button', { name: 'Ajouter une pesée' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Ajouter une pesée' })
+    await dialog.getByLabel('Poids').fill(kg)
+    await dialog.getByLabel('Date').fill(localDate(offset))
+    await dialog.getByRole('button', { name: 'Enregistrer' }).click()
+    await expect(dialog).toBeHidden()
+  }
+  const chart = page.getByRole('img', { name: /Courbe de la moyenne/ })
+  await chart.scrollIntoViewIfNeeded()
+  const box = await chart.boundingBox()
+  if (!box) throw new Error('courbe introuvable')
+  await page.touchscreen.tap(box.x + box.width * 0.5, box.y + box.height * 0.5)
+  await expect(chart.locator('.recharts-tooltip-wrapper')).toContainText(/\d+,\d kg/)
+  expect(errors).toEqual([])
+})

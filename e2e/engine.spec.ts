@@ -89,3 +89,33 @@ test('réglages du moteur : cible conservée, validation, rétablissement, fréq
 
   expect(errors).toEqual([])
 })
+
+test('réglages du matériel : charges de la kettlebell conservées, aperçu dans la plage', async ({ page }) => {
+  const errors = collectErrors(page)
+  await start(page)
+  await openSettings(page)
+
+  const section = page.locator('section', { has: page.getByRole('heading', { name: 'Matériel' }) })
+  // Par défaut 12 à 24 kg, pas de 1 : on retire les charges de 17 à 24 kg (max 16, pas de 2 : 12, 14, 16).
+  await section.getByLabel('Maximum').fill('16')
+  await section.getByLabel('Pas').fill('2')
+  await section.getByRole('button', { name: 'Enregistrer le matériel' }).click()
+  await expect(section.getByText('Matériel enregistré.')).toBeVisible()
+
+  await page.reload()
+  const after = page.locator('section', { has: page.getByRole('heading', { name: 'Matériel' }) })
+  await expect(after.getByLabel('Minimum')).toHaveValue('12')
+  await expect(after.getByLabel('Maximum')).toHaveValue('16')
+  await expect(after.getByLabel('Pas')).toHaveValue('2')
+
+  // Aperçu : toute charge proposée est dans {12, 14, 16}.
+  await page.goto('./entrainement/apercu?duree=60')
+  await expect(page.getByText(/^≈ \d+ min$/)).toBeVisible()
+  const rows = page.locator('a[href*="/entrainement/exercices/"]')
+  await expect(rows.first()).toBeVisible()
+  const text = await page.locator('main').innerText()
+  const loads = [...text.matchAll(/(\d+(?:,\d+)?) kg\b/g)].map((m) => Number(m[1]?.replace(',', '.')))
+  expect(loads.length, 'au moins une charge kettlebell dans l’aperçu').toBeGreaterThan(0)
+  for (const kg of loads) expect([12, 14, 16], `charge ${kg} kg hors réglage`).toContain(kg)
+  expect(errors).toEqual([])
+})

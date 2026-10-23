@@ -495,21 +495,38 @@ describe('règles métier (repositories)', () => {
     await expect(saveProfile(makeProfile({ weeklySessionsMin: 0 }), NOW)).rejects.toThrow(/séances/)
   })
 
-  it('pesée future refusée (saisie, mise à jour, onboarding)', async () => {
-    await expect(upsertWeighIn({ date: '2026-03-02', weightKg: 70 }, NOW)).rejects.toThrow(/futur/)
-    await expect(upsertWeighIn({ date: '2026-03-01', weightKg: 70 }, NOW)).resolves.toBeDefined()
-    const a = await upsertWeighIn({ date: '2026-02-01', weightKg: 70 }, NOW)
-    await expect(updateWeighIn(a.id, { date: '2026-04-01' }, NOW)).rejects.toThrow(/futur/)
-    await expect(
-      completeOnboarding(
-        {
-          profile: makeProfile(),
-          equipment: defaultEquipment(NOW),
-          weighIn: { date: '2027-01-01', weightKg: 70 },
-        },
-        NOW,
-      ),
-    ).rejects.toThrow(/futur/)
+  // Instants construits en heure LOCALE : le jour calendaire local reste 2026-03-01 quel que soit le fuseau,
+  // alors que le jour UTC peut valoir la veille ou le lendemain (bords 00:30 et 23:30).
+  describe.each([
+    ['00:30', new Date(2026, 2, 1, 0, 30)],
+    ['23:30', new Date(2026, 2, 1, 23, 30)],
+  ])('pesée future refusée (horloge locale à %s)', (_label, instant) => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(instant)
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('saisie, mise à jour, onboarding', async () => {
+      const now = new Date().toISOString()
+      expect(toLocalDate(new Date())).toBe('2026-03-01')
+      await expect(upsertWeighIn({ date: '2026-03-02', weightKg: 70 }, now)).rejects.toThrow(/futur/)
+      await expect(upsertWeighIn({ date: '2026-03-01', weightKg: 70 }, now)).resolves.toBeDefined()
+      const a = await upsertWeighIn({ date: '2026-02-01', weightKg: 70 }, now)
+      await expect(updateWeighIn(a.id, { date: '2026-04-01' }, now)).rejects.toThrow(/futur/)
+      await expect(
+        completeOnboarding(
+          {
+            profile: makeProfile(),
+            equipment: defaultEquipment(now),
+            weighIn: { date: '2027-01-01', weightKg: 70 },
+          },
+          now,
+        ),
+      ).rejects.toThrow(/futur/)
+    })
   })
 
   it('coachUrl : null ou https uniquement', async () => {

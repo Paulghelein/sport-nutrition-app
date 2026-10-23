@@ -5,13 +5,21 @@ import { ErrorBoundary, levelLabel, patternLabel } from '../../ui'
 import { Card, EmptyState, Skeleton, SkeletonGroup, formatDecimal } from '../../ui/kit'
 import { Note, ScreenSection } from './parts'
 import type { ProgressModel } from './progressModel'
-import { METRIC_LABEL, METRIC_UNIT, lastMetricValue, recordLines, strengthChartData } from './progressModel'
+import {
+  METRIC_LABEL,
+  METRIC_UNIT,
+  lastMetricValue,
+  recordLines,
+  strengthChartData,
+  timedMaxText,
+} from './progressModel'
 
 const StrengthChart = lazy(() => import('./StrengthChart').then((m) => ({ default: m.StrengthChart })))
 
 function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'][number] }) {
   const points = strengthChartData(row.strength, row.metric)
   const records = recordLines(row.strength)
+  const timed = row.timedMax
   return (
     <div id={id} className="flex flex-col gap-2 pb-3">
       <p className="m-0 text-caption text-ink-muted">
@@ -37,7 +45,7 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
         </Note>
       )}
       <h4 className="m-0 mt-1 text-label uppercase text-ink-muted">Records</h4>
-      {records.length === 0 ? (
+      {records.length === 0 && timed.length === 0 ? (
         <Note className="text-caption">Pas encore de record.</Note>
       ) : (
         <ul className="m-0 list-none p-0">
@@ -50,14 +58,26 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
               </span>
             </li>
           ))}
+          {timed.map((r) => (
+            <li
+              key={`${r.windowSec}|${r.loadKg ?? ''}`}
+              className="flex justify-between gap-3 py-1 text-body"
+            >
+              <span className="text-ink-muted">Max en {r.windowSec} s </span>
+              <span className="text-right">
+                <span className="font-display font-bold tabular-nums">{timedMaxText(r)}</span>
+                <span className="text-caption text-ink-muted"> · {formatDateFr(r.date)}</span>
+              </span>
+            </li>
+          ))}
         </ul>
       )}
     </div>
   )
 }
 
-/** Force par exercice (courbe et records au toucher) et niveau atteint par schéma de mouvement. */
-export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strength' | 'patterns'> }) {
+/** Force par exercice (courbe et records au toucher). */
+export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strength'> }) {
   const [openId, setOpenId] = useState<string | null>(null)
   return (
     <>
@@ -112,22 +132,27 @@ export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strengt
           </Card>
         )}
       </ScreenSection>
-
-      <ScreenSection title="Niveau par mouvement">
-        <Card padding="none" className="px-4 py-2">
-          <ul className="m-0 grid list-none grid-cols-1 gap-x-4 p-0">
-            {model.patterns.map((p) => (
-              <li
-                key={p.pattern}
-                className="flex min-h-10 items-center justify-between gap-2 border-t border-line text-body first:border-t-0"
-              >
-                <span className="text-ink-muted">{patternLabel(p.pattern)}</span>
-                <span className="font-semibold">{levelLabel(p.level)}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </ScreenSection>
     </>
+  )
+}
+
+/** Niveau atteint par schéma de mouvement. */
+export function PatternsSection({ patterns }: { patterns: ProgressModel['patterns'] }) {
+  return (
+    <ScreenSection title="Niveau par mouvement">
+      <Card padding="none" className="px-4 py-2">
+        <ul className="m-0 grid list-none grid-cols-1 gap-x-4 p-0">
+          {patterns.map((p) => (
+            <li
+              key={p.pattern}
+              className="flex min-h-10 items-center justify-between gap-2 border-t border-line text-body first:border-t-0"
+            >
+              <span className="text-ink-muted">{patternLabel(p.pattern)}</span>
+              <span className="font-semibold">{levelLabel(p.level)}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </ScreenSection>
   )
 }

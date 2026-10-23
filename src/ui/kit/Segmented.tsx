@@ -29,8 +29,11 @@ export function Segmented<T extends string | number>({
 }: SegmentedProps<T>) {
   const cols = columns ?? options.length
   const refs = useRef(new Map<T, HTMLButtonElement>())
+  // Valeur hors liste : le premier choix reste atteignable au clavier.
+  const hasSelected = options.some((o) => o.value === value)
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    // Valeur hors liste : → va au premier, ← au dernier.
     const i = options.findIndex((o) => o.value === value)
     const step =
       e.key === 'ArrowRight' || e.key === 'ArrowDown'
@@ -38,9 +41,10 @@ export function Segmented<T extends string | number>({
         : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
           ? -1
           : 0
-    if (step === 0 || i < 0 || disabled) return
+    if (step === 0 || disabled) return
     e.preventDefault()
-    const next = options[(i + step + options.length) % options.length]
+    const next =
+      options[i < 0 ? (step > 0 ? 0 : options.length - 1) : (i + step + options.length) % options.length]
     if (!next) return
     onChange(next.value)
     refs.current.get(next.value)?.focus()
@@ -54,7 +58,7 @@ export function Segmented<T extends string | number>({
       className={cx('grid gap-1.5 bg-canvas p-1', cols < options.length ? 'rounded-lg' : 'rounded-full')}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
-      {options.map((o) => {
+      {options.map((o, idx) => {
         const selected = o.value === value
         return (
           <button
@@ -67,7 +71,7 @@ export function Segmented<T extends string | number>({
             role="radio"
             aria-checked={selected}
             disabled={disabled}
-            tabIndex={selected ? 0 : -1}
+            tabIndex={selected || (idx === 0 && !hasSelected) ? 0 : -1}
             onClick={() => onChange(o.value)}
             className={cx(
               'focus-ring min-h-11 rounded-full font-sans text-body-sm disabled:text-ink-muted',

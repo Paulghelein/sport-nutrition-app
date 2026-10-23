@@ -9,7 +9,9 @@ import { collectErrors, completeOnboarding, openSettings } from './helpers.ts'
 
 const EAN = '3017620422003'
 /** Octets JPEG factices (SOI + JFIF + EOI) : le contenu n'a pas besoin d'être décodable, seulement de survivre. */
-const JPEG_BYTES = [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x02, 0x03, 0xff, 0xd9]
+const JPEG_BYTES = [
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x02, 0x03, 0xff, 0xd9,
+]
 
 async function forceDownloadPath(page: Page) {
   await page.addInitScript(() => {
@@ -25,7 +27,8 @@ async function seedPhoto(page: Page, ean: string, bytes: number[]) {
         req.onsuccess = () => resolve(req.result)
         req.onerror = () => reject(req.error)
       })
-      if (!db.objectStoreNames.contains('foodPhotos')) throw new Error('table foodPhotos absente (schéma < v3)')
+      if (!db.objectStoreNames.contains('foodPhotos'))
+        throw new Error('table foodPhotos absente (schéma < v3)')
       const now = new Date().toISOString()
       const food = {
         id: `off-${ean}`,

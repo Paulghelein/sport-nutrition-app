@@ -14,6 +14,7 @@ import type { LibraryExercise, MovementPattern, TrainingLevel } from '../../type
 import { muscleLabel, patternLabel } from '../../ui'
 import { Button, Card, CardSkeleton, EmptyState, ExerciseThumb, cx } from '../../ui/kit'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import { Switch } from '../../ui/kit/Switch'
 import type { ChoiceOption } from '../../ui/kit/ChoiceGroup'
 import { Note } from '../../ui/kit/Note'
 import { DELETED_EXERCISES_PATH, LIBRARY_PATH, NEW_EXERCISE_PATH, TRAINING_PATH } from '../routes'
@@ -29,42 +30,6 @@ const levelFilterChoices: ChoiceOption<LevelFilter>[] = [
   { value: 2, label: 'Intermédiaire' },
   { value: 3, label: 'Avancé' },
 ]
-
-function Switch({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="focus-ring flex min-h-12 w-full items-center justify-between gap-3 rounded-md bg-canvas px-3.5 py-2 text-left"
-    >
-      <span className="text-body-strong">{label}</span>
-      <span
-        aria-hidden="true"
-        className={cx(
-          'relative h-7 w-12 shrink-0 rounded-full transition-colors motion-reduce:transition-none',
-          checked ? 'bg-ember' : 'bg-surface-sunken',
-        )}
-      >
-        <span
-          className={cx(
-            'absolute top-0.5 size-6 rounded-full bg-surface-raised shadow-card transition-all motion-reduce:transition-none',
-            checked ? 'left-[22px]' : 'left-0.5',
-          )}
-        />
-      </span>
-    </button>
-  )
-}
 
 function ExerciseListRow({ ex, missing }: { ex: LibraryExercise; missing: boolean }) {
   return (

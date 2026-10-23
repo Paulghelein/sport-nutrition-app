@@ -60,6 +60,7 @@ export type { SessionProgressProps, SetDotsProps, SetDotState } from './SessionP
 export type { SelectFieldProps, TextFieldProps } from './Fields'
 export type { ChoiceGroupProps, ChoiceOption } from './ChoiceGroup'
 export type { CheckRowProps } from './CheckRow'
+// Switch : import par chemin direct (`ui/kit/Switch`), comme ChoiceGroup.
 export type { NoteProps } from './Note'
 export type { ConfirmSheetProps } from './ConfirmSheet'
 // FoodRow (Nutrition) : à importer par chemin direct (`ui/kit/FoodRow`), seul son type est dans le barrel.

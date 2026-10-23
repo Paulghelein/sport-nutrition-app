@@ -8,7 +8,7 @@ import { recentRecords } from '../../domain/progress/recentRecords'
 import { regularity, weekStartOf } from '../../domain/progress/regularity'
 import { nutritionOkShare, sessionsThisMonth } from '../../domain/progress/stats'
 import { previousWeekRange, shouldShowReview, weeklyReview } from '../../domain/progress/review'
-import { recordsInRange, strengthByExercise } from '../../domain/progress/strength'
+import { recordsInRange, strengthByExercise, timedMaxHistory } from '../../domain/progress/strength'
 import type { ExercisesById } from '../../domain/progress/strength'
 import { groupVolumes } from '../../domain/progress/volume'
 import {
@@ -19,6 +19,8 @@ import {
 } from '../../domain/nutrition/targets'
 import { weightSeries, weightSummary, weightTargetCorridor } from '../../domain/progress/weight'
 import type { WeightSummary } from '../../domain/progress/weight'
+import { mergedSets } from '../../domain/training/summary'
+import { timedMaxWindowOf } from '../../domain/training/setTypes'
 import { PATTERN_ORDER, mergeLibrary } from '../../domain/training/library'
 import { patternLevels } from '../../domain/training/levels'
 import { MAJOR_GROUPS } from '../../domain/training/volume'
@@ -31,12 +33,14 @@ import type {
   Exercise,
   ExerciseStrength,
   StrengthPoint,
+  TimedMaxRecord,
   GroupVolume,
   LocalDate,
   Measurement,
   MovementPattern,
   NutritionWeek,
   Regularity,
+  Session,
   WeighIn,
   TrainingLevel,
   WeeklyReview,
@@ -53,6 +57,26 @@ export interface StrengthRow {
   strength: ExerciseStrength
   /** Mesure principale de la courbe de cet exercice. */
   metric: StrengthMetric
+  /** Records « max en temps fixe » (reps dans une fenêtre), exclus de `strength.records`. */
+  timedMax: TimedMaxRecord[]
+}
+
+/** Valeur d'un record en temps fixe, la fenêtre étant dans le libellé : « 42 reps · 16 kg », « 30 reps » (poids du corps). */
+export function timedMaxText(r: TimedMaxRecord): string {
+  const at = r.loadKg !== undefined ? ` · ${formatDecimal(r.loadKg, 2)} kg` : ''
+  return `${formatInt(r.reps)} reps${at}`
+}
+
+/** Les séries en temps fixe d'un exercice sont rares : on ne calcule les records que pour ceux qui en ont. */
+function exercisesWithTimedMax(sessions: readonly Session[]): Set<string> {
+  const ids = new Set<string>()
+  for (const session of sessions) {
+    if (session.status !== 'done') continue
+    for (const [exerciseId, sets] of mergedSets(session)) {
+      if (!ids.has(exerciseId) && sets.some((set) => timedMaxWindowOf(set) !== undefined)) ids.add(exerciseId)
+    }
+  }
+  return ids
 }
 
 export interface ProgressModel {
@@ -456,11 +480,13 @@ export function buildProgressModel({ data, equipment, seeds, now }: ProgressInpu
 
   const reminder = backupReminder(settings.lastExportAt, now)
 
+  const withTimedMax = exercisesWithTimedMax(data.sessions)
   const strength = strengthByExercise(data.sessions, byId).map((s) => ({
     exerciseId: s.exerciseId,
     name: nameOf(s.exerciseId),
     strength: s,
     metric: strengthMetric(s),
+    timedMax: withTimedMax.has(s.exerciseId) ? timedMaxHistory(data.sessions, s.exerciseId) : [],
   }))
 
   const levels = patternLevels(library, data.states, profile.level)

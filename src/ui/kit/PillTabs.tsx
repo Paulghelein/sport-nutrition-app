@@ -26,13 +26,16 @@ export function PillTabs<T extends string>({
   panelIdPrefix,
 }: PillTabsProps<T>) {
   const refs = useRef(new Map<T, HTMLButtonElement>())
+  // Valeur hors liste : le premier onglet reste atteignable au clavier.
+  const hasSelected = tabs.some((t) => t.id === value)
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    // Valeur hors liste : → va au premier, ← au dernier.
     const i = tabs.findIndex((t) => t.id === value)
     const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
-    if (step === 0 || i < 0) return
+    if (step === 0) return
     e.preventDefault()
-    const next = tabs[(i + step + tabs.length) % tabs.length]
+    const next = tabs[i < 0 ? (step > 0 ? 0 : tabs.length - 1) : (i + step + tabs.length) % tabs.length]
     if (!next) return
     onChange(next.id)
     refs.current.get(next.id)?.focus()
@@ -40,7 +43,7 @@ export function PillTabs<T extends string>({
 
   return (
     <div role="tablist" aria-label={ariaLabel} onKeyDown={onKeyDown} className="flex flex-wrap gap-1.5">
-      {tabs.map((t) => {
+      {tabs.map((t, idx) => {
         const selected = t.id === value
         return (
           <button
@@ -53,7 +56,7 @@ export function PillTabs<T extends string>({
             role="tab"
             aria-selected={selected}
             aria-controls={panelIdPrefix ? `${panelIdPrefix}-${t.id}` : undefined}
-            tabIndex={selected ? 0 : -1}
+            tabIndex={selected || (idx === 0 && !hasSelected) ? 0 : -1}
             onClick={() => onChange(t.id)}
             className={pillClass(selected)}
           >

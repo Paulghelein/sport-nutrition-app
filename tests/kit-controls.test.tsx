@@ -129,6 +129,22 @@ describe('Segmented', () => {
     expect(screen.getByRole('radio', { name: '20' }).tabIndex).toBe(-1)
   })
 
+  it('tabIndex : valeur hors liste, le premier choix reste atteignable au clavier', () => {
+    render(<Segmented ariaLabel="Durée" options={OPTIONS} value={99 as 20} onChange={() => undefined} />)
+    expect(screen.getByRole('radio', { name: '20' }).tabIndex).toBe(0)
+    expect(screen.getByRole('radio', { name: '30' }).tabIndex).toBe(-1)
+  })
+
+  it('valeur hors liste : → va au premier choix, ← au dernier', () => {
+    const onChange = vi.fn()
+    render(<Segmented ariaLabel="Durée" options={OPTIONS} value={99 as 20} onChange={onChange} />)
+    const group = screen.getByRole('radiogroup')
+    fireEvent.keyDown(group, { key: 'ArrowRight' })
+    expect(onChange).toHaveBeenLastCalledWith(OPTIONS[0]?.value)
+    fireEvent.keyDown(group, { key: 'ArrowLeft' })
+    expect(onChange).toHaveBeenLastCalledWith(OPTIONS[OPTIONS.length - 1]?.value)
+  })
+
   it('désactivé : ni clic ni flèches', () => {
     const onChange = vi.fn()
     render(<Segmented ariaLabel="Durée" options={OPTIONS} value={30} onChange={onChange} disabled />)
@@ -161,6 +177,22 @@ describe('PillTabs', () => {
     expect(journal.getAttribute('aria-controls')).toBe('panel-journal')
     fireEvent.click(screen.getByRole('tab', { name: 'Frigo' }))
     expect(onChange).toHaveBeenCalledWith('fridge')
+  })
+
+  it('tabIndex : valeur hors liste, le premier onglet reste atteignable au clavier', () => {
+    render(<PillTabs ariaLabel="N" tabs={TABS} value={'inconnu' as 'journal'} onChange={() => undefined} />)
+    expect(screen.getByRole('tab', { name: 'Journal' }).tabIndex).toBe(0)
+    expect(screen.getByRole('tab', { name: 'Frigo' }).tabIndex).toBe(-1)
+  })
+
+  it('valeur hors liste : → va au premier onglet, ← au dernier', () => {
+    const onChange = vi.fn()
+    render(<PillTabs ariaLabel="N" tabs={TABS} value={'inconnu' as 'journal'} onChange={onChange} />)
+    const list = screen.getByRole('tablist')
+    fireEvent.keyDown(list, { key: 'ArrowRight' })
+    expect(onChange).toHaveBeenLastCalledWith(TABS[0]?.id)
+    fireEvent.keyDown(list, { key: 'ArrowLeft' })
+    expect(onChange).toHaveBeenLastCalledWith(TABS[TABS.length - 1]?.id)
   })
 
   it('pas d’aria-controls sans panelIdPrefix', () => {

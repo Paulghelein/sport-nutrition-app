@@ -12,7 +12,8 @@ R1 — Navigation + Aujourd'hui : terminé et **validé sur iPhone le 2026-10-16
 Suite décidée avec l'utilisateur : (1) en parallèle, les parties moteur F3 (domain/training), F4 + photo OFF
 (domain/nutrition, src/db) et F5 (domain/claude) — **fait le 2026-10-16** (eeb548d, afc94c4, c5a56c3) ; (2) écrans R2
 et R4 en parallèle — **faits et validés sur iPhone le 2026-10-16** (R4 853e602, R2 e759e74) ; (3) R3 écrans
-nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ; (4) R5 finitions : prochain jalon.
+nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ; (4) R5 finitions — **fait le 2026-10-23**,
+à valider sur iPhone (une semaine d'usage). Fin de la v2.
 
 ## Décisions prises
 
@@ -156,6 +157,12 @@ nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ;
   Playwright en `reducedMotion: 'reduce'` sauf `transitions.spec.ts`. États vides = `EmptyState` du kit (pas de carte
   sur le journal vide : les repas suffisent) ; squelettes = `Skeleton`/`ScreenSkeleton`/`CardSkeleton`/`SectionSkeleton`,
   au premier chargement seulement (le journal garde l'ancien jour, inert, pendant ‹ ›).
+- 2026-10-23 (R5) : Progrès : Régularité (3 chiffres + calendrier) → bilan du lundi → rappel de sauvegarde → poids →
+  records → force → niveau → volume → nutrition → historique des pesées → mensurations. Records « max en temps fixe » de
+  l'historique de force = `timedMaxHistory` (src/domain/progress/strength.ts, F3) : mêmes clés de charge que le
+  récapitulatif (`slotOf`/`slotKey` exportés, 0 kg ≠ poids du corps), égalité → séance la plus ancienne ; affiché
+  « Max en 60 s · 42 reps · 16 kg ». Vitest tourne en `TZ=America/Los_Angeles` (vite.config.ts) pour que les tests de
+  dates soient discriminants en CI (UTC).
 - 2026-10-23 (R5) : outillage : ESLint `defineConfig` (règles identiques), actions GitHub checkout@v7, setup-node@v7,
   configure-pages@v6, upload-pages-artifact@v5, deploy-pages@v5.
 
@@ -326,6 +333,12 @@ nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ;
 
 ## Fait
 
+- R5 Finitions (2026-10-23) : plus aucun écran v1 (nutrition, scan, recettes, Claude, Réglages, onboarding, pesée,
+  mensurations, mise à jour, erreur), doublons supprimés, jetons et composants v1 retirés, états vides, squelettes,
+  transitions, ordre de Progrès et records en temps fixe, outillage (ESLint, actions, Prettier). Commits 6e17aab,
+  ebdd760, f6f11f4, 75d6629 et le commit de clôture. Total : 2134 tests Vitest, 117 e2e. Démarrage 579,5 kB /
+  178,1 kB gzip (181,6 avant R5).
+
 - R3 Nutrition (2026-10-16) : journal restylé (jour ‹ ›, sections en pastilles, carte bilan, cartes par repas, FoodRow
   avec pictogramme / photo OFF / badge code-barres / fond frigo), photo OFF enregistrée au scan, contenance du paquet
   dans le formulaire d'aliment, recette par scan (F4), recette d'une vidéo (F5), feuille + branchée, Recettes, Frigo,
@@ -388,101 +401,50 @@ nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ;
 
 ## À faire ensuite
 
-- R3 validé sur iPhone le 2026-10-23. Prochain : **R5 Finitions** (V2.md) — écrans encore v1, nettoyage des doublons,
-  remarques reportées R0–R3 ci-dessous, suppression des jetons `v1-*` et des homonymes v1 de `src/ui/`.
-- Retour iPhone (2026-10-23) : mise au point du scan « ça marche mieux » après b90c82f.
-- À vérifier sur iPhone (R3) : scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
-  scan (caméra en continu, paquet entier, quantité, fermer l'app puis rouvrir : brouillon intact) puis 6 portions au
-  frigo et « 6 muffins » sur la fiche ; recette depuis un vrai TikTok (« Coller le lien » et bulle iOS, copier +
-  ouvrir Claude, « Coller la réponse ») ; journal lisible (pastilles sur une ligne, noms longs, photos 40 px) ; bandeau
-  caméra collé en haut sous la barre d'état ; fond au rebond (body encore sombre v1) ; mode cuisine clair d'une main.
-- Remarques reportées (R3, pour R5) : RecipeLogSheet (v2) / LogRecipeSheet (v1) en double (même logique, fusionner
-  avec la refonte d'AddFoodScreen) ; NutritionTabs relit le frigo (2e requête sur l'écran Frigo) et duplique le style
-  de PillTabs ; marges négatives des écrans pleine largeur (recette par scan, pastilles) couplées au padding de
-  `<main>` ; `body` encore au fond v1 ; feuille d'AskClaudeButton toujours v1 ; écrans nutrition v1 listés ci-dessus.
-- À vérifier sur iPhone (R2) : lisibilité à 1 m (panneaux 64 px, repos 76 px), une main, petit écran (SE) ; bip de fin
-  du temps fixe en mode silencieux ; série max avec la consigne d'arrêt ; Facile/Correct/Dur en un tap ; aperçu avec la
-  barre d'onglets sous Modifier/Démarrer ; fond sombre sans bande claire au rebond ; feuilles claires sur le mode séance.
-- À vérifier sur iPhone (R4) : cases du calendrier au doigt ; jours de « Ta semaine » ouvrant le résumé ; calendrier
-  juste sur l'historique réel (niveaux, record le bon jour, point nutrition) ; courbe de poids et couloir, toucher ;
-  chiffres de tête ; défilement sous la barre flottante.
-- Remarques reportées (R2/R4, pour R5) : AskClaudeButton et sa feuille en v1 sombre (aperçu, Progrès) ; ErrorBoundary
-  v1 ; WeightSheet/MeasurementSheet (src/app/forms) en champs v1 hors garde-fou couleurs ; tailles en dur dans
-  guidedViews (`text-[28px]`…) ; chrono de série en durée / compte à rebours non repris après rechargement ;
-  `ExerciseRecords` sans record timedMax (historique de force) ; seuil timedMax (haut de fourchette) à ajuster après
-  essai ; `dayActivities` O(R × H) (≈ 5 ms en usage réel) ; ordre des cartes de Progrès (bilan/sauvegarde en tête).
-
-- Remarques reportées (R1) : WeekCard charge tout `loadProgressData` pour 7 jours (requête limitée en R4) ;
-  `dayActivities` en O(R × H) pour les records (passage chronologique unique en R4 si lent) ; pesée depuis + : si
-  la feuille est fermée pendant la lecture des pesées, la feuille de pesée s'ouvre quand même (rare) ; pas de toast
-  de confirmation après une pesée depuis + ; l'invite de mise à jour `fixed` recouvre la zone collante tant qu'elle
-  est affichée ; carte séance : l'édition de l'aperçu est relue au montage seulement ; chaînes '/entrainement…' en
-  dur dans les écrans d'entraînement (constantes à reprendre en R2) ; « Nouvel exercice » non proposé dans +
-  (création contextuelle depuis la bibliothèque) ; e2e `scan.spec.ts:144` et `:205` instables sous charge (4 workers),
-  verts isolément (3/3).
-
-- Valider R0 sur iPhone, puis R1 (navigation + Aujourd'hui).
-- Remarques reportées (R0) : lien « Composants de l'interface (dev) » et page `/dev/ui` présents en production
-  (retirer ou conditionner à `import.meta.env.DEV` en R5) ; le kit dépend de `src/ui/choices` (v1) pour
-  `muscleLabel` : ne pas le supprimer avec les homonymes v1 en R5 ; `formatInt`/`withUnit` du kit à fusionner avec
-  `src/ui/format.ts` ; Sheet du kit et Sheet v1 ont des piles `inert` séparées (ne pas les superposer) ;
-  Segmented/PillTabs sans `tabIndex` 0 si `value` absente de la liste ; libellés de TabBar inactifs en `ink-muted`
-  (icônes en `ink-faint`) et cibles 44 px au lieu des 36–40 px des maquettes, par choix d'accessibilité.
-
-- Valider J8 et J9 sur iPhone (fin de la v1), puis refonte complète de l'UI.
-- À vérifier sur iPhone (J6/J7) : barre d'onglets collée en bas en standalone (e2e OK, standalone non émulable) ;
-  lecture réelle d'un EAN, voyant caméra éteint en quittant l'écran / en arrière-plan, message « Réglages → Apps →
-  Safari → Caméra » exact, lampe (probablement absente), bip ; mode cuisine d'une main (boutons collés en bas, Wake
-  Lock) ; cases de courses 64 px ; formulaire de recette long ; « Depuis le frigo » présélectionné.
-- À vérifier sur iPhone (J9) : « Copier et ouvrir Claude » en un tap (Safari et standalone) ; URL d'un Projet ouverte
-  dans l'app Claude ou Safari ; bulle « Coller » d'iOS et refus ; feuille d'envoi avec le clavier ouvert ; place des
-  6 boutons « Demander à Claude ».
-- Remarques reportées (J9) : cartes d'aperçu dupliquées entre ImportScreen et ClaudeResponseScreen (refonte) ;
-  ImportScreen de Réglages appelle encore `commitImport` (recettes/repas seulement) ; Zod toujours dans le démarrage
-  via les schémas de `src/db` (remarque J1) ; `scan.spec.ts:205` a échoué une fois (non reproduit en 10 essais).
-- Remarques reportées (J8, pour la refonte ou plus tard) : libellés coupés (« Au- / dessus », « Poussée
-  horizontale »), « 0 » au-dessus des semaines vides, tooltip du poids à vérifier au tactile, `Stat` et
-  `formatNumber` dupliqués, ticks de l'axe de force ; test « pesée future » sensible au fuseau (UTC-11).
-- Remarques non bloquantes reportées (J6/J7/J8) :
-  - Stepper / Switch dupliqués dans src/app/recipes/parts.tsx (vs src/ui/Stepper, LibraryScreen) : mutualiser dans src/ui.
-  - Filtre e2e « Importing a module script failed » global (WebKit ne donne pas l'URL du chunk).
-  - Mode cuisine dans la barre d'onglets (pas plein écran comme le mode guidé) : à revoir selon le retour iPhone.
-  - « Riz basmati cru » sans candidat Ciqual sûr à l'import par nom (garde ses `per100g` s'ils sont fournis).
-  - Bundle d'entrée +22 kB (db/recipes, foods-off réexportés par src/db/index.ts) : avec la remarque Zod (J1).
-- À vérifier sur iPhone (J4) : son en mode silencieux, Wake Lock en standalone, lisibilité à 1 m, panneau du bas
-  (« Comment faire ? » parfois sous le pli), repos de 20 s entre exercices de superset sans bip distinct.
-- À vérifier sur iPhone (J5) : anneau 176 px, bouton collant « Terminer », toasts de 7 s, noms Ciqual longs,
-  « Copier d'hier » visible même si le repas du jour est rempli.
-- Remarques non bloquantes reportées (J4/J5) :
-  - Profil repassé de 2 à 1 avec un état niveau 3 : niveau conservé (choix assumé : les niveaux gagnés restent).
-  - Aperçu édité en sessionStorage : charges figées au moment de l'édition (risque faible, même jour).
-  - `CiqualFood.search` stocké mais l'index renormalise (les `Food` fusionnés n'ont pas le champ).
-  - Bundle d'entrée 458 kB / 143 kB gzip (+23 kB depuis J3) : à surveiller avec la remarque Zod (J1).
-- Remarques non bloquantes reportées (J3) :
-  - Débutant : pectoraux souvent sous la cible à 5 séances/sem. (un seul exercice niveau 1) ; 5 × 60 min dépasse
-    les cibles (excès inévitable).
-  - Prettier : 23 fichiers antérieurs à J3 non formatés (`npx prettier --list-different src e2e`).
-  - e2e : les `ChoiceGroup` (radios `sr-only`) ne se cochent pas avec `.check()` ; cliquer l'étiquette.
-- Remarques non bloquantes reportées (J2) :
-  - Illustrations les plus faibles : pompes archer, dead bug, pompes diamant (≈ pompes) ; kettlebells en cercle vide
-    sur les dessins d'origine vs disque plein sur les redessinés (harmoniser si besoin).
-  - `box-goblet-squat` demande une chaise mais n'exige pas `bench` (un canapé suffit) : à revoir si gênant.
-  - Bundle principal 435 kB (137 kB gzip, +19 kB) : barrels `src/ui` / `src/db` ; le chunk `useLibrary` est chargé
-    dès `/seance` (compteur). À traiter avec la remarque Zod de J1.
-  - J3 : ne pas proposer le Turkish get-up à un débutant sans critère validé ; double progression en durée pour les portés.
-  - Pas encore d'écran pour restaurer un exercice perso supprimé.
-- Remarques non bloquantes du reviewer reportées (J1) :
-  - `Sheet` : une seule feuille montée à la fois ; gérer l'empilement (compteur `inert`, pile pour Échap/Tab) quand
-    J4/J6 en auront besoin.
-  - Zod et le code de sauvegarde restent dans le bundle principal (~415 kB bruts, ~131 kB gzip) car
-    `src/db/repositories.ts` importe les schémas : sortir Zod du démarrage (validateurs sans Zod, `import()` du module
-    backup) si le démarrage dépasse 2 s.
-  - `tests/format.test.ts` (cas Infinity) dépend de la base partagée : tester `checkWeighIn` directement.
-  - Couverture Vitest chiffrée : `@vitest/coverage-v8` non installé (à décider).
-- Remarques non bloquantes du reviewer reportées (J0) :
-  - `tseslint.config()` déprécié → migrer vers `defineConfig` de `eslint/config`.
-  - CI : actions GitHub en Node 20 dépréciées (checkout@v4, setup-node@v4…) → passer aux versions majeures suivantes.
-  - Envisager Playwright en CI.
+- **R5 terminé le 2026-10-23, fin de la v2.** À valider sur iPhone pendant une semaine d'usage (liste ci-dessous).
+- À vérifier sur iPhone (R5) :
+  - Barre d'état (`black-translucent`) : heure et batterie lisibles sur le fond clair ? Sinon décider `default`/`black`
+    (attention : change les safe areas du bandeau caméra et du mode séance).
+  - Aucun zoom au focus d'un champ (16 px partout) ; « Ta demande » (feuille Claude) lisible en entier.
+  - Transitions : fiche, formulaire, Réglages glissent depuis la droite ; retour et onglets nets ; rien ne saute
+    (Démarrer de l'aperçu, bandeau caméra de la recette par scan) ; Réduire les animations → fondu.
+  - Onboarding sur une installation neuve (supprimer l'app de l'écran d'accueil, réinstaller depuis Safari) ;
+    Réglages complets (Kettlebell à 3 champs, ancre `#sauvegarde`) ; sauvegarde aller-retour (export partage iOS,
+    import Remplacer sur l'install neuve).
+  - Hors ligne (mode avion) : ouverture, journal, photo d'un produit scanné, polices.
+  - Invite de mise à jour en haut (encoche) ; toast après une pesée depuis + ; états vides et squelettes ;
+    Progrès dans le nouvel ordre ; « Max en N s » après une séance avec temps fixe ; courbe de poids au doigt.
+  - Écrans refaits en R5 : Ajouter (recherche, récents/favoris), quantité clavier ouvert, fiche et formulaire
+    d'aliment, scan (cadre vert, lampe), formulaire de recette long, import, réponse de Claude.
+- Bilan des remarques reportées (R5) :
+  - **Faites** : écrans v1 restants et doublons (LogRecipeSheet, cartes d'aperçu import/Claude, feuille
+    d'AskClaudeButton, Stepper/Switch de recipes/parts, Switch de LibraryScreen, Stat/formatNumber/formatInt/withUnit,
+    BackLink et SearchBox) ; WeightSheet/MeasurementSheet et ErrorBoundary en v2 ; `/dev/ui` seulement en dev ;
+    jetons `v1-*` et body sombre ; rayons `rounded-ds-*` ; NutritionTabs (2e lecture du frigo, style PillTabs) ;
+    marges négatives ; routes en dur ; tailles en dur de guidedViews ; invite de mise à jour sur la zone collante ;
+    toast après une pesée depuis + ; ordre de Progrès ; ExerciseRecords sans timedMax (`timedMaxHistory`, domaine) ;
+    libellés coupés et ticks de force (J8) ; « 0 » des semaines vides (disparu avec le calendrier R4) ; Segmented /
+    PillTabs sans `tabIndex` hors liste ; `tseslint.config` → `defineConfig` ; actions GitHub Node 20 ; Prettier sur
+    src/, e2e/, tests/ ; `format.test.ts` sur `checkWeighIn` pur ; test « pesée future » indépendant du fuseau
+    (Vitest tourne en America/Los_Angeles) ; ImportScreen de Réglages sur les cartes partagées.
+  - **Reportées, avec raison** :
+    - Zod hors du démarrage (≈ 29 kB gzip) : ~35 écritures à précéder d'un `await ensureSchemas()` dont plusieurs
+      dans des transactions Dexie ; un oubli casse la première écriture en production sans que les tests le voient.
+      À faire seulement si le démarrage devient lent (aujourd'hui 178 kB gzip).
+    - Seuil timedMax (haut de fourchette) : attend des séances réelles.
+    - Chrono de série en durée / compte à rebours non repris après rechargement : changement de comportement.
+    - `dayActivities` en O(R × H) : ≈ 5 ms en usage réel.
+    - Pesée depuis + si la feuille est fermée pendant la lecture des pesées : cas rare.
+    - Carte séance : édition de l'aperçu relue au montage seulement : sans effet constaté.
+    - « Nouvel exercice » absent de + : choix R1 (création depuis la bibliothèque).
+    - Pas d'écran pour restaurer un exercice perso supprimé ; illustrations faibles (J2) ; `box-goblet-squat` sans
+      `bench` ; débutant : pectoraux sous la cible à 5 séances/sem. : contenu et moteur, hors finitions.
+    - Feuilles : animation d'entrée seulement (sortie animée = pile inert / focus fragiles).
+    - Playwright en CI, couverture Vitest chiffrée : outillage hors périmètre ; l'e2e teste un build avec
+      `VITE_DEV_UI=1` (seule différence avec la production : la route `/dev/ui`).
+    - `CiqualFood.search` stocké mais renormalisé ; « Riz basmati cru » sans candidat Ciqual sûr : sans effet visible.
+    - e2e instables sous charge (`scan.spec.ts:32/144/205`, `dev-ui.spec.ts:7`), verts isolément ; filtre global
+      « Importing a module script failed » (WebKit ne donne pas l'URL du chunk).
 
 ## Points ouverts / questions pour l'utilisateur
 
