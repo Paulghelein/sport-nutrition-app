@@ -358,8 +358,8 @@ nutrition ensuite — **fait le 2026-10-16, à valider sur iPhone** ; R5 en dern
 ## À faire ensuite
 
 - **Valider R3 sur iPhone**, puis R5 (finitions).
-- À vérifier sur iPhone (R3) : mise au point du scan à 15–20 cm (caméra multi-objectifs, zoom 2×, ouverture pas trop
-  lente, lampe) ; scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
+- Retour iPhone (2026-10-23) : mise au point du scan « ça marche mieux » après b90c82f.
+- À vérifier sur iPhone (R3) : scan réel d'un produit → photo dans le journal, aussi en mode avion ; egg muffins par
   scan (caméra en continu, paquet entier, quantité, fermer l'app puis rouvrir : brouillon intact) puis 6 portions au
   frigo et « 6 muffins » sur la fiche ; recette depuis un vrai TikTok (« Coller le lien » et bulle iOS, copier +
   ouvrir Claude, « Coller la réponse ») ; journal lisible (pastilles sur une ligne, noms longs, photos 40 px) ; bandeau
