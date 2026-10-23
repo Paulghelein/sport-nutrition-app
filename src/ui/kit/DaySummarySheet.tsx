@@ -1,5 +1,14 @@
-import { Check, ChevronLeft, ChevronRight, TriangleAlert, Trophy } from 'lucide-react'
+import {
+  CalendarClock,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleSlash,
+  TriangleAlert,
+  Trophy,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
+import { EmptyState } from './EmptyState'
 import { formatInt } from './format'
 import { ListRow } from './ListRow'
 import { Sheet } from './Sheet'
@@ -90,9 +99,13 @@ export function DaySummarySheet({ day, onClose, onPrev, onNext }: DaySummaryShee
           </button>
         </div>
         {day.future ? (
-          <p className="m-0 text-body text-ink-muted">Ce jour n’est pas encore arrivé.</p>
+          <EmptyState compact icon={CalendarClock} title="Pas encore arrivé">
+            Ce jour n’est pas encore arrivé.
+          </EmptyState>
         ) : empty ? (
-          <p className="m-0 text-body text-ink-muted">Rien d’enregistré ce jour-là : ni séance, ni repas.</p>
+          <EmptyState compact icon={CircleSlash} title="Rien d’enregistré ce jour-là">
+            Ni séance, ni repas.
+          </EmptyState>
         ) : null}
 
         {day.sessions.length > 0 && (

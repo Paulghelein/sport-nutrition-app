@@ -1,7 +1,7 @@
 import { Trophy } from 'lucide-react'
-import { Card, ListRow } from '../../ui/kit'
+import { Card, EmptyState, ListRow } from '../../ui/kit'
 import type { RecordRowModel } from './calendarModel'
-import { Note, ScreenSection } from './parts'
+import { ScreenSection } from './parts'
 
 /**
  * Records récents : les derniers records battus (6 semaines), du plus récent au plus ancien. Le premier est mis en
@@ -12,10 +12,9 @@ export function RecordsSection({ records }: { records: readonly RecordRowModel[]
     <ScreenSection title="Records récents" hiddenTitle>
       <Card padding="none" className="px-4 py-1.5">
         {records.length === 0 ? (
-          <Note className="py-3">
-            Pas de record ces dernières semaines. Ils apparaissent quand tu bats une de tes performances
-            passées.
-          </Note>
+          <EmptyState compact icon={Trophy} title="Pas de record ces dernières semaines">
+            Ils apparaissent quand tu bats une de tes performances passées.
+          </EmptyState>
         ) : (
           records.map((r, i) => (
             <ListRow

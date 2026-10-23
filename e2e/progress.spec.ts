@@ -192,7 +192,7 @@ test('Progrès : sans donnée, états vides et pas d’erreur', async ({ page })
     .click()
   // Profil créé aujourd'hui : rien à évaluer, pas de carte du lundi.
   await expect(page.getByRole('heading', { name: 'Bilan de la semaine' })).toBeHidden()
-  await expect(page.getByText('Pas encore de séance. Lance')).toBeVisible()
+  await expect(page.getByText('Pas de séance pour l’instant')).toBeVisible()
   await expect(page.getByText('Pas encore de séance terminée')).toBeVisible()
   await expect(page.getByText('Rien de logué cette semaine')).toBeVisible()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

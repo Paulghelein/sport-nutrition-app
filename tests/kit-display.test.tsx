@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { KcalRing, MacroBar, Sheet } from '../src/ui/kit'
+import { Inbox } from 'lucide-react'
+import { EmptyState, KcalRing, MacroBar, ScreenSkeleton, Sheet } from '../src/ui/kit'
 import { FoodTile } from '../src/ui/kit/FoodPictogram'
 
 afterEach(cleanup)
@@ -178,5 +179,24 @@ describe('Sheet (kit)', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(b).toHaveBeenCalledTimes(1)
     expect(a).not.toHaveBeenCalled()
+  })
+})
+
+describe('EmptyState et squelettes', () => {
+  it('EmptyState : titre, phrase et action', () => {
+    render(
+      <EmptyState icon={Inbox} title="Rien ici" action={<button type="button">Ajouter un truc</button>}>
+        Fais ceci.
+      </EmptyState>,
+    )
+    expect(screen.getByText('Rien ici')).toBeTruthy()
+    expect(screen.getByText('Fais ceci.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Ajouter un truc' })).toBeTruthy()
+  })
+
+  it('ScreenSkeleton : conteneur occupé avec un texte masqué', () => {
+    const { container } = render(<ScreenSkeleton />)
+    expect(container.querySelector('[aria-busy="true"]')).toBeTruthy()
+    expect(screen.getByText('Chargement…').className).toContain('sr-only')
   })
 })

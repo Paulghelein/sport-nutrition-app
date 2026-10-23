@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import type { ReactNode } from 'react'
+import { CardSkeleton } from '../../ui/kit'
 
 /** Section de l'écran Réglages : titre de carte (Archivo) puis contenu ; la section est nommée par son titre. */
 export function SettingsSection({
@@ -28,5 +29,9 @@ export function SettingsSection({
 
 /** Cadre de chargement d'une section à la demande (hauteur réservée pour ne pas faire sauter la page). */
 export function SectionFallback() {
-  return <div aria-busy="true" className="h-40 rounded-lg bg-surface-sunken/50" />
+  return (
+    <div className="min-h-40">
+      <CardSkeleton lines={4} />
+    </div>
+  )
 }

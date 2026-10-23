@@ -4,7 +4,7 @@ import { checkFoodInput, createFood, updateFood } from '../../db'
 import { normalizeEan } from '../../domain/nutrition'
 import type { Food, FoodInput } from '../../types'
 import { errorMessage, parseDecimal, toInputNumber } from '../../ui'
-import { Button, Card, buttonClass } from '../../ui/kit'
+import { Button, Card, ScreenSkeleton, buttonClass } from '../../ui/kit'
 import { DecimalField, TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { SCAN_PATH, foodPath } from '../routes'
@@ -267,7 +267,7 @@ export default function FoodFormScreen() {
         returnPath={allowedReturn(params.get('retour'))}
       />
     )
-  if (!data && loading) return <div aria-busy="true" className="min-h-40" />
+  if (!data && loading) return <ScreenSkeleton cards={2} />
   if (!data) {
     return (
       <div className="flex flex-col gap-3.5">

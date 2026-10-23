@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { MUSCLE_GROUPS, volumeTargets, weeklyVolume } from '../../domain/training'
 import { muscleLabel } from '../../ui'
-import { Card } from '../../ui/kit'
+import { Card, SectionSkeleton } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
 import { formatDecimal } from '../../ui/kit/format'
 import { Section } from './parts'
@@ -30,7 +30,7 @@ export default function WeeklyVolume() {
         <Note tone="error">Impossible de calculer le volume de la semaine.</Note>
       </Section>
     )
-  if (!data) return <div className="mt-7 h-64" aria-busy="true" />
+  if (!data) return <SectionSkeleton />
   return (
     <Section title={TITLE}>
       <Card padding="large">

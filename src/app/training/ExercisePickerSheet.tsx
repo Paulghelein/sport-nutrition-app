@@ -1,9 +1,9 @@
-import { CircleHelp } from 'lucide-react'
+import { CircleHelp, Dumbbell, SearchX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { normalizeSearch } from '../../domain/training'
 import type { LibraryExercise } from '../../types'
 import { patternLabel } from '../../ui'
-import { Button, Sheet } from '../../ui/kit'
+import { Button, EmptyState, Sheet } from '../../ui/kit'
 import { TextField } from '../../ui/kit/Fields'
 import { TechniqueSheet } from './TechniqueSheet'
 import { LevelBadge } from './parts'
@@ -55,9 +55,13 @@ export function ExercisePickerSheet({
           />
         ) : null}
         {shown.length === 0 ? (
-          <p className="m-0 text-body text-ink-muted">
-            {candidates.length === 0 ? emptyText : 'Aucun résultat.'}
-          </p>
+          <EmptyState
+            compact
+            icon={candidates.length === 0 ? Dumbbell : SearchX}
+            title={candidates.length === 0 ? 'Aucun exercice disponible' : 'Aucun résultat'}
+          >
+            {candidates.length === 0 ? emptyText : 'Essaie un autre mot.'}
+          </EmptyState>
         ) : (
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {shown.map((c) => (

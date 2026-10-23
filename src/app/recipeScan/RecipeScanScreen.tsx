@@ -7,7 +7,7 @@
 //   Une caméra qui relit le code ne doit pas doubler la quantité en silence ; pour deux paquets, on modifie la quantité.
 // - La caméra est coupée tant qu'une feuille est ouverte (clavier, saisie) et reprend à la fermeture.
 // - Le brouillon survit à tout (produit inconnu, erreur réseau, fermeture de l'app) : aucune navigation avant la création.
-import { Plus } from 'lucide-react'
+import { Plus, ScanLine } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { createRecipeWithFridge, getFoodRow } from '../../db'
@@ -22,7 +22,7 @@ import {
 } from '../../domain/nutrition/scan'
 import { toLocalDate } from '../../domain/shared/dates'
 import type { Ean, Food, FoodLookup, Recipe, ScanErrorKind, ScanIngredient } from '../../types'
-import { Button } from '../../ui/kit'
+import { Button, EmptyState } from '../../ui/kit'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { Note } from '../../ui/kit/Note'
 import { errorMessage } from '../../ui/format'
@@ -391,10 +391,10 @@ export default function RecipeScanScreen() {
 
         <section aria-label="Ingrédients" className="rounded-lg bg-surface px-3.5 py-1 shadow-card">
           {draft.ingredients.length === 0 ? (
-            <p className="m-0 py-4 text-body text-ink-muted">
+            <EmptyState compact icon={ScanLine} title="Aucun ingrédient">
               Scanne un produit avec la caméra, saisis son code ou cherche un aliment : la liste se remplit
               ici.
-            </p>
+            </EmptyState>
           ) : (
             <ul className="m-0 list-none p-0">
               {draft.ingredients.map((ing) => (

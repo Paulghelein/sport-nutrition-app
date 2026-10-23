@@ -1,9 +1,10 @@
+import { BookmarkPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MAX_TEMPLATE_NAME_LENGTH, deleteTemplate, listTemplates, updateTemplate } from '../../db'
 import type { SessionTemplate } from '../../types'
 import { errorMessage, useLiveQuery } from '../../ui'
-import { Button, Card, Sheet, buttonClass } from '../../ui/kit'
+import { Button, Card, EmptyState, ScreenSkeleton, Sheet, buttonClass } from '../../ui/kit'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
@@ -93,12 +94,12 @@ export default function TemplatesScreen() {
         <Note tone="error">Impossible de lire les modèles. Ferme l’app puis rouvre-la.</Note>
       ) : null}
       {error ? <Note tone="error">{error}</Note> : null}
-      {!templates.data && !templates.error ? <div aria-busy="true" className="min-h-40" /> : null}
+      {!templates.data && !templates.error ? <ScreenSkeleton cards={2} title={false} /> : null}
       {templates.data && templates.data.length === 0 ? (
-        <p className="m-0 text-body text-ink-muted">
-          Aucun modèle. Depuis l’aperçu ou le récapitulatif d’une séance, appuie sur « Enregistrer comme
-          modèle » pour la refaire plus tard.
-        </p>
+        <EmptyState icon={BookmarkPlus} title="Aucun modèle">
+          Depuis l’aperçu ou le récapitulatif d’une séance, appuie sur « Enregistrer comme modèle » pour la
+          refaire plus tard.
+        </EmptyState>
       ) : null}
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {templates.data?.map((t) => (

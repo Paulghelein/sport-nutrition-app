@@ -4,7 +4,7 @@ import { getSettings, updateSettings } from '../../db'
 import { COACH_PROJECT_INSTRUCTIONS } from '../../domain/claude/instructions'
 import { CLAUDE_CODE_URL } from '../../types/claude'
 import { errorMessage, useLiveQuery } from '../../ui'
-import { Button, Card, buttonClass } from '../../ui/kit'
+import { Button, Card, CardSkeleton, buttonClass } from '../../ui/kit'
 import { TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { copyToClipboard } from '../claude/clipboard'
@@ -76,7 +76,7 @@ export default function ClaudeSection() {
       title="Claude"
       intro="Les boutons « Demander à Claude » copient un message à coller dans ton Projet Coach. Rien n’est envoyé sans que tu le colles toi-même."
     >
-      {data ? <CoachUrlForm saved={data.coachUrl} /> : <div aria-busy="true" className="h-24" />}
+      {data ? <CoachUrlForm saved={data.coachUrl} /> : <CardSkeleton lines={2} />}
 
       <Card className="flex flex-col gap-3">
         <Button

@@ -1,4 +1,4 @@
-import { Check, Play } from 'lucide-react'
+import { Check, Dumbbell, Play } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -6,7 +6,7 @@ import { getActiveSession } from '../../db'
 import { sessionHeadline, volumeTargets, weeklyVolume } from '../../domain/training'
 import type { LibraryExercise, Session, SessionDuration } from '../../types'
 import { useLiveQuery } from '../../ui'
-import { Card, ExerciseThumb, Segmented, buttonClass } from '../../ui/kit'
+import { Card, EmptyState, ExerciseThumb, Segmented, buttonClass } from '../../ui/kit'
 import { GUIDED_PATH, PREVIEW_PATH, SETTINGS_PATH, TRAINING_PATH } from '../routes'
 import { DURATIONS, loadDuration, saveDuration } from '../training/durations'
 import { planForDuration, previewBlocks } from '../training/previewPlan'
@@ -155,9 +155,9 @@ function Proposed() {
       {count > 0 ? (
         <Thumbs exercises={exercises} total={count} />
       ) : (
-        <p className="m-0 text-body text-ink-muted">
-          Aucune séance possible avec ton matériel et tes préférences actuels.
-        </p>
+        <EmptyState compact icon={Dumbbell} title="Aucune séance possible">
+          Vérifie ton matériel et tes préférences dans les Réglages.
+        </EmptyState>
       )}
       <Segmented ariaLabel="Durée" options={DURATION_OPTIONS} value={duration} onChange={change} />
       {count > 0 ? (

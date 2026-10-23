@@ -1,4 +1,4 @@
-import { Check, Minus, Plus, X } from 'lucide-react'
+import { Check, Minus, Plus, SearchX, ShoppingBasket, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { deleteShoppingList, saveShoppingList, setShoppingItemChecked } from '../../db'
 import {
@@ -11,7 +11,7 @@ import {
 import { foodCategory, isScannedFood } from '../../domain/nutrition/category'
 import type { Aisle, LibraryRecipe, ShoppingItem, ShoppingList } from '../../types'
 import { errorMessage, parseDecimal, useLiveQuery } from '../../ui'
-import { Button, Card, FoodTile, Sheet, cx } from '../../ui/kit'
+import { Button, Card, EmptyState, FoodTile, Sheet, cx } from '../../ui/kit'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { DecimalField, SelectField, TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
@@ -125,7 +125,11 @@ function PickRecipesSheet({
           )
         })}
         {shown.length === 0 ? (
-          <li className="py-2 text-body text-ink-muted">Aucune recette trouvée.</li>
+          <li>
+            <EmptyState compact icon={SearchX} title="Aucune recette trouvée">
+              Essaie un autre mot.
+            </EmptyState>
+          </li>
         ) : null}
       </ul>
       {/* Dans une Sheet : -mx-4 px-4 est couplé au px-4 de src/ui/kit/Sheet.tsx (pas à la marge de page). */}
@@ -263,7 +267,7 @@ export default function ShoppingScreen() {
                 ))}
               </ul>
             ) : (
-              <p className="m-0 text-body text-ink-muted">Aucune recette pour l’instant.</p>
+              <p className="m-0 text-body text-ink-muted">Aucune recette choisie pour l’instant.</p>
             )}
             <div className="grid grid-cols-2 gap-2">
               <Button variant="flat" disabled={!lib || busy} onClick={() => setSheet('recipes')}>
@@ -283,12 +287,9 @@ export default function ShoppingScreen() {
           </Card>
 
           {!list || list.items.length === 0 ? (
-            <Card padding="large" className="flex flex-col items-center gap-1 text-center">
-              <p className="m-0 font-display text-title">Liste vide</p>
-              <p className="m-0 text-body text-ink-muted">
-                Choisis des recettes : les ingrédients sont additionnés et rangés par rayon.
-              </p>
-            </Card>
+            <EmptyState icon={ShoppingBasket} title="Liste vide">
+              Choisis des recettes ci-dessus : les ingrédients sont additionnés et rangés par rayon.
+            </EmptyState>
           ) : (
             <>
               <div className="flex flex-col gap-1.5">

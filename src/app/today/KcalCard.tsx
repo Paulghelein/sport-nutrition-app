@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { getProfile, listLogForDate, listWeighIns } from '../../db'
 import { dayLog } from '../../domain/nutrition/journal'
 import { nutritionTargets, targetWeight } from '../../domain/nutrition/targets'
-import { KcalRing, MacroBar, cx, formatInt } from '../../ui/kit'
+import { KcalRing, MacroBar, Skeleton, cx, formatInt } from '../../ui/kit'
 import { useLiveQuery } from '../../ui'
 import type { LocalDate } from '../../types'
 import { NUTRITION_PATH } from '../routes'
@@ -35,7 +35,13 @@ export function KcalCard({ today }: { today: LocalDate }) {
 
   if (error && !data) return <CardError>Impossible de lire ton journal. Réessaie dans un instant.</CardError>
   if (!model) {
-    return <div aria-busy={loading} aria-label="Calories du jour" role="group" className={cx(CARD, MIN_H)} />
+    return (
+      <div aria-busy={loading} aria-label="Calories du jour" role="group" className={cx(CARD, MIN_H, 'p-5')}>
+        <span className="sr-only">Chargement…</span>
+        <Skeleton className="h-5 w-2/5" />
+        <Skeleton className="mt-4 h-12 w-4/5" />
+      </div>
+    )
   }
 
   const { totals, targets } = model

@@ -1,4 +1,5 @@
-import { Card, StatTile } from '../../ui/kit'
+import { CalendarClock, Utensils } from 'lucide-react'
+import { Card, EmptyState, StatTile } from '../../ui/kit'
 import { formatDecimal, formatInt } from '../../ui/kit/format'
 import type { NutritionWeek } from '../../types'
 import { Note, ScreenSection, Unit } from './parts'
@@ -28,9 +29,13 @@ export function NutritionSection({
           Jours complets seulement (aujourd’hui n’est pas compté).
         </p>
         {daysElapsed === 0 ? (
-          <Note>Semaine commencée : pas encore de jour complet. Les moyennes arrivent demain.</Note>
+          <EmptyState compact icon={CalendarClock} title="Semaine commencée">
+            Pas encore de jour complet : les moyennes arrivent demain.
+          </EmptyState>
         ) : week.daysLogged === 0 ? (
-          <Note>Rien de logué cette semaine. Ajoute tes repas dans l’onglet Nutrition.</Note>
+          <EmptyState compact icon={Utensils} title="Rien de logué cette semaine">
+            Ajoute tes repas dans l’onglet Nutrition.
+          </EmptyState>
         ) : (
           <div className="grid grid-cols-2 gap-x-3 gap-y-4">
             <div className="flex flex-col gap-0.5">

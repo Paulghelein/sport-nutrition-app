@@ -1,8 +1,11 @@
-import { Card, StatTile } from '../../ui/kit'
+import { Dumbbell } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Card, EmptyState, StatTile, buttonClass } from '../../ui/kit'
 import { CalendarHeatmap } from '../../ui/kit/CalendarHeatmap'
 import type { WeekStripDay } from '../../ui/kit'
 import type { Regularity } from '../../types'
-import { Note, Unit } from './parts'
+import { TRAINING_PATH } from '../routes'
+import { Unit } from './parts'
 
 export interface HeadlineModel {
   streakWeeks: number
@@ -83,7 +86,18 @@ export function RegularitySection({
         label="Calendrier des 12 dernières semaines"
       />
       {total === 0 ? (
-        <Note>Pas encore de séance. Lance ta première séance pour démarrer ta série.</Note>
+        <EmptyState
+          compact
+          icon={Dumbbell}
+          title="Pas de séance pour l’instant"
+          action={
+            <Link to={TRAINING_PATH} className={buttonClass('flat')}>
+              Démarrer une séance
+            </Link>
+          }
+        >
+          Lance ta première séance pour démarrer ta série.
+        </EmptyState>
       ) : (
         <p className="m-0 text-caption text-ink-muted">
           Série : semaines d’affilée avec au moins {target} séance{target > 1 ? 's' : ''}. Meilleure série :{' '}

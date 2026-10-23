@@ -1,4 +1,4 @@
-import { ChevronRight, Plus, Search, X } from 'lucide-react'
+import { ChevronRight, Plus, Search, SearchX, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { seedExercises } from '../../content'
@@ -12,7 +12,7 @@ import {
 import type { LibraryFilter } from '../../domain/training'
 import type { LibraryExercise, MovementPattern, TrainingLevel } from '../../types'
 import { muscleLabel, patternLabel } from '../../ui'
-import { Card, ExerciseThumb, cx } from '../../ui/kit'
+import { Button, Card, CardSkeleton, EmptyState, ExerciseThumb, cx } from '../../ui/kit'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
 import type { ChoiceOption } from '../../ui/kit/ChoiceGroup'
 import { Note } from '../../ui/kit/Note'
@@ -262,32 +262,28 @@ export default function LibraryScreen() {
       ) : null}
 
       {!data ? (
-        <p className="m-0 text-body text-ink-muted" aria-busy="true">
-          Chargement…
-        </p>
+        <CardSkeleton lines={5} />
       ) : (
         <>
           <p aria-live="polite" className="m-0 text-caption text-ink-muted">
             {filtered?.length ?? 0} exercice{(filtered?.length ?? 0) > 1 ? 's' : ''}
           </p>
           {groups.length === 0 ? (
-            <Card className="flex flex-col items-center gap-2 text-center">
-              <p className="m-0 font-display text-title">Aucun exercice trouvé</p>
-              <p className="m-0 text-body text-ink-muted">
-                {availableOnly
-                  ? 'Essaie un autre mot, ou coupe « Avec mon matériel » pour voir tous les exercices.'
-                  : 'Essaie un autre mot ou retire un filtre.'}
-              </p>
-              {filtersActive ? (
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="focus-ring min-h-11 rounded-full px-4 text-body-strong text-ember-ink active:opacity-70"
-                >
-                  Réinitialiser les filtres
-                </button>
-              ) : null}
-            </Card>
+            <EmptyState
+              icon={SearchX}
+              title="Aucun exercice trouvé"
+              action={
+                filtersActive ? (
+                  <Button variant="text" onClick={reset}>
+                    Réinitialiser les filtres
+                  </Button>
+                ) : undefined
+              }
+            >
+              {availableOnly
+                ? 'Essaie un autre mot, ou coupe « Avec mon matériel » pour voir tous les exercices.'
+                : 'Essaie un autre mot ou retire un filtre.'}
+            </EmptyState>
           ) : (
             groups.map((g) => (
               <section

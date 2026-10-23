@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { formatDateFr } from '../../domain/shared/dates'
-import { Button, Card, ListRow } from '../../ui/kit'
+import { Ruler } from 'lucide-react'
+import { Button, Card, EmptyState, ListRow } from '../../ui/kit'
 import { formatDecimal } from '../../ui/kit/format'
 import type { Measurement } from '../../types'
 import { MeasurementSheet } from '../forms/MeasurementSheet'
 import { MEASURE_FIELDS, sortMeasurements } from '../forms/measurementDraft'
-import { Note, ScreenSection } from './parts'
+import { ScreenSection } from './parts'
 
 function summary(m: Measurement): string {
   return MEASURE_FIELDS.filter(({ key }) => m[key] !== undefined)
@@ -32,10 +33,10 @@ export function MeasurementsSection({ measurements }: { measurements: readonly M
     >
       <Card padding="none" className="px-4 py-1.5">
         {rows.length === 0 ? (
-          <Note className="py-3">
+          <EmptyState compact icon={Ruler} title="Aucune mensuration">
             Facultatif : mesure bras, poitrine, taille et cuisses (en cm) de temps en temps pour suivre ta
             prise de masse au-delà du poids.
-          </Note>
+          </EmptyState>
         ) : (
           rows.map((m) => (
             <ListRow

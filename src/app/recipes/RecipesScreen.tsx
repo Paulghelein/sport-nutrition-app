@@ -1,11 +1,11 @@
-import { Clapperboard, Plus, ScanLine, Star } from 'lucide-react'
+import { BookOpen, Clapperboard, Plus, ScanLine, SearchX, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { restoreRecipe } from '../../db'
 import { deletedSeedRecipes, filterRecipes, recipeListItems, roundMacros } from '../../domain/nutrition'
 import type { MealSlot, RecipeFilter, RecipeListItem } from '../../types'
 import { errorMessage } from '../../ui'
-import { Button, Card, FoodTile, Sheet, cx } from '../../ui/kit'
+import { Button, Card, EmptyState, FoodTile, Sheet, cx } from '../../ui/kit'
 import { buttonClass } from '../../ui/kit/buttonClass'
 import { CheckRow } from '../../ui/kit/CheckRow'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
@@ -118,7 +118,9 @@ function DeletedSheet({
     >
       {error ? <Note tone="error">{error}</Note> : null}
       {deleted.length === 0 ? (
-        <p className="m-0 text-body-strong">Aucune recette supprimée.</p>
+        <EmptyState compact icon={BookOpen} title="Aucune recette supprimée">
+          Les recettes que tu supprimes pourront être restaurées ici.
+        </EmptyState>
       ) : (
         <ul className="m-0 flex list-none flex-col p-0">
           {deleted.map((r) => (
@@ -323,15 +325,35 @@ export default function RecipesScreen() {
             {filtered.length} recette{filtered.length > 1 ? 's' : ''}
           </p>
           {filtered.length === 0 ? (
-            <Card padding="large" className="flex flex-col items-center gap-1 text-center">
-              <p className="m-0 font-display text-title">Aucune recette trouvée</p>
-              <p className="m-0 text-body text-ink-muted">Essaie un autre mot ou retire un filtre.</p>
-              {filtersActive ? (
-                <Button variant="text" onClick={reset}>
-                  Réinitialiser les filtres
-                </Button>
-              ) : null}
-            </Card>
+            filtersActive ? (
+              <EmptyState
+                icon={SearchX}
+                title="Aucune recette trouvée"
+                action={
+                  <Button variant="text" onClick={reset}>
+                    Réinitialiser les filtres
+                  </Button>
+                }
+              >
+                Essaie un autre mot ou retire un filtre.
+              </EmptyState>
+            ) : (
+              <EmptyState
+                icon={BookOpen}
+                title="Pas encore de recette"
+                action={
+                  deleted.length > 0 ? (
+                    <Button variant="secondary" onClick={() => setDeletedOpen(true)}>
+                      Restaurer les recettes supprimées
+                    </Button>
+                  ) : undefined
+                }
+              >
+                {deleted.length > 0
+                  ? 'Tu peux restaurer les recettes fournies, ou créer la tienne avec le bouton +.'
+                  : 'Crée ta première recette avec le bouton +, ou importe-en depuis les Réglages.'}
+              </EmptyState>
+            )
           ) : (
             <Card padding="none" className="px-4 py-1">
               <ul className="m-0 list-none p-0">

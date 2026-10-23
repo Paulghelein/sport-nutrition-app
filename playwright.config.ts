@@ -11,6 +11,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}/sport-nutrition-app/`,
     trace: 'on-first-retry',
+    // Les transitions d'écran (200 ms) rendraient les mesures de position instables : fondu de 100 ms, sans glissement.
+    // e2e/transitions.spec.ts repasse en `no-preference` pour vérifier le vrai glissement.
+    reducedMotion: 'reduce',
   },
   projects: [
     { name: 'iPhone 13', use: { ...devices['iPhone 13'] }, testIgnore: /offline\.spec\.ts/ },

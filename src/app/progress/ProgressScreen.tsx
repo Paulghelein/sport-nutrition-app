@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { buildProgressMessage } from '../../domain/claude/context'
 import type { LocalDate } from '../../types'
+import { ScreenSkeleton } from '../../ui/kit'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { progressData } from '../claude/inputs'
 import { BackupBanner } from './BackupBanner'
@@ -42,7 +43,7 @@ export default function ProgressScreen() {
           Impossible de lire tes données de progression.
         </p>
       ) : null}
-      {model === undefined && !error ? <div className="h-64" aria-busy="true" /> : null}
+      {model === undefined && !error ? <ScreenSkeleton cards={3} title={false} /> : null}
       {model === null ? <Note>Termine d’abord la configuration de ton profil.</Note> : null}
       {model ? (
         <>

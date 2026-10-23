@@ -25,7 +25,7 @@ import {
   usesDuration,
 } from '../../ui/exerciseDraft'
 import type { ExerciseDraft } from '../../ui/exerciseDraft'
-import { Button, Card, cx } from '../../ui/kit'
+import { Button, Card, ScreenSkeleton, cx } from '../../ui/kit'
 import { CheckRow } from '../../ui/kit/CheckRow'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
 import { IntegerField, SelectField, TextField } from '../../ui/kit/Fields'
@@ -435,7 +435,7 @@ export default function ExerciseFormScreen() {
     )
   }
   if (id === undefined) return <ExerciseForm current={null} />
-  if (!data) return <div aria-busy="true" className="min-h-40" />
+  if (!data) return <ScreenSkeleton cards={2} />
   const current = data.library.find((e) => e.id === id)
   if (!current) return <NotFound message="Cet exercice n’existe pas ou a été supprimé." />
   return <ExerciseForm key={current.id} current={current} />

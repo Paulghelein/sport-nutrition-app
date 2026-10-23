@@ -1,10 +1,10 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, History } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { listSessions } from '../../db'
 import { historyItems } from '../../domain/training'
 import { formatDateFr } from '../../domain/shared'
 import { useLiveQuery } from '../../ui'
-import { Card, buttonClass } from '../../ui/kit'
+import { Card, EmptyState, ScreenSkeleton, buttonClass } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
 import { HISTORY_PATH, TRAINING_PATH } from '../routes'
 import { ScreenTitle, Tag } from './parts'
@@ -23,16 +23,19 @@ export default function HistoryScreen() {
       <BackLink to={TRAINING_PATH}>Entraînement</BackLink>
       <ScreenTitle>Historique</ScreenTitle>
       {error ? <Note tone="error">Impossible de lire l’historique. Ferme l’app puis rouvre-la.</Note> : null}
-      {!items && !error ? <div aria-busy="true" className="min-h-40" /> : null}
+      {!items && !error ? <ScreenSkeleton cards={2} title={false} /> : null}
       {items && items.length === 0 ? (
-        <div className="flex flex-col gap-4">
-          <p className="m-0 text-body text-ink-muted">
-            Aucune séance terminée pour l’instant. Ta première apparaîtra ici.
-          </p>
-          <Link to={TRAINING_PATH} className={buttonClass('primary', 'normal', true)}>
-            Préparer une séance
-          </Link>
-        </div>
+        <EmptyState
+          icon={History}
+          title="Aucune séance terminée"
+          action={
+            <Link to={TRAINING_PATH} className={buttonClass('primary')}>
+              Préparer une séance
+            </Link>
+          }
+        >
+          Ta première apparaîtra ici une fois terminée.
+        </EmptyState>
       ) : null}
       {items && items.length > 0 ? (
         <ul className="m-0 flex list-none flex-col gap-3 p-0">

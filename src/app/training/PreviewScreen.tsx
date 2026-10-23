@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeftRight, ArrowUp, Play, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowLeftRight, ArrowUp, Dumbbell, Play, Trash2 } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -27,7 +27,18 @@ import {
 import type { TemplateIssue } from '../../domain/training'
 import type { EngineInput, LibraryExercise, SessionBlock, SessionDuration, SessionPlan } from '../../types'
 import { errorMessage, muscleLabel, useLiveQuery } from '../../ui'
-import { Button, Card, Segmented, StatTile, buttonClass, cx, formatInt, withUnit } from '../../ui/kit'
+import {
+  Button,
+  Card,
+  EmptyState,
+  ScreenSkeleton,
+  Segmented,
+  StatTile,
+  buttonClass,
+  cx,
+  formatInt,
+  withUnit,
+} from '../../ui/kit'
 import { ExerciseRow } from '../../ui/kit/ExerciseRow'
 import { Note } from '../../ui/kit/Note'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
@@ -262,19 +273,23 @@ function PreviewContent({
       ) : null}
 
       {empty && !edited ? (
-        <Card padding="large" className="flex flex-col gap-3">
-          <p className="m-0 font-display text-title">Aucune séance possible avec ces réglages.</p>
-          <p className="m-0 text-body text-ink-muted">
-            Il n’y a pas assez d’exercices adaptés à ton matériel et à tes préférences. Vérifie ton matériel
-            dans les Réglages, ou ajoute et réactive des exercices dans la bibliothèque.
-          </p>
-          <Link to={SETTINGS_PATH} className={buttonClass('primary', 'normal', true)}>
-            Ouvrir les Réglages
-          </Link>
-          <Link to={LIBRARY_PATH} className={buttonClass('secondary', 'normal', true)}>
-            Bibliothèque d’exercices
-          </Link>
-        </Card>
+        <EmptyState
+          icon={Dumbbell}
+          title="Aucune séance possible avec ces réglages"
+          action={
+            <>
+              <Link to={SETTINGS_PATH} className={buttonClass('primary')}>
+                Ouvrir les Réglages
+              </Link>
+              <Link to={LIBRARY_PATH} className={buttonClass('secondary')}>
+                Bibliothèque d’exercices
+              </Link>
+            </>
+          }
+        >
+          Il n’y a pas assez d’exercices adaptés à ton matériel et à tes préférences. Vérifie ton matériel
+          dans les Réglages, ou ajoute et réactive des exercices dans la bibliothèque.
+        </EmptyState>
       ) : (
         <>
           {!empty ? (
@@ -555,7 +570,7 @@ export default function PreviewScreen() {
           <Note tone="error">Ce modèle n’existe plus.</Note>
         </>
       ) : null}
-      {!data && !error ? <div aria-busy="true" className="min-h-40" /> : null}
+      {!data && !error ? <ScreenSkeleton cards={2} title={false} /> : null}
 
       {data && result && !result.missing ? (
         <PreviewContent

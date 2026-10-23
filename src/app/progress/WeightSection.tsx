@@ -1,7 +1,8 @@
 import { Suspense, lazy, useState } from 'react'
 import { formatDateFr } from '../../domain/shared'
 import { ErrorBoundary, formatKg, formatSignedKg } from '../../ui'
-import { Button, Card, ListRow, StatTile } from '../../ui/kit'
+import { Scale } from 'lucide-react'
+import { Button, Card, EmptyState, ListRow, Skeleton, SkeletonGroup, StatTile } from '../../ui/kit'
 import type { WeighIn } from '../../types'
 import { WeightSheet } from '../forms/WeightSheet'
 import { Note, ScreenSection, Unit } from './parts'
@@ -54,12 +55,9 @@ export function WeightSection({ weight }: { weight: WeightModel }) {
       <ScreenSection title="Poids" hiddenTitle>
         <Card padding="none" className="flex flex-col gap-2 px-[18px] py-4">
           {rows.length === 0 ? (
-            <>
-              <Note>
-                Aucune pesée pour l’instant. Ajoute ta première pesée pour voir ta courbe apparaître.
-              </Note>
-              {addButton}
-            </>
+            <EmptyState compact icon={Scale} title="Aucune pesée pour l’instant" action={addButton}>
+              Ajoute ta première pesée pour voir ta courbe apparaître.
+            </EmptyState>
           ) : (
             <>
               <div className="flex items-start justify-between gap-3">
@@ -88,7 +86,13 @@ export function WeightSection({ weight }: { weight: WeightModel }) {
               {trend ? (
                 <>
                   <ErrorBoundary>
-                    <Suspense fallback={<div style={{ height: CHART_HEIGHT }} aria-busy="true" />}>
+                    <Suspense
+                      fallback={
+                        <SkeletonGroup>
+                          <Skeleton style={{ height: CHART_HEIGHT }} />
+                        </SkeletonGroup>
+                      }
+                    >
                       <WeightChart model={weight} summary={chartSummary(trend, corridor !== null)} />
                     </Suspense>
                   </ErrorBoundary>

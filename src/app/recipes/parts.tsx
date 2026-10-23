@@ -2,7 +2,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { cx } from '../../ui/kit'
+import { CardSkeleton, cx } from '../../ui/kit'
 import { BackLink } from '../../ui/kit/BackLink'
 import { buttonClass } from '../../ui/kit/buttonClass'
 import { RECIPES_PATH } from '../routes'
@@ -12,11 +12,7 @@ import { RECIPES_PATH } from '../routes'
 export { RECIPES_PATH }
 
 export function Loading() {
-  return (
-    <p className="m-0 text-body text-ink-muted" aria-busy="true">
-      Chargement…
-    </p>
-  )
+  return <CardSkeleton lines={4} />
 }
 
 export function NotFound({ message }: { message: string }) {

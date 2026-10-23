@@ -1,9 +1,10 @@
+import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { seedExercises } from '../../content'
 import { restoreExercise } from '../../db'
 import { deletedSeedExercises } from '../../domain/training'
 import { errorMessage, muscleLabel, patternLabel } from '../../ui'
-import { Button, Card } from '../../ui/kit'
+import { Button, Card, EmptyState } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
 import { LIBRARY_PATH } from '../routes'
 import { LevelBadge, ScreenTitle } from './parts'
@@ -40,9 +41,9 @@ export default function DeletedScreen() {
         <Note tone="error">{actionError ?? 'Impossible de lire la bibliothèque.'}</Note>
       ) : null}
       {!data ? null : deleted.length === 0 ? (
-        <Card className="text-center">
-          <p className="m-0 font-display text-title">Aucun exercice supprimé</p>
-        </Card>
+        <EmptyState icon={Trash2} title="Aucun exercice supprimé">
+          Les exercices que tu supprimes de la bibliothèque pourront être restaurés ici.
+        </EmptyState>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {deleted.map((ex) => (

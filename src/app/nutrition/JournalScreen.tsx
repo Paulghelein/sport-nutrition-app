@@ -15,7 +15,7 @@ import {
 import { addDays, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { FoodLogEntry, Id, LocalDate, MealSlot } from '../../types'
 import { errorMessage, useLiveQuery } from '../../ui'
-import { Button, Card, cx } from '../../ui/kit'
+import { Button, Card, ScreenSkeleton, cx } from '../../ui/kit'
 import { FoodRow } from '../../ui/kit/FoodRow'
 import { Note } from '../../ui/kit/Note'
 import { formatInt } from '../../ui/kit/format'
@@ -191,7 +191,12 @@ export default function JournalScreen() {
     () => (data && data.date === date ? buildJournalModel({ ...data, today }) : undefined),
     [data, date, today],
   )
-  const photoUrls = usePhotoUrls(model?.photoFoodIds ?? [])
+  // Changement de jour (‹ ›) : on garde le jour précédent (inerte) jusqu'à l'arrivée du nouveau, sans squelette.
+  const [lastModel, setLastModel] = useState<typeof model>(undefined)
+  if (model && model !== lastModel) setLastModel(model)
+  const shown = model ?? lastModel
+  const stale = !model && shown !== undefined
+  const photoUrls = usePhotoUrls(shown?.photoFoodIds ?? [])
 
   const go = (target: LocalDate) => setParams(target === today ? {} : { date: target }, { replace: true })
 
@@ -275,9 +280,17 @@ export default function JournalScreen() {
       {loadError ? <Note tone="error">Impossible de lire le journal.</Note> : null}
       {error ? <Note tone="error">{error}</Note> : null}
 
-      {model ? (
-        <>
-          <DaySummary bilan={model.bilan} />
+      {!shown && !loadError ? <ScreenSkeleton cards={2} title={false} /> : null}
+      {shown ? (
+        <div
+          className="contents"
+          aria-busy={stale}
+          ref={(el) => {
+            if (stale) el?.setAttribute('inert', '')
+            else el?.removeAttribute('inert')
+          }}
+        >
+          <DaySummary bilan={shown.bilan} />
           {suggestion && !hidden ? (
             <Card padding="large" className="flex flex-col gap-3">
               <h2 className="m-0 font-display text-title">Ajuster tes calories ?</h2>
@@ -298,7 +311,7 @@ export default function JournalScreen() {
               </div>
             </Card>
           ) : null}
-          {model.meals.map((meal) => (
+          {shown.meals.map((meal) => (
             <MealCard
               key={meal.slot}
               meal={meal}
@@ -314,7 +327,7 @@ export default function JournalScreen() {
             onDefaultOpened={claudeOpened}
             // Objectifs du jour affiché (affichés à l'écran) ; repli sur ceux d'aujourd'hui si le jour consulté n'a pas de poids de référence.
             build={(base) =>
-              buildJournalMessage({ ...base, targets: model.bilan.targets ?? base.targets, day: model.log })
+              buildJournalMessage({ ...base, targets: shown.bilan.targets ?? base.targets, day: shown.log })
             }
             renderTrigger={({ onClick, disabled, busy: waiting, label }) => (
               <Button variant="secondary" fullWidth onClick={onClick} disabled={disabled} aria-busy={waiting}>
@@ -322,7 +335,7 @@ export default function JournalScreen() {
               </Button>
             )}
           />
-        </>
+        </div>
       ) : null}
 
       {/* Zone collante en bas de <main> (jamais `fixed`) : au-dessus de la barre d'onglets flottante. */}

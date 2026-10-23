@@ -1,4 +1,4 @@
-import { AlertTriangle, Minus, Plus } from 'lucide-react'
+import { AlertTriangle, Minus, Plus, Refrigerator } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteFridgeItem, updateFridgeItem } from '../../db'
@@ -6,7 +6,7 @@ import { fridgeViews, recipeNutrition } from '../../domain/nutrition'
 import { formatDateFr, toLocalDate } from '../../domain/shared/dates'
 import type { FridgeView } from '../../types'
 import { errorMessage } from '../../ui'
-import { Button, Card, FoodTile, Sheet, cx } from '../../ui/kit'
+import { Button, Card, EmptyState, FoodTile, Sheet, cx } from '../../ui/kit'
 import { buttonClass } from '../../ui/kit/buttonClass'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { TextField } from '../../ui/kit/Fields'
@@ -105,15 +105,17 @@ export default function FridgeScreen() {
       {!views ? (
         <Loading />
       ) : views.length === 0 ? (
-        <Card padding="large" className="flex flex-col items-center gap-1 text-center">
-          <p className="m-0 font-display text-title">Le frigo est vide</p>
-          <p className="m-0 text-body text-ink-muted">
-            Ouvre une recette et choisis « Préparer pour le frigo » après avoir cuisiné un batch.
-          </p>
-          <Link to={RECIPES_PATH} className={cx(buttonClass('flat'), 'mt-3')}>
-            Voir les recettes
-          </Link>
-        </Card>
+        <EmptyState
+          icon={Refrigerator}
+          title="Le frigo est vide"
+          action={
+            <Link to={RECIPES_PATH} className={buttonClass('flat')}>
+              Voir les recettes
+            </Link>
+          }
+        >
+          Ouvre une recette et choisis « Préparer pour le frigo » après avoir cuisiné un batch.
+        </EmptyState>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-3.5 p-0">
           {views.map((v) => {

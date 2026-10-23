@@ -204,6 +204,45 @@
   }
 }
 
+/* Entrée d'un écran de détail : glisse depuis la droite. Enveloppe de la page dans <main>, jamais <main> lui-même.
+   Mot-clé `from` seul : la fin de l'animation retombe sur les valeurs naturelles, donc AUCUN transform résiduel
+   (il casserait `position: fixed` des descendants et créerait un contexte d'empilement). Pas de fill-mode. */
+@keyframes ds-page-slide {
+  from {
+    transform: translateX(2.5rem);
+    opacity: 0;
+  }
+}
+
+/* Deux noms d'animation identiques, alternés par TabsLayout : deux glissements consécutifs relancent ainsi
+   l'animation sans démonter la page (changer le nom d'animation suffit à la redémarrer). */
+@keyframes ds-page-slide-b {
+  from {
+    transform: translateX(2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes ds-fade-in-b {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility ds-page-slide {
+  animation: ds-page-slide 200ms ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    animation: ds-fade-in 100ms ease-out;
+  }
+}
+
+@utility ds-page-slide-b {
+  animation: ds-page-slide-b 200ms ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    animation: ds-fade-in-b 100ms ease-out;
+  }
+}
+
 @utility ds-fade-enter {
   animation: ds-fade-in 200ms ease-out;
   @media (prefers-reduced-motion: reduce) {

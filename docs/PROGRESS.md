@@ -148,6 +148,14 @@ nutrition ensuite — **fait le 2026-10-16, validé sur iPhone le 2026-10-23** ;
   une pesée depuis +. Réglages : boutons Enregistrer en variante sombre (une seule couleur ember par écran).
   Meta `apple-mobile-web-app-status-bar-style` gardée en `black-translucent` (passer à `default` casserait les safe
   areas du bandeau caméra et du mode séance) : lisibilité de l'heure sur canvas à vérifier sur iPhone.
+- 2026-10-23 (R5) : transitions : seule une navigation PUSH vers une route plus profonde glisse depuis la droite
+  (200 ms ease-out ; `transitionFor`/`routeDepth`, src/app/shell/pageTransition.ts) ; POP, REPLACE, onglets, query/hash,
+  séance, cuisine et recette par scan (panneau `fixed`) ne glissent pas. Enveloppe dans `<main>` qui alterne deux noms
+  d'animation (relance sans `key`, qui démontait Suspense) ; keyframes `from` seul, sans fill-mode : aucun transform
+  résiduel. `prefers-reduced-motion` → fondu 100 ms. Feuilles : entrée seule (sortie animée = pile inert/focus fragiles).
+  Playwright en `reducedMotion: 'reduce'` sauf `transitions.spec.ts`. États vides = `EmptyState` du kit (pas de carte
+  sur le journal vide : les repas suffisent) ; squelettes = `Skeleton`/`ScreenSkeleton`/`CardSkeleton`/`SectionSkeleton`,
+  au premier chargement seulement (le journal garde l'ancien jour, inert, pendant ‹ ›).
 - 2026-10-23 (R5) : outillage : ESLint `defineConfig` (règles identiques), actions GitHub checkout@v7, setup-node@v7,
   configure-pages@v6, upload-pages-artifact@v5, deploy-pages@v5.
 

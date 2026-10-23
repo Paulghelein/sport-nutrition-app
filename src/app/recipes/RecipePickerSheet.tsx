@@ -1,7 +1,8 @@
+import { SearchX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { recipeListItems, recipeNutrition, roundMacros, normalizeFoodSearch } from '../../domain/nutrition'
 import type { FoodLogEntry, FridgeItem, LibraryRecipe, LocalDate, MealSlot } from '../../types'
-import { Card, ListRow, Sheet } from '../../ui/kit'
+import { Card, CardSkeleton, EmptyState, ListRow, Sheet } from '../../ui/kit'
 import { portionsWord } from './format'
 import { CiqualBanner } from './parts'
 import { SearchBox } from '../../ui/kit/SearchBox'
@@ -113,16 +114,16 @@ export default function RecipePickerSheet({
           </div>
           {lib ? <CiqualBanner failed={lib.ciqualFailed} onRetry={lib.retry} /> : null}
           {!lib ? (
-            <p className="m-0 text-body text-ink-muted" aria-busy="true">
-              Chargement…
-            </p>
+            <CardSkeleton lines={4} />
           ) : (
             <>
               {group('Au frigo', inFridge)}
               {group('Favoris', favorites)}
               {group(searching ? 'Résultats' : 'Toutes les recettes', others)}
               {matches.length === 0 ? (
-                <p className="m-0 text-body text-ink-muted">Aucune recette trouvée.</p>
+                <EmptyState compact icon={SearchX} title="Aucune recette trouvée">
+                  Essaie un autre mot.
+                </EmptyState>
               ) : null}
             </>
           )}

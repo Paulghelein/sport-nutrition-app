@@ -1,4 +1,4 @@
-import { Plus, ScanBarcode } from 'lucide-react'
+import { Clock, Plus, ScanBarcode, SearchX, Star } from 'lucide-react'
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { addLogEntries, deleteLogEntry, listLogBetween, listLogForDate, undoRecipeEntries } from '../../db'
@@ -15,7 +15,7 @@ import { foodCategory, isScannedFood } from '../../domain/nutrition/category'
 import { addDays, formatDateFr, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { Food, FoodLogEntry, FridgeItem, FreeEntryInput, QuickItem } from '../../types'
 import { ErrorBoundary, errorMessage, useLiveQuery } from '../../ui'
-import { Button, Card, Segmented, buttonClass } from '../../ui/kit'
+import { Button, Card, EmptyState, Segmented, buttonClass } from '../../ui/kit'
 import { FoodRow as KitFoodRow } from '../../ui/kit/FoodRow'
 import { Note } from '../../ui/kit/Note'
 import { SearchBox } from '../../ui/kit/SearchBox'
@@ -290,9 +290,9 @@ export default function AddFoodScreen() {
               </ul>
             </Card>
           ) : (
-            <p className="m-0 text-body text-ink-muted">
-              Aucun aliment ne correspond. Essaie un autre mot, ou crée-le avec « Créer un aliment ».
-            </p>
+            <EmptyState icon={SearchX} title="Aucun aliment ne correspond">
+              Essaie un autre mot, ou crée-le avec « Créer un aliment ».
+            </EmptyState>
           )
         ) : (
           <>
@@ -318,11 +318,14 @@ export default function AddFoodScreen() {
                 </ul>
               </Card>
             ) : (
-              <p className="m-0 text-body text-ink-muted">
+              <EmptyState
+                icon={shownTab === 'recents' ? Clock : Star}
+                title={shownTab === 'recents' ? 'Pas encore d’aliment récent' : 'Aucun favori pour l’instant'}
+              >
                 {shownTab === 'recents'
                   ? 'Tes aliments récents apparaîtront ici. Cherche un aliment ci-dessus pour commencer.'
-                  : 'Aucun favori pour l’instant : ouvre un aliment et touche l’étoile.'}
-              </p>
+                  : 'Ouvre un aliment et touche l’étoile pour le retrouver ici.'}
+              </EmptyState>
             )}
           </>
         )}

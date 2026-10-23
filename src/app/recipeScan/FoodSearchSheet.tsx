@@ -1,9 +1,10 @@
-import { Search } from 'lucide-react'
+import { Search, SearchX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { foodCategory } from '../../domain/nutrition/category'
 import { searchFoodIndex } from '../../domain/nutrition/search'
 import type { FoodIndex } from '../../domain/nutrition/search'
 import type { Food } from '../../types'
+import { EmptyState } from '../../ui/kit/EmptyState'
 import { FoodTile } from '../../ui/kit/FoodPictogram'
 import { Note } from '../../ui/kit/Note'
 import { Sheet } from '../../ui/kit/Sheet'
@@ -94,7 +95,9 @@ export function FoodSearchSheet({
         ))}
       </ul>
       {index && !preparing && query.trim() !== '' && results.length === 0 ? (
-        <p className="m-0 text-body text-ink-muted">Aucun aliment trouvé. Essaie un mot plus court.</p>
+        <EmptyState compact icon={SearchX} title="Aucun aliment trouvé">
+          Essaie un mot plus court.
+        </EmptyState>
       ) : null}
     </Sheet>
   )

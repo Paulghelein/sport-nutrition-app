@@ -5,7 +5,7 @@ import { deleteSession, updateDoneSession } from '../../db'
 import { formatDateFr } from '../../domain/shared'
 import type { Equipment, Session } from '../../types'
 import { errorMessage } from '../../ui'
-import { Button, Card, buttonClass } from '../../ui/kit'
+import { Button, Card, ScreenSkeleton, buttonClass } from '../../ui/kit'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { DecimalField, IntegerField, SelectField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
@@ -204,7 +204,7 @@ export default function HistoryDetailScreen() {
       </section>
     )
   }
-  if (!data?.session || !data.summary || !data.equipment) return <div aria-busy="true" className="min-h-40" />
+  if (!data?.session || !data.summary || !data.equipment) return <ScreenSkeleton cards={2} />
   const { session, summary, equipment } = data
 
   const remove = async () => {

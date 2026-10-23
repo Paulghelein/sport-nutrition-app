@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { getSettings, requestPersistentStorage } from '../db'
 import { useLiveQuery } from '../ui'
+import { ScreenSkeleton } from '../ui/kit'
 import { DEV_UI_ENABLED } from './devUi'
 import { Onboarding } from './Onboarding'
 import {
@@ -88,7 +89,7 @@ const UiScreen =
 function Tabs() {
   return (
     <TabsLayout>
-      <Suspense fallback={<div aria-busy="true" className="min-h-40" />}>
+      <Suspense fallback={<ScreenSkeleton />}>
         <Routes>
           <Route path={HOME_PATH} element={<TodayScreen />} />
           <Route path={TRAINING_PATH} element={<SessionScreen />} />

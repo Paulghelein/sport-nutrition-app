@@ -8,7 +8,7 @@ import { deletedSeedExercises, missingEquipment, variantsOf } from '../../domain
 import type { ExercisePreference, LibraryExercise } from '../../types'
 import { equipmentLabel, errorMessage, loadTypeLabel, muscleLabel, patternLabel, preferences } from '../../ui'
 import { clearExerciseDraft } from '../../ui/exerciseDraft'
-import { Button, Card, buttonClass } from '../../ui/kit'
+import { Button, Card, ScreenSkeleton, buttonClass } from '../../ui/kit'
 import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
 import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { Note } from '../../ui/kit/Note'
@@ -94,7 +94,7 @@ export default function ExerciseScreen() {
       </section>
     )
   }
-  if (!data) return <div aria-busy="true" className="min-h-40" />
+  if (!data) return <ScreenSkeleton cards={2} />
   const ex = data.library.find((e) => e.id === id)
   if (!ex) {
     return (

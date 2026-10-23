@@ -1,8 +1,8 @@
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, LineChart } from 'lucide-react'
 import { Suspense, lazy, useState } from 'react'
 import { formatDateFr } from '../../domain/shared/dates'
 import { ErrorBoundary, levelLabel, patternLabel } from '../../ui'
-import { Card, formatDecimal } from '../../ui/kit'
+import { Card, EmptyState, Skeleton, SkeletonGroup, formatDecimal } from '../../ui/kit'
 import { Note, ScreenSection } from './parts'
 import type { ProgressModel } from './progressModel'
 import { METRIC_LABEL, METRIC_UNIT, lastMetricValue, recordLines, strengthChartData } from './progressModel'
@@ -19,7 +19,13 @@ function ExerciseDetail({ id, row }: { id: string; row: ProgressModel['strength'
       </p>
       {points.length >= 2 ? (
         <ErrorBoundary>
-          <Suspense fallback={<div className="h-52" aria-busy="true" />}>
+          <Suspense
+            fallback={
+              <SkeletonGroup>
+                <Skeleton className="h-52" />
+              </SkeletonGroup>
+            }
+          >
             <StrengthChart points={points} metric={row.metric} name={row.name} />
           </Suspense>
         </ErrorBoundary>
@@ -58,7 +64,9 @@ export function StrengthSection({ model }: { model: Pick<ProgressModel, 'strengt
       <ScreenSection title="Force">
         {model.strength.length === 0 ? (
           <Card padding="none" className="px-[18px] py-4">
-            <Note>Pas encore de séance terminée : tes exercices et tes records apparaîtront ici.</Note>
+            <EmptyState compact icon={LineChart} title="Pas encore de séance terminée">
+              Tes exercices et tes records apparaîtront ici.
+            </EmptyState>
           </Card>
         ) : (
           <Card padding="none" className="px-4 py-1.5">

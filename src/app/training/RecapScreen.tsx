@@ -6,7 +6,7 @@ import { acceptSuggestion } from '../../domain/training'
 import { formatDateFr } from '../../domain/shared'
 import type { LibraryExercise, Equipment, Session } from '../../types'
 import { errorMessage } from '../../ui'
-import { Button, Card, buttonClass } from '../../ui/kit'
+import { Button, Card, ScreenSkeleton, buttonClass } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
 import { AskClaudeButton } from '../claude/AskClaudeButton'
 import { sessionAfterData } from '../claude/inputs'
@@ -134,7 +134,7 @@ export default function RecapScreen() {
       </section>
     )
   }
-  if (!data?.session || !data.summary || !data.equipment) return <div aria-busy="true" className="min-h-40" />
+  if (!data?.session || !data.summary || !data.equipment) return <ScreenSkeleton cards={2} />
   const { session, summary } = data
   if (session.status === 'in_progress') {
     return (
