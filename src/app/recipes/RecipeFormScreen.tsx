@@ -1,3 +1,4 @@
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -14,20 +15,17 @@ import {
   DEFAULT_FRIDGE_DAYS,
 } from '../../domain/nutrition'
 import type { Aisle, Food, FoodLookup, LibraryRecipe, MealSlot, Recipe } from '../../types'
-import { Button, Card, ErrorNote, IntegerField, SelectField, TextField, errorMessage } from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button, Card } from '../../ui/kit'
+import { CheckRow } from '../../ui/kit/CheckRow'
+import { IntegerField, SelectField, TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
 import { fmtG, fmtInt, slotChoices } from '../nutrition/format'
-import { BackLink } from '../nutrition/parts'
+import { RECIPES_PATH, recipePath } from '../routes'
 import { LineListEditor } from '../training/LineListEditor'
 import { FoodPickerSheet } from './FoodPickerSheet'
-import {
-  CiqualBanner,
-  Loading,
-  NotFound,
-  RECIPES_PATH,
-  ToggleChip,
-  focusRing,
-  iconButtonClass,
-} from './parts'
+import { CiqualBanner, Loading, NotFound } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import {
   clearRecipeDraft,
   draftToInput,
@@ -44,9 +42,9 @@ const aisleOptions = AISLE_ORDER.map((a) => ({ value: a, label: AISLE_LABELS[a] 
 
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card>
-      <h2 className="mb-4 text-xl font-bold">{title}</h2>
-      <div className="flex flex-col gap-5">{children}</div>
+    <Card padding="large" aria-label={title} className="flex flex-col gap-4">
+      <h2 className="m-0 font-display text-title">{title}</h2>
+      <div className="flex flex-col gap-4">{children}</div>
     </Card>
   )
 }
@@ -83,8 +81,10 @@ function IngredientEditor({
   const v = ingredient.values
   const setValue = (k: 'kcal' | 'protein' | 'carbs' | 'fat', text: string) =>
     v && onChange({ ...ingredient, values: { ...v, [k]: text.replace(/[^\d.,]/g, '') } })
+  const iconButton =
+    'focus-ring grid size-11 shrink-0 place-items-center rounded-full bg-canvas text-ink active:opacity-70 disabled:text-ink-faint'
   return (
-    <li className="rounded-2xl border border-v1-line bg-v1-surface-hi p-3">
+    <li className="flex flex-col gap-3 border-t border-line pt-4 first:border-t-0 first:pt-0">
       <div className="grid grid-cols-[1fr_7rem] gap-2">
         <TextField
           label={`Ingrédient ${n}`}
@@ -102,38 +102,30 @@ function IngredientEditor({
           onChange={(grams) => onChange({ ...ingredient, grams })}
         />
       </div>
-      <div className="mt-3">
-        <SelectField
-          label={`Rayon ${n}`}
-          value={ingredient.aisle}
-          options={aisleOptions}
-          onChange={(aisle: Aisle) => onChange({ ...ingredient, aisle })}
-        />
-      </div>
-      <div className="mt-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2.5">
+      <SelectField
+        label={`Rayon ${n}`}
+        value={ingredient.aisle}
+        options={aisleOptions}
+        onChange={(aisle: Aisle) => onChange({ ...ingredient, aisle })}
+      />
+      <div className="flex flex-col gap-2">
         {linked !== null ? (
-          <p className="text-base">
-            <span className="text-zinc-400">Relié à : </span>
-            <span className="font-medium">{linked}</span>
+          <p className="m-0 text-body">
+            <span className="text-ink-muted">Relié à : </span>
+            <span className="text-body-strong">{linked}</span>
           </p>
         ) : v ? (
-          <p className="text-base text-zinc-200">Valeurs pour 100 g saisies à la main.</p>
+          <p className="m-0 text-body">Valeurs pour 100 g saisies à la main.</p>
         ) : (
-          <p className="text-base text-amber-300">Aucune donnée nutritionnelle : compte pour 0.</p>
+          <p className="m-0 text-body text-warning">Aucune donnée nutritionnelle : compte pour 0.</p>
         )}
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            width="auto"
-            onClick={onSearch}
-            aria-label={`Relier l’ingrédient ${n} à un aliment`}
-          >
+        <div className="flex flex-wrap gap-2">
+          <Button variant="flat" onClick={onSearch} aria-label={`Relier l’ingrédient ${n} à un aliment`}>
             {linked !== null ? 'Changer d’aliment' : 'Chercher un aliment'}
           </Button>
           {v === undefined ? (
             <Button
-              variant="ghost"
-              width="auto"
+              variant="text"
               aria-label={`Saisir les valeurs de l’ingrédient ${n}`}
               onClick={() =>
                 onChange({
@@ -146,8 +138,7 @@ function IngredientEditor({
             </Button>
           ) : (
             <Button
-              variant="ghost"
-              width="auto"
+              variant="text"
               aria-label={`Retirer les valeurs de l’ingrédient ${n}`}
               onClick={() => {
                 const rest = { ...ingredient }
@@ -160,8 +151,7 @@ function IngredientEditor({
           )}
           {linked !== null ? (
             <Button
-              variant="ghost"
-              width="auto"
+              variant="text"
               aria-label={`Délier l’ingrédient ${n}`}
               onClick={() => {
                 const rest = { ...ingredient }
@@ -175,7 +165,7 @@ function IngredientEditor({
           ) : null}
         </div>
         {v ? (
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {(
               [
                 ['kcal', 'Calories (kcal)'],
@@ -197,32 +187,32 @@ function IngredientEditor({
           </div>
         ) : null}
       </div>
-      <div className="mt-2 flex justify-end gap-2">
+      <div className="flex justify-end gap-2">
         <button
           type="button"
-          className={iconButtonClass}
+          className={iconButton}
           disabled={index === 0}
           aria-label={`Monter l’ingrédient ${n}`}
           onClick={() => onMove(index - 1)}
         >
-          ↑
+          <ChevronUp size={20} strokeWidth={1.75} aria-hidden="true" />
         </button>
         <button
           type="button"
-          className={iconButtonClass}
+          className={iconButton}
           disabled={index === count - 1}
           aria-label={`Descendre l’ingrédient ${n}`}
           onClick={() => onMove(index + 1)}
         >
-          ↓
+          <ChevronDown size={20} strokeWidth={1.75} aria-hidden="true" />
         </button>
         <button
           type="button"
-          className={iconButtonClass}
+          className={iconButton}
           aria-label={`Supprimer l’ingrédient ${n}`}
           onClick={onRemove}
         >
-          ✕
+          <Trash2 size={20} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </div>
     </li>
@@ -245,20 +235,16 @@ function LiveMacros({ draft, lookup }: { draft: RecipeDraft; lookup: FoodLookup 
   }, [draft, lookup])
   const m = roundMacros(nutrition.perServing)
   return (
-    <div
-      aria-live="polite"
-      className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-3"
-      data-testid="live-macros"
-    >
-      <p className="text-sm font-medium text-zinc-300">Par portion (calculé en direct)</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums">
+    <div aria-live="polite" className="rounded-ds-md bg-canvas p-3.5" data-testid="live-macros">
+      <p className="m-0 text-caption text-ink-muted">Par portion (calculé en direct)</p>
+      <p className="m-0 mt-1 font-display text-number-l tabular-nums">
         {fmtInt(m.kcal)} kcal
-        <span className="ml-2 text-base font-medium text-zinc-300">
+        <span className="ml-2 font-sans text-body font-medium text-ink-muted">
           P {fmtG(m.protein)} · G {fmtG(m.carbs)} · L {fmtG(m.fat)}
         </span>
       </p>
       {nutrition.missing.length > 0 ? (
-        <p className="mt-1 text-sm text-amber-300">Sans données : {nutrition.missing.join(', ')}.</p>
+        <p className="m-0 mt-1 text-caption text-warning">Sans données : {nutrition.missing.join(', ')}.</p>
       ) : null}
     </div>
   )
@@ -319,7 +305,7 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
     // Rien n'a changé : retour à la fiche sans créer de surcharge.
     if (current && recipeContentEquals(input, toRecipeInput(current))) {
       clearRecipeDraft(draftKey)
-      navigate(`/nutrition/recettes/${current.id}`, { replace: true })
+      navigate(recipePath(current.id), { replace: true })
       return
     }
     setBusy(true)
@@ -327,7 +313,7 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
     try {
       const saved = current ? await updateRecipe(current, input) : await createRecipe(input)
       clearRecipeDraft(draftKey)
-      navigate(`/nutrition/recettes/${saved.id}`, { replace: true })
+      navigate(recipePath(saved.id), { replace: true })
     } catch (e) {
       setError(errorMessage(e, 'Impossible d’enregistrer la recette. Réessaie.'))
       setBusy(false)
@@ -350,31 +336,34 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
         void save()
       }}
       noValidate
+      className="mx-auto flex max-w-xl flex-col gap-4"
     >
-      <BackLink to={current ? `/nutrition/recettes/${current.id}` : RECIPES_PATH}>
-        {current ? 'Fiche' : 'Recettes'}
-      </BackLink>
-      <h1 className="mt-1 text-3xl font-bold">{current ? 'Modifier la recette' : 'Nouvelle recette'}</h1>
+      <div>
+        <BackLink to={current ? recipePath(current.id) : RECIPES_PATH}>
+          {current ? 'Fiche' : 'Recettes'}
+        </BackLink>
+      </div>
+      <h1 className="m-0 font-display text-display-l">
+        {current ? 'Modifier la recette' : 'Nouvelle recette'}
+      </h1>
       {current?.source === 'seed' ? (
-        <p className="mt-2 text-base text-zinc-400">
+        <p className="m-0 text-body text-ink-muted">
           Ta version remplacera l’original ; tu pourras le rétablir.
         </p>
       ) : null}
       <CiqualBanner failed={lib.ciqualFailed} onRetry={lib.retry} />
       {showRestored ? (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-orange-400/40 bg-orange-400/10 px-3 py-2.5 text-base text-orange-100">
-          <span role="status">Brouillon retrouvé.</span>
-          <button
-            type="button"
-            onClick={restart}
-            className="min-h-11 shrink-0 px-2 font-semibold text-orange-300 underline"
-          >
+        <Card className="flex items-center justify-between gap-3 py-2 pr-2">
+          <span role="status" className="text-body">
+            Brouillon retrouvé.
+          </span>
+          <Button variant="text" onClick={restart}>
             Repartir de zéro
-          </button>
-        </div>
+          </Button>
+        </Card>
       ) : null}
 
-      <div className="mt-5 flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <FormSection title="Général">
           <TextField
             label="Nom"
@@ -384,10 +373,10 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
             autoComplete="off"
           />
           <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="mb-1.5 p-0 text-sm font-medium text-zinc-300">Repas</legend>
-            <div className="flex flex-wrap gap-2">
+            <legend className="mb-1.5 p-0 text-caption text-ink-muted">Repas</legend>
+            <div className="grid grid-cols-2 gap-2">
               {slotChoices.map((s) => (
-                <ToggleChip
+                <CheckRow
                   key={s.value}
                   label={s.label}
                   checked={draft.meal.includes(s.value)}
@@ -440,11 +429,11 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
         </FormSection>
 
         <FormSection title="Ingrédients">
-          <p className="-mt-2 text-sm text-zinc-400">
+          <p className="-mt-2 mb-0 text-caption text-ink-muted">
             Quantités en grammes, pour toute la recette (poids cru).
           </p>
           <LiveMacros draft={draft} lookup={lib.lookup} />
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul className="m-0 flex list-none flex-col gap-4 p-0">
             {draft.ingredients.map((ing, i) => (
               <IngredientEditor
                 key={ing.key}
@@ -459,13 +448,14 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
               />
             ))}
           </ul>
-          <button
-            type="button"
+          <Button
+            variant="flat"
+            fullWidth
+            icon={<Plus size={20} strokeWidth={1.75} aria-hidden="true" />}
             onClick={() => patch({ ingredients: [...draft.ingredients, newIngredientDraft()] })}
-            className={`min-h-11 rounded-xl px-3 text-base font-semibold text-orange-400 active:bg-white/5 ${focusRing}`}
           >
-            + Ajouter un ingrédient
-          </button>
+            Ajouter un ingrédient
+          </Button>
         </FormSection>
 
         <FormSection title="Étapes">
@@ -482,9 +472,9 @@ function RecipeForm({ current, lib }: { current: LibraryRecipe | null; lib: Reci
         </FormSection>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3">
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button type="submit" disabled={busy}>
+      <div className="flex flex-col gap-3">
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button type="submit" fullWidth disabled={busy}>
           {current ? 'Enregistrer les modifications' : 'Créer la recette'}
         </Button>
       </div>
@@ -507,11 +497,11 @@ export default function RecipeFormScreen() {
 
   if (error) {
     return (
-      <section>
-        <BackLink to={RECIPES_PATH}>Recettes</BackLink>
-        <div className="mt-3">
-          <ErrorNote>Impossible de lire les recettes. Ferme l’app puis rouvre-la.</ErrorNote>
+      <section className="flex flex-col gap-3">
+        <div>
+          <BackLink to={RECIPES_PATH}>Recettes</BackLink>
         </div>
+        <Note tone="error">Impossible de lire les recettes. Ferme l’app puis rouvre-la.</Note>
       </section>
     )
   }

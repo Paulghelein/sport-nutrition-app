@@ -4,10 +4,14 @@ import { addLogEntries, deleteLogEntry, getFoodRow, listLogForDate } from '../..
 import { foodLogEntry, normalizeEan } from '../../domain/nutrition'
 import { isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { Ean, Food, ScanErrorKind } from '../../types'
-import { Button, ErrorNote, TextField, errorMessage, linkButtonClass, useLiveQuery } from '../../ui'
+import { errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card, buttonClass } from '../../ui/kit'
+import { TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { ADD_FOOD_PATH, NEW_FOOD_PATH, NUTRITION_PATH } from '../routes'
 import { QuantitySheet } from '../nutrition/QuantitySheet'
 import { SLOT_LABEL, isMealSlot, slotForNow } from '../nutrition/format'
-import { BackLink } from '../nutrition/parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { CameraView } from './CameraView'
 import { resolveScan } from './resolveScan'
 import { scanErrorText, scanReducer } from './scanLogic'
@@ -22,8 +26,8 @@ export default function ScanScreen() {
   const askedSlot = params.get('repas')
   const slot = isMealSlot(askedSlot) ? askedSlot : slotForNow()
   const context = `?repas=${slot}&date=${date}`
-  const addPath = `/nutrition/ajouter${context}`
-  const back = `/nutrition${date === today ? '' : `?date=${date}`}`
+  const addPath = `${ADD_FOOD_PATH}${context}`
+  const back = `${NUTRITION_PATH}${date === today ? '' : `?date=${date}`}`
   const addedKey = `added:${slot}:${date}`
 
   const [state, dispatch] = useReducer(scanReducer, { phase: 'scanning' })
@@ -62,7 +66,7 @@ export default function ScanScreen() {
       if (res.brand) q.set('marque', res.brand)
       if (res.packageG !== undefined) q.set('paquet', String(res.packageG))
       busy.current = false
-      navigate(`/nutrition/aliments/nouveau?${q.toString()}`, { replace: true })
+      navigate(`${NEW_FOOD_PATH}?${q.toString()}`, { replace: true })
     } catch (e) {
       if (!ctrl.signal.aborted) fail(errorMessage(e, 'Recherche impossible. Réessaie.'))
     }
@@ -149,15 +153,17 @@ export default function ScanScreen() {
 
   const errorText = cameraError ? scanErrorText(cameraError) : null
   const createLink = (ean: Ean) =>
-    `/nutrition/aliments/nouveau?${new URLSearchParams({ repas: slot, date, ean, origine: 'not_found' }).toString()}`
+    `${NEW_FOOD_PATH}?${new URLSearchParams({ repas: slot, date, ean, origine: 'not_found' }).toString()}`
 
   return (
-    <>
+    <div className="flex flex-col gap-3.5">
       <BackLink to={addPath}>Ajouter</BackLink>
-      <h1 className="mt-1 text-2xl font-bold">Scanner un produit</h1>
-      <p className="mt-1 text-base text-zinc-300">Pour : {SLOT_LABEL[slot].toLowerCase()}</p>
+      <header className="flex flex-col gap-1">
+        <h1 className="m-0 font-display text-display-l">Scanner un produit</h1>
+        <p className="m-0 text-body text-ink-muted">Pour : {SLOT_LABEL[slot].toLowerCase()}</p>
+      </header>
 
-      <div className="mt-4">
+      <div>
         {cameraError === null ? (
           <CameraView
             key={cameraAttempt}
@@ -173,14 +179,15 @@ export default function ScanScreen() {
           />
         ) : (
           <div className="flex flex-col gap-3">
-            <ErrorNote>
+            <Note tone="error">
               <strong>{errorText?.title}</strong>
               <br />
               {errorText?.body}
-            </ErrorNote>
+            </Note>
             {cameraError !== 'insecure_context' && cameraError !== 'unsupported' ? (
               <Button
                 variant="secondary"
+                fullWidth
                 onClick={() => {
                   setCameraError(null)
                   setCameraAttempt((n) => n + 1)
@@ -192,78 +199,75 @@ export default function ScanScreen() {
           </div>
         )}
         {cameraError === null ? (
-          <p className="mt-2 text-center text-base text-zinc-300">Place le code-barres dans le cadre.</p>
+          <p className="m-0 mt-2 text-center text-body text-ink-muted">Place le code-barres dans le cadre.</p>
         ) : null}
       </div>
 
-      {handoffError ? (
-        <div className="mt-4">
-          <ErrorNote>{handoffError}</ErrorNote>
-        </div>
-      ) : null}
+      {handoffError ? <Note tone="error">{handoffError}</Note> : null}
 
       {state.phase === 'lookup' ? (
-        <div
-          role="status"
-          className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface p-3"
-        >
-          <span className="text-base">Recherche du produit {state.ean}…</span>
-          <Button variant="secondary" width="auto" onClick={cancel}>
+        <Card role="status" className="flex items-center justify-between gap-3">
+          <span className="min-w-0 text-body">Recherche du produit {state.ean}…</span>
+          <Button variant="flat" onClick={cancel}>
             Annuler
           </Button>
-        </div>
+        </Card>
       ) : null}
 
       {state.phase === 'error' ? (
-        <div className="mt-4 flex flex-col gap-3">
-          <ErrorNote>{state.message}</ErrorNote>
-          <Button onClick={() => void lookup(state.ean)}>Réessayer</Button>
-          <Link to={createLink(state.ean)} replace className={linkButtonClass('secondary')}>
+        <div className="flex flex-col gap-2">
+          <Note tone="error">{state.message}</Note>
+          <Button fullWidth onClick={() => void lookup(state.ean)}>
+            Réessayer
+          </Button>
+          <Link to={createLink(state.ean)} replace className={buttonClass('secondary', 'normal', true)}>
             Créer l’aliment avec ce code
           </Link>
-          <Button variant="secondary" onClick={cancel}>
+          <Button variant="secondary" fullWidth onClick={cancel}>
             Scanner à nouveau
           </Button>
         </div>
       ) : null}
 
       {state.phase === 'added' ? (
-        <div
-          role="status"
-          className="mt-4 flex flex-col gap-3 rounded-xl border border-emerald-400/40 bg-emerald-950 p-3 text-emerald-100"
-        >
-          <p className="text-base font-semibold">Ajouté : {state.name}</p>
-          {addError ? <ErrorNote>{addError}</ErrorNote> : null}
-          <Button onClick={() => dispatch({ type: 'again' })}>Scanner un autre produit</Button>
-          <Button variant="secondary" onClick={finish}>
+        <div className="flex flex-col gap-2">
+          <Note tone="success">
+            <p className="m-0 text-body-strong">Ajouté : {state.name}</p>
+          </Note>
+          {addError ? <Note tone="error">{addError}</Note> : null}
+          <Button fullWidth onClick={() => dispatch({ type: 'again' })}>
+            Scanner un autre produit
+          </Button>
+          <Button variant="secondary" fullWidth onClick={finish}>
             Terminer ({addedCount} ajouté{addedCount > 1 ? 's' : ''} · {SLOT_LABEL[slot]})
           </Button>
-          <Button variant="secondary" onClick={() => void undo()}>
+          <Button variant="text" fullWidth onClick={() => void undo()}>
             Annuler l’ajout
           </Button>
         </div>
       ) : null}
 
       <form
-        className="mt-6 flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault()
           submitManual()
         }}
       >
-        <TextField
-          label="Saisir le code à la main"
-          value={manual}
-          onChange={(v) => setManual(v.replace(/[^\d\s]/g, ''))}
-          inputMode="numeric"
-          pattern="[0-9 ]*"
-          autoComplete="off"
-          hint="Les 8, 12 ou 13 chiffres sous le code-barres."
-        />
-        {manualError ? <ErrorNote>{manualError}</ErrorNote> : null}
-        <Button type="submit" variant="secondary" disabled={state.phase === 'lookup'}>
-          Chercher ce code
-        </Button>
+        <Card padding="large" className="flex flex-col gap-3">
+          <TextField
+            label="Saisir le code à la main"
+            value={manual}
+            onChange={(v) => setManual(v.replace(/[^\d\s]/g, ''))}
+            inputMode="numeric"
+            pattern="[0-9 ]*"
+            autoComplete="off"
+            hint="Les 8, 12 ou 13 chiffres sous le code-barres."
+          />
+          {manualError ? <Note tone="error">{manualError}</Note> : null}
+          <Button type="submit" variant="flat" fullWidth disabled={state.phase === 'lookup'}>
+            Chercher ce code
+          </Button>
+        </Card>
       </form>
 
       {state.phase === 'quantity' ? (
@@ -276,7 +280,7 @@ export default function ScanScreen() {
           onClose={cancel}
         />
       ) : null}
-    </>
+    </div>
   )
 }
 

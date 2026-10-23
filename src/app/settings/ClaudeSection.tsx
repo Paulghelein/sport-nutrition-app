@@ -3,19 +3,14 @@ import { Link } from 'react-router-dom'
 import { getSettings, updateSettings } from '../../db'
 import { COACH_PROJECT_INSTRUCTIONS } from '../../domain/claude/instructions'
 import { CLAUDE_CODE_URL } from '../../types/claude'
-import {
-  Button,
-  ErrorNote,
-  Section,
-  SuccessNote,
-  TextField,
-  errorMessage,
-  linkButtonClass,
-  useLiveQuery,
-} from '../../ui'
+import { errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card, buttonClass } from '../../ui/kit'
+import { TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
 import { copyToClipboard } from '../claude/clipboard'
 import { CLAUDE_RESPONSE_PATH } from '../routes'
 import { checkCoachUrlInput } from './coachUrl'
+import { SettingsSection } from './SettingsSection'
 
 function CoachUrlForm({ saved }: { saved: string | null }) {
   const [draft, setDraft] = useState(saved ?? '')
@@ -44,27 +39,29 @@ function CoachUrlForm({ saved }: { saved: string | null }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <TextField
-        label="Adresse du Projet Coach"
-        value={draft}
-        onChange={(v) => {
-          setDraft(v)
-          setDone(false)
-        }}
-        type="url"
-        inputMode="url"
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        placeholder="https://claude.ai/project/…"
-        hint="Laisse vide pour ouvrir claude.ai/new."
-      />
-      {error ? <ErrorNote>{error}</ErrorNote> : null}
-      {done ? <SuccessNote>Adresse enregistrée.</SuccessNote> : null}
-      <Button variant="secondary" onClick={() => void save()} disabled={busy}>
-        Enregistrer l’adresse
-      </Button>
+    <div className="flex flex-col gap-3">
+      <Card className="flex flex-col gap-4">
+        <TextField
+          label="Adresse du Projet Coach"
+          value={draft}
+          onChange={(v) => {
+            setDraft(v)
+            setDone(false)
+          }}
+          type="url"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="https://claude.ai/project/…"
+          hint="Laisse vide pour ouvrir claude.ai/new."
+        />
+        <Button variant="dark" fullWidth onClick={() => void save()} disabled={busy}>
+          Enregistrer l’adresse
+        </Button>
+      </Card>
+      {error ? <Note tone="error">{error}</Note> : null}
+      {done ? <Note tone="success">Adresse enregistrée.</Note> : null}
     </div>
   )
 }
@@ -75,33 +72,27 @@ export default function ClaudeSection() {
   const [showText, setShowText] = useState(false)
 
   return (
-    <Section title="Claude">
-      <p className="mb-3 text-zinc-400">
-        Les boutons « Demander à Claude » copient un message à coller dans ton Projet Coach. Rien n’est envoyé
-        sans que tu le colles toi-même.
-      </p>
+    <SettingsSection
+      title="Claude"
+      intro="Les boutons « Demander à Claude » copient un message à coller dans ton Projet Coach. Rien n’est envoyé sans que tu le colles toi-même."
+    >
       {data ? <CoachUrlForm saved={data.coachUrl} /> : <div aria-busy="true" className="h-24" />}
 
-      <div className="mt-5 flex flex-col gap-2">
+      <Card className="flex flex-col gap-3">
         <Button
-          variant="secondary"
+          variant="flat"
+          fullWidth
           onClick={() =>
             void copyToClipboard(COACH_PROJECT_INSTRUCTIONS).then((ok) => setCopied(ok ? 'ok' : 'failed'))
           }
         >
           Copier les instructions du Projet Coach
         </Button>
-        {copied === 'ok' ? (
-          <SuccessNote>Instructions copiées. Colle-les dans les instructions du Projet.</SuccessNote>
-        ) : null}
-        {copied === 'failed' ? (
-          <ErrorNote>Copie impossible : ouvre le texte ci-dessous et copie-le à la main.</ErrorNote>
-        ) : null}
         <button
           type="button"
           aria-expanded={showText}
           onClick={() => setShowText((v) => !v)}
-          className="flex min-h-11 items-center justify-center rounded-xl text-base font-semibold text-orange-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
+          className="focus-ring flex min-h-11 items-center justify-center rounded-ds-pill text-body-strong text-ember-ink underline underline-offset-4"
         >
           {showText ? 'Masquer les instructions' : 'Voir les instructions'}
         </button>
@@ -112,24 +103,32 @@ export default function ClaudeSection() {
             rows={12}
             value={COACH_PROJECT_INSTRUCTIONS}
             onFocus={(e) => e.currentTarget.select()}
-            className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 font-mono text-xs text-zinc-200"
+            className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-mono text-input text-ink"
           />
         ) : null}
-      </div>
+      </Card>
+      {copied === 'ok' ? (
+        <Note tone="success">Instructions copiées. Colle-les dans les instructions du Projet.</Note>
+      ) : null}
+      {copied === 'failed' ? (
+        <Note tone="error">
+          Copie impossible : ouvre « Voir les instructions » et copie le texte à la main.
+        </Note>
+      ) : null}
 
-      <div className="mt-5 flex flex-col gap-2">
-        <Link to={CLAUDE_RESPONSE_PATH} className={linkButtonClass('secondary')}>
+      <div className="flex flex-col gap-2">
+        <Link to={CLAUDE_RESPONSE_PATH} className={buttonClass('secondary', 'normal', true)}>
           Coller une réponse de Claude
         </Link>
         <a
           href={CLAUDE_CODE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className={linkButtonClass('secondary')}
+          className={buttonClass('secondary', 'normal', true)}
         >
           Faire évoluer l’app
         </a>
       </div>
-    </Section>
+    </SettingsSection>
   )
 }

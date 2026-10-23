@@ -17,7 +17,8 @@ import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
 import type { ChoiceOption } from '../../ui/kit/ChoiceGroup'
 import { Note } from '../../ui/kit/Note'
 import { LIBRARY_PATH, TRAINING_PATH } from '../routes'
-import { BackLink, LevelBadge, PreferenceIcon, ScreenTitle, Tag } from './parts'
+import { LevelBadge, PreferenceIcon, ScreenTitle, Tag } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
 
 type LevelFilter = 'all' | TrainingLevel
@@ -174,7 +175,7 @@ export default function LibraryScreen() {
               setQuery(e.target.value)
               setParam('q', e.target.value)
             }}
-            className="focus-ring min-h-12 w-full rounded-ds-pill bg-surface pl-11 pr-11 text-body text-ink shadow-card placeholder:text-ink-muted"
+            className="focus-ring min-h-12 w-full rounded-ds-pill bg-surface pl-11 pr-11 text-input text-ink shadow-card placeholder:text-ink-muted"
           />
           {query !== '' ? (
             <button

@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import { Button } from './Button'
+import { Button } from './kit'
 
 interface Props {
   children: ReactNode
@@ -21,9 +21,9 @@ export class ErrorBoundary extends Component<Props, { failed: boolean }> {
   override render(): ReactNode {
     if (!this.state.failed) return this.props.children
     return (
-      <div role="alert" className="rounded-2xl border border-red-400/40 bg-red-500/10 p-4">
-        <p className="text-base text-red-100">Impossible de charger cette section.</p>
-        <Button variant="secondary" className="mt-3" onClick={() => location.reload()}>
+      <div role="alert" className="rounded-ds-lg bg-surface p-4 font-sans text-ink shadow-card">
+        <p className="m-0 text-body">Impossible de charger cette section.</p>
+        <Button variant="dark" className="mt-3" onClick={() => location.reload()}>
           Recharger
         </Button>
       </div>

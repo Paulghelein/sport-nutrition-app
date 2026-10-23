@@ -1,9 +1,10 @@
-import { ChoiceGroup } from './ChoiceGroup'
-import { activities, goals, levels, sexes } from './choices'
-import { Stepper } from './Stepper'
-import { DateField, DecimalField, TextField } from './Field'
-import type { ProfileDraft } from './drafts'
-import { toLocalDate } from '../domain/shared'
+import { activities, goals, levels, sexes } from '../../ui/choices'
+import type { ProfileDraft } from '../../ui/drafts'
+import { ChoiceGroup } from '../../ui/kit/ChoiceGroup'
+import { DateField } from '../../ui/kit/DateField'
+import { DecimalField, TextField } from '../../ui/kit/Fields'
+import { Stepper } from '../../ui/kit'
+import { toLocalDate } from '../../domain/shared'
 
 interface FieldsProps {
   draft: ProfileDraft
@@ -12,7 +13,8 @@ interface FieldsProps {
 
 /** Prénom, sexe, naissance, taille, activité. */
 export function IdentityFields({ draft, onChange }: FieldsProps) {
-  const set = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) => onChange({ ...draft, [key]: value })
+  const set = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) =>
+    onChange({ ...draft, [key]: value })
   return (
     <div className="flex flex-col gap-5">
       <TextField
@@ -49,22 +51,30 @@ export function IdentityFields({ draft, onChange }: FieldsProps) {
 
 /** Objectif, niveau, fréquence. */
 export function GoalFields({ draft, onChange }: FieldsProps) {
-  const set = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) => onChange({ ...draft, [key]: value })
+  const set = <K extends keyof ProfileDraft>(key: K, value: ProfileDraft[K]) =>
+    onChange({ ...draft, [key]: value })
   return (
     <div className="flex flex-col gap-5">
       <ChoiceGroup legend="Objectif" options={goals} value={draft.goal} onChange={(v) => set('goal', v)} />
-      <ChoiceGroup legend="Niveau en musculation" options={levels} value={draft.level} onChange={(v) => set('level', v)} />
+      <ChoiceGroup
+        legend="Niveau en musculation"
+        options={levels}
+        value={draft.level}
+        onChange={(v) => set('level', v)}
+      />
       <Stepper
-        legend="Séances par semaine (cible)"
-        unitLabel="séances par semaine, cible"
+        label="Séances par semaine (cible)"
+        decreaseLabel="Diminuer : séances par semaine, cible"
+        increaseLabel="Augmenter : séances par semaine, cible"
         min={1}
         max={7}
         value={Number(draft.weeklySessionsTarget)}
         onChange={(v) => set('weeklySessionsTarget', String(v))}
       />
       <Stepper
-        legend="Minimum par semaine"
-        unitLabel="séances minimum par semaine"
+        label="Minimum par semaine"
+        decreaseLabel="Diminuer : séances minimum par semaine"
+        increaseLabel="Augmenter : séances minimum par semaine"
         min={1}
         max={7}
         value={Number(draft.weeklySessionsMin)}

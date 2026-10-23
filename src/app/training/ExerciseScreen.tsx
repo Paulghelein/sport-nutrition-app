@@ -21,7 +21,8 @@ import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { Note } from '../../ui/kit/Note'
 import { SETTINGS_PATH, LIBRARY_PATH } from '../routes'
 import { formatSeconds, formatTarget } from './format'
-import { BackLink, LevelBadge, NotFound, ScreenTitle, Section, Warning } from './parts'
+import { LevelBadge, NotFound, ScreenTitle, Section, Warning } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
 
 /** URL https valide, sinon `null` (jamais de lien cliquable douteux). */

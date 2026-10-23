@@ -6,7 +6,8 @@ import { errorMessage, muscleLabel, patternLabel } from '../../ui'
 import { Button, Card } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
 import { LIBRARY_PATH } from '../routes'
-import { BackLink, LevelBadge, ScreenTitle } from './parts'
+import { LevelBadge, ScreenTitle } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
 
 export default function DeletedScreen() {

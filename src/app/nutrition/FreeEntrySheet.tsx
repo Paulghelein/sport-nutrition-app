@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import type { FreeEntryInput } from '../../types'
-import { Button, ErrorNote, Sheet, errorMessage } from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button } from '../../ui/kit/Button'
+import { Note } from '../../ui/kit/Note'
+import { Sheet } from '../../ui/kit/Sheet'
 import { FreeFields } from './freeEntry'
 import { emptyFreeDraft, parseFreeDraft } from './freeDraft'
 
@@ -34,13 +37,11 @@ export function FreeEntrySheet({
 
   return (
     <Sheet title="Saisie libre" onClose={onClose} busy={busy}>
-      <div className="flex flex-col gap-4">
-        <FreeFields draft={draft} onChange={setDraft} />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button onClick={() => void submit()} disabled={busy}>
-          Ajouter
-        </Button>
-      </div>
+      <FreeFields draft={draft} onChange={setDraft} />
+      {error ? <Note tone="error">{error}</Note> : null}
+      <Button fullWidth onClick={() => void submit()} disabled={busy}>
+        Ajouter
+      </Button>
     </Sheet>
   )
 }

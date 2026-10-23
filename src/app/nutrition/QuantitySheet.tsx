@@ -1,9 +1,15 @@
+import { Star } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { setFoodFavorite } from '../../db'
 import { macrosFor, roundMacros } from '../../domain/nutrition'
 import type { Food } from '../../types'
-import { Button, DecimalField, ErrorNote, Sheet, errorMessage, parseDecimal, toInputNumber } from '../../ui'
+import { errorMessage, parseDecimal, toInputNumber } from '../../ui'
+import { Button } from '../../ui/kit/Button'
+import { DecimalField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { Sheet } from '../../ui/kit/Sheet'
+import { foodPath } from '../routes'
 import { fmtG, macroLine } from './format'
 
 /** Quantité en grammes d'un aliment : raccourcis de portion, aperçu des macros en direct, favori. */
@@ -62,47 +68,54 @@ export function QuantitySheet({
 
   return (
     <Sheet title={food.name} onClose={onClose} busy={busy}>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-2">
-          <Link
-            to={`/nutrition/aliments/${food.id}${contextSearch}`}
-            className="flex min-h-11 items-center text-base font-semibold text-orange-400"
-          >
-            Voir la fiche
-          </Link>
-          <button
-            type="button"
-            aria-pressed={favorite}
-            onClick={() => void toggleFavorite()}
-            className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-base font-semibold active:bg-white/5"
-          >
-            <span aria-hidden="true" className={`text-2xl ${favorite ? 'text-orange-400' : 'text-zinc-500'}`}>
-              {favorite ? '★' : '☆'}
-            </span>
-            {favorite ? 'Favori' : 'Mettre en favori'}
-          </button>
-        </div>
-        <DecimalField label="Quantité" big unit="g" value={grams} onChange={setGrams} />
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Portions rapides">
-          {shortcuts.map((g, i) => (
-            <button
-              key={g}
-              type="button"
-              onClick={() => setGrams(toInputNumber(g))}
-              className="min-h-11 rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base font-semibold active:bg-zinc-700"
-            >
-              {i === 0 && g === food.defaultPortionG ? `Portion ${fmtG(g)} g` : `${fmtG(g)} g`}
-            </button>
-          ))}
-        </div>
-        <p aria-live="polite" className="min-h-6 text-base text-zinc-200" data-testid="preview">
-          {valid ? macroLine(roundMacros(macrosFor(food.per100g, value))) : null}
-        </p>
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button onClick={() => void submit()} disabled={busy}>
-          {submitLabel}
-        </Button>
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to={`${foodPath(food.id)}${contextSearch}`}
+          className="focus-ring flex min-h-11 items-center rounded-ds-pill text-body-strong text-ember-ink"
+        >
+          Voir la fiche
+        </Link>
+        <button
+          type="button"
+          aria-pressed={favorite}
+          onClick={() => void toggleFavorite()}
+          className="focus-ring flex min-h-11 items-center gap-2 rounded-ds-pill px-3 text-body-strong text-ink active:opacity-70"
+        >
+          <Star
+            size={22}
+            strokeWidth={1.75}
+            aria-hidden="true"
+            className={favorite ? 'fill-ember text-ember-ink' : 'text-ink-muted'}
+          />
+          {favorite ? 'Favori' : 'Mettre en favori'}
+        </button>
       </div>
+      <DecimalField
+        label="Quantité"
+        unit="g"
+        value={grams}
+        onChange={setGrams}
+        className="[&_input]:min-h-14 [&_input]:text-title [&_input]:font-bold"
+      />
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Portions rapides">
+        {shortcuts.map((g, i) => (
+          <Button
+            key={g}
+            variant={valid && value === g ? 'dark' : 'flat'}
+            aria-pressed={valid && value === g}
+            onClick={() => setGrams(toInputNumber(g))}
+          >
+            {i === 0 && g === food.defaultPortionG ? `Portion ${fmtG(g)} g` : `${fmtG(g)} g`}
+          </Button>
+        ))}
+      </div>
+      <p aria-live="polite" className="m-0 min-h-6 text-body-strong" data-testid="preview">
+        {valid ? macroLine(roundMacros(macrosFor(food.per100g, value))) : null}
+      </p>
+      {error ? <Note tone="error">{error}</Note> : null}
+      <Button fullWidth onClick={() => void submit()} disabled={busy}>
+        {submitLabel}
+      </Button>
     </Sheet>
   )
 }

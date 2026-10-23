@@ -254,6 +254,7 @@ test.describe('feuille Ajouter', () => {
     await dialog.getByLabel('Poids').fill('74,1')
     await dialog.getByRole('button', { name: 'Enregistrer' }).click()
     await expect(dialog).toBeHidden()
+    await expect(page.getByText('Pesée enregistrée : 74,1 kg.')).toBeVisible()
 
     await goTab(page, 'Progrès')
     await expect(page.getByRole('button', { name: /^Modifier la pesée .*74,1 kg$/ })).toBeVisible()

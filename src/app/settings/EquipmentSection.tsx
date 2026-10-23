@@ -1,18 +1,11 @@
 import { useState } from 'react'
 import { checkEquipment, getEquipment, saveEquipment } from '../../db'
-import {
-  Button,
-  Card,
-  EquipmentFields,
-  ErrorNote,
-  Section,
-  SuccessNote,
-  draftToEquipment,
-  equipmentToDraft,
-  errorMessage,
-  useLiveQuery,
-} from '../../ui'
+import { draftToEquipment, equipmentToDraft, errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card } from '../../ui/kit'
+import { Note } from '../../ui/kit/Note'
 import type { Equipment } from '../../types'
+import { EquipmentFields } from './EquipmentFields'
+import { SettingsSection } from './SettingsSection'
 
 function EquipmentEditor({ equipment }: { equipment: Equipment }) {
   const [draft, setDraft] = useState(() => equipmentToDraft(equipment))
@@ -53,31 +46,33 @@ function EquipmentEditor({ equipment }: { equipment: Equipment }) {
   }
 
   return (
-    <Card>
-      <div className="flex flex-col gap-6">
-        <EquipmentFields
-          draft={draft}
-          onChange={(next) => {
-            setSaved(false)
-            setDraft(next)
-          }}
-        />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        {saved ? <SuccessNote>Matériel enregistré.</SuccessNote> : null}
-        <Button onClick={() => void save()} disabled={busy}>
-          Enregistrer le matériel
-        </Button>
-      </div>
-    </Card>
+    <div className="flex flex-col gap-3">
+      <Card>
+        <div className="flex flex-col gap-6">
+          <EquipmentFields
+            draft={draft}
+            onChange={(next) => {
+              setSaved(false)
+              setDraft(next)
+            }}
+          />
+          <Button variant="dark" fullWidth onClick={() => void save()} disabled={busy}>
+            Enregistrer le matériel
+          </Button>
+        </div>
+      </Card>
+      {error ? <Note tone="error">{error}</Note> : null}
+      {saved ? <Note tone="success">Matériel enregistré.</Note> : null}
+    </div>
   )
 }
 
 export function EquipmentSection() {
   const { data: equipment, error } = useLiveQuery(() => getEquipment(), [])
   return (
-    <Section title="Matériel">
-      {error ? <ErrorNote>Impossible de lire le matériel.</ErrorNote> : null}
+    <SettingsSection title="Matériel">
+      {error ? <Note tone="error">Impossible de lire le matériel.</Note> : null}
       {equipment ? <EquipmentEditor equipment={equipment} /> : null}
-    </Section>
+    </SettingsSection>
   )
 }

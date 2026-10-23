@@ -23,6 +23,7 @@ import { DaySummary } from './DaySummary'
 import { EntrySheet } from './EntrySheet'
 import { Toast } from './JournalToast'
 import type { ToastState } from './JournalToast'
+import { ADD_FOOD_PATH } from '../routes'
 import { NutritionTabs } from './NutritionTabs'
 import { SLOT_LABEL, fmtInt } from './format'
 import { buildJournalModel, dayLabel, mealCopies } from './journalModel'
@@ -50,7 +51,7 @@ function MealCard({
   onOpen: (entry: FoodLogEntry) => void
   onCopy: () => void
 }) {
-  const addTo = `/nutrition/ajouter?repas=${meal.slot}&date=${date}`
+  const addTo = `${ADD_FOOD_PATH}?repas=${meal.slot}&date=${date}`
   const copy = meal.canCopy ? (
     <button
       type="button"

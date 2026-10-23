@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button } from './Button'
+import { Button } from './kit'
 
 /** Surveille l'arrivée d'un service worker en attente (nouvelle version déployée). */
 function useWaitingWorker(): ServiceWorker | null {
@@ -65,19 +65,26 @@ export function UpdatePrompt() {
   return (
     <div
       role="status"
-      className="flex shrink-0 items-center gap-3 border-t border-orange-400/40 bg-v1-surface px-4 py-2"
+      // Posée en haut, sous la zone de sécurité : ne recouvre ni la barre d'onglets ni les zones collantes du bas.
+      // Le conteneur laisse passer les touchers ; seule la carte les reçoit.
+      className="pointer-events-none fixed inset-x-0 top-0 z-30 font-sans"
       style={{
+        paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)',
         paddingLeft: 'calc(env(safe-area-inset-left) + 1rem)',
         paddingRight: 'calc(env(safe-area-inset-right) + 1rem)',
       }}
     >
-      <p className="m-0 flex-1 text-sm text-zinc-200">Nouvelle version disponible.</p>
-      <Button variant="secondary" width="auto" onClick={() => setDismissed(true)}>
-        Plus tard
-      </Button>
-      <Button width="auto" onClick={reload}>
-        Recharger
-      </Button>
+      <div className="pointer-events-auto mx-auto flex max-w-xl flex-col gap-3 rounded-ds-lg bg-inverse p-4 text-on-inverse shadow-float">
+        <p className="m-0 text-body-strong">Nouvelle version disponible.</p>
+        <div className="flex gap-2">
+          <Button variant="inverse" fullWidth onClick={() => setDismissed(true)}>
+            Plus tard
+          </Button>
+          <Button fullWidth onClick={reload}>
+            Recharger
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

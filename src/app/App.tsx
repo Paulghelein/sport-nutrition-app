@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { getSettings, requestPersistentStorage } from '../db'
 import { useLiveQuery } from '../ui'
+import { DEV_UI_ENABLED } from './devUi'
 import { Onboarding } from './Onboarding'
 import { DEV_UI_PATH, GUIDED_PATH, HOME_PATH, RECIPE_SCAN_PATH, VIDEO_RECIPE_PATH } from './routes'
 import { SessionScreen } from './screens/SessionScreen'
@@ -44,8 +45,11 @@ const ClaudeResponseScreen = lazy(() => import('./claude/ClaudeResponseScreen'))
 const VideoRecipeScreen = lazy(() => import('./claude/VideoRecipeScreen'))
 // v2 (R3) — F4 : recette par scan (caméra en bandeau, brouillon conservé).
 const RecipeScanScreen = lazy(() => import('./recipeScan/RecipeScanScreen'))
-// v2 (R0) — page de démonstration du kit de composants.
-const UiScreen = lazy(() => import('./dev/UiScreen'))
+// v2 (R0) — page de démonstration du kit (développement et e2e seulement). La condition est écrite ici, à côté du
+// `import()`, et non importée de devUi.ts : Rolldown (Vite 8) ne la prouve fausse que dans le même module, sinon il générerait
+// quand même le chunk de la page. Doit rester identique à `DEV_UI_ENABLED`.
+const UiScreen =
+  import.meta.env.DEV || import.meta.env.VITE_DEV_UI === '1' ? lazy(() => import('./dev/UiScreen')) : null
 
 function Tabs() {
   return (
@@ -107,6 +111,7 @@ function Guided() {
 
 /** Page de composants v2 : plein écran clair, hors de la mise en page à onglets v1. */
 function DevUi() {
+  if (!UiScreen) return <Navigate to={HOME_PATH} replace />
   return (
     <Suspense fallback={<div aria-busy="true" className="flex-1" />}>
       <UiScreen />
@@ -132,7 +137,7 @@ function Shell() {
   return (
     <Routes>
       <Route path={GUIDED_PATH} element={<Guided />} />
-      <Route path={DEV_UI_PATH} element={<DevUi />} />
+      {DEV_UI_ENABLED && <Route path={DEV_UI_PATH} element={<DevUi />} />}
       <Route path="/seance/*" element={<LegacyRedirect />} />
       <Route path="*" element={<Tabs />} />
     </Routes>

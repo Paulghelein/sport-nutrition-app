@@ -1,20 +1,14 @@
+import { AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import { getEquipment, getSettings, updateEngineSettings } from '../../db'
 import { MAJOR_GROUPS, MUSCLE_GROUPS, deloadEveryWeeks, volumeTargets } from '../../domain/training'
 import type { EngineSettings, Equipment, MuscleGroup, Range } from '../../types'
-import {
-  Button,
-  Card,
-  ConfirmSheet,
-  ErrorNote,
-  IntegerField,
-  Section,
-  Stepper,
-  SuccessNote,
-  errorMessage,
-  muscleLabel,
-  useLiveQuery,
-} from '../../ui'
+import { errorMessage, muscleLabel, useLiveQuery } from '../../ui'
+import { Button, Card, Stepper } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { IntegerField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { SettingsSection } from './SettingsSection'
 
 const MAX_SETS = 30
 const WARN_ABOVE = 20
@@ -202,96 +196,111 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
   const warns = warnings(stable)
 
   return (
-    <Card>
-      <div className="flex flex-col gap-6">
-        <Stepper
-          legend="Semaine allégée toutes les (semaines)"
-          value={weeks}
-          min={3}
-          max={12}
-          onChange={changeWeeks}
-          unitLabel="semaines entre deux semaines allégées"
-          disabled={busy}
-        />
-        <div>
-          <h3 className="m-0 text-lg font-bold">Séries par semaine et par groupe</h3>
-          <p className="mb-3 mt-1 text-sm text-zinc-400">
-            Cibles que le moteur cherche à atteindre. Les petits groupes à 0 sont travaillés par les autres
-            exercices.
-          </p>
-          <ul className="m-0 flex list-none flex-col gap-4 p-0">
-            {MUSCLE_GROUPS.map((g) => {
-              const problem = checked.has(g) && focused !== g ? checkRow(g, rows[g]) : null
-              const valid = checkRow(g, rows[g]) === null
-              const isDefault =
-                focused !== g && valid && same([Number(rows[g].min), Number(rows[g].max)], defaults[g])
-              const hint = `${defaults[g][0]}–${defaults[g][1]}`
-              return (
-                <li key={g}>
-                  <div
-                    role="group"
-                    aria-label={muscleLabel(g)}
-                    onFocus={() => setFocused(g)}
-                    onBlur={(e) => {
-                      // Le focus reste dans le groupe (passage de « Minimum » à « Maximum ») : rien à valider.
-                      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) leaveGroup(g)
-                    }}
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-base font-semibold">{muscleLabel(g)}</span>
-                      {isDefault ? (
-                        <span className="text-sm text-zinc-500">par défaut</span>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirm(g)}
-                          aria-label={`Rétablir (${hint}), ${muscleLabel(g)}`}
-                          className="min-h-11 rounded-lg px-2 text-sm font-semibold text-orange-400 disabled:text-zinc-600"
-                        >
-                          Rétablir ({hint})
-                        </button>
-                      )}
+    <div className="flex flex-col gap-3">
+      <Card>
+        <div className="flex flex-col gap-6">
+          <Stepper
+            label="Semaine allégée toutes les (semaines)"
+            decreaseLabel="Diminuer : semaines entre deux semaines allégées"
+            increaseLabel="Augmenter : semaines entre deux semaines allégées"
+            value={weeks}
+            min={3}
+            max={12}
+            onChange={changeWeeks}
+            disabled={busy}
+          />
+          <div>
+            <h3 className="m-0 font-display text-title">Séries par semaine et par groupe</h3>
+            <p className="mb-3 mt-1 text-body text-ink-muted">
+              Cibles que le moteur cherche à atteindre. Les petits groupes à 0 sont travaillés par les autres
+              exercices.
+            </p>
+            <ul className="m-0 flex list-none flex-col p-0">
+              {MUSCLE_GROUPS.map((g) => {
+                const problem = checked.has(g) && focused !== g ? checkRow(g, rows[g]) : null
+                const valid = checkRow(g, rows[g]) === null
+                const isDefault =
+                  focused !== g && valid && same([Number(rows[g].min), Number(rows[g].max)], defaults[g])
+                const hint = `${defaults[g][0]}–${defaults[g][1]}`
+                return (
+                  <li key={g} className="border-t border-line py-4 first:border-t-0 first:pt-0">
+                    <div
+                      role="group"
+                      aria-label={muscleLabel(g)}
+                      onFocus={() => setFocused(g)}
+                      onBlur={(e) => {
+                        // Le focus reste dans le groupe (passage de « Minimum » à « Maximum ») : rien à valider.
+                        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) leaveGroup(g)
+                      }}
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-headline">{muscleLabel(g)}</span>
+                        {isDefault ? (
+                          <span className="text-caption text-ink-muted">par défaut</span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setConfirm(g)}
+                            aria-label={`Rétablir (${hint}), ${muscleLabel(g)}`}
+                            className="focus-ring min-h-11 rounded-ds-sm px-2 text-caption font-bold text-ember-ink disabled:text-ink-muted"
+                          >
+                            Rétablir ({hint})
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-1 grid grid-cols-2 gap-3">
+                        <IntegerField
+                          label="Minimum"
+                          value={rows[g].min}
+                          onChange={(v) => edit(g, 'min', v)}
+                          unit="séries"
+                          maxLength={2}
+                        />
+                        <IntegerField
+                          label="Maximum"
+                          value={rows[g].max}
+                          onChange={(v) => edit(g, 'max', v)}
+                          unit="séries"
+                          maxLength={2}
+                        />
+                      </div>
+                      {problem ? (
+                        <p className="m-0 mt-2 flex items-start gap-1.5 text-caption text-critical">
+                          <AlertCircle
+                            size={16}
+                            strokeWidth={1.75}
+                            aria-hidden="true"
+                            className="mt-px shrink-0"
+                          />
+                          {problem}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <IntegerField
-                        label="Minimum"
-                        value={rows[g].min}
-                        onChange={(v) => edit(g, 'min', v)}
-                        unit="séries"
-                        maxLength={2}
-                      />
-                      <IntegerField
-                        label="Maximum"
-                        value={rows[g].max}
-                        onChange={(v) => edit(g, 'max', v)}
-                        unit="séries"
-                        maxLength={2}
-                      />
-                    </div>
-                    {problem ? <p className="m-0 mt-1.5 text-sm text-red-300">{problem}</p> : null}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+          <Button variant="dark" fullWidth onClick={saveTargets} disabled={busy}>
+            Enregistrer les cibles
+          </Button>
+          <Button fullWidth variant="flat" onClick={() => setConfirm('all')} disabled={busy}>
+            Rétablir les valeurs par défaut
+          </Button>
         </div>
-        {warns.length > 0 ? (
-          <ul className="m-0 flex list-none flex-col gap-1 rounded-xl border border-amber-400/40 bg-amber-400/10 p-3 text-sm text-amber-200">
+      </Card>
+      {warns.length > 0 ? (
+        <Note tone="warning">
+          <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {warns.map((w) => (
               <li key={w}>{w}</li>
             ))}
           </ul>
-        ) : null}
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        {saved ? <SuccessNote>{saved}</SuccessNote> : null}
-        <Button onClick={saveTargets} disabled={busy}>
-          Enregistrer les cibles
-        </Button>
-        <Button variant="secondary" onClick={() => setConfirm('all')} disabled={busy}>
-          Rétablir les valeurs par défaut
-        </Button>
-      </div>
+        </Note>
+      ) : null}
+      {error ? <Note tone="error">{error}</Note> : null}
+      {saved ? <Note tone="success">{saved}</Note> : null}
       {confirm ? (
         <ConfirmSheet
           title="Rétablir les valeurs par défaut ?"
@@ -306,7 +315,7 @@ function EngineEditor({ engine, equipment }: { engine: EngineSettings; equipment
           onCancel={() => setConfirm(null)}
         />
       ) : null}
-    </Card>
+    </div>
   )
 }
 
@@ -316,10 +325,10 @@ export function EngineSection() {
     return { engine: settings.engine, equipment }
   }, [])
   return (
-    <Section title="Moteur d’entraînement">
-      {error ? <ErrorNote>Impossible de lire les réglages du moteur.</ErrorNote> : null}
+    <SettingsSection title="Moteur d’entraînement">
+      {error ? <Note tone="error">Impossible de lire les réglages du moteur.</Note> : null}
       {data ? <EngineEditor engine={data.engine} equipment={data.equipment} /> : null}
-    </Section>
+    </SettingsSection>
   )
 }
 

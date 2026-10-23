@@ -39,8 +39,7 @@ export interface RecipeLogSheetProps {
 const NO_FRIDGE = 'none'
 
 /**
- * Feuille « Loguer une portion » v2 (clair), pour Recettes, Frigo, fiche et mode cuisine. Le sélecteur de recettes du
- * journal (`RecipePickerSheet`, v1) garde `LogRecipeSheet` jusqu'à R5. Jour, repas, portions (0,5 à 4), et origine frigo.
+ * Feuille « Loguer une portion » (Recettes, Frigo, fiche, mode cuisine, sélecteur de recettes du journal). Jour, repas, portions (0,5 à 4), et origine frigo.
  * Réutilisable par le journal : elle écrit elle-même via `logRecipeEntries` (le frigo est décrémenté dans la même
  * transaction) puis appelle `onLogged`.
  */

@@ -1,23 +1,11 @@
-import { ChevronLeft, ChevronRight, EyeOff, Heart, ThumbsDown, TriangleAlert } from 'lucide-react'
+import { ChevronRight, EyeOff, Heart, ThumbsDown, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { ExercisePreference, TrainingLevel } from '../../types'
 import { levelLabel, preferenceLabel } from '../../ui'
 import { Card, buttonClass, cx } from '../../ui/kit'
+import { BackLink } from '../../ui/kit/BackLink'
 import { LIBRARY_PATH } from '../routes'
-
-/** Bouton retour en haut des écrans enfants : pastille claire avec chevron et libellé (cible 44 px). */
-export function BackLink({ to, children }: { to: string; children: ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="focus-ring inline-flex min-h-11 items-center gap-1 self-start rounded-ds-pill bg-surface py-2 pl-2.5 pr-4 text-body-strong text-ink no-underline shadow-card active:opacity-70"
-    >
-      <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
-      {children}
-    </Link>
-  )
-}
 
 /** Titre d'écran (un par écran) : display-l. */
 export function ScreenTitle({ children, className }: { children: ReactNode; className?: string }) {

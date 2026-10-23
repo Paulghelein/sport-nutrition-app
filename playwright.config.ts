@@ -21,7 +21,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run build && npx vite preview --port ${port} --strictPort`,
+    command: `VITE_DEV_UI=1 npm run build && npx vite preview --port ${port} --strictPort`,
     url: `http://localhost:${port}/sport-nutrition-app/`,
     reuseExistingServer: false,
     timeout: 120_000,

@@ -37,7 +37,8 @@ import { IntegerField, SelectField, TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { LIBRARY_PATH } from '../routes'
 import { LineListEditor } from './LineListEditor'
-import { BackLink, NotFound, ScreenTitle } from './parts'
+import { NotFound, ScreenTitle } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
 
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
@@ -364,7 +365,7 @@ function ExerciseForm({ current }: { current: LibraryExercise | null }) {
               maxLength={MAX_SETUP_LENGTH}
               value={draft.setup}
               onChange={(e) => patch({ setup: e.target.value })}
-              className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-2.5 text-body text-ink"
+              className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-2.5 text-input text-ink"
             />
           </div>
           <LineListEditor

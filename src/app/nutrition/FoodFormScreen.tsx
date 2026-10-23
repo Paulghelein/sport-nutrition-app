@@ -3,18 +3,13 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { checkFoodInput, createFood, updateFood } from '../../db'
 import { normalizeEan } from '../../domain/nutrition'
 import type { Food, FoodInput } from '../../types'
-import {
-  Button,
-  DecimalField,
-  ErrorNote,
-  TextField,
-  errorMessage,
-  linkButtonClass,
-  parseDecimal,
-  toInputNumber,
-} from '../../ui'
+import { errorMessage, parseDecimal, toInputNumber } from '../../ui'
+import { Button, Card, buttonClass } from '../../ui/kit'
+import { DecimalField, TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { SCAN_PATH, foodPath } from '../routes'
 import { allowedReturn, returnTarget } from './formReturn'
-import { BackLink } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { setSearchSeed, useAddContext, useGoBack } from './navContext'
 import { useFood } from './useFoods'
 
@@ -125,7 +120,7 @@ function FoodForm({
   const set = (key: keyof Draft) => (value: string) => setDraft((d) => ({ ...d, [key]: value }))
   const fromAdd = search !== ''
   const fromScan = !food && prefill.ean !== ''
-  const scanPath = `/nutrition/scanner${search}`
+  const scanPath = `${SCAN_PATH}${search}`
 
   const save = async () => {
     const parsed = parseDraft(draft, food?.aisle, food?.ean !== undefined)
@@ -138,7 +133,7 @@ function FoodForm({
     try {
       if (food) {
         await updateFood(food, parsed.input)
-        goBack(`/nutrition/aliments/${food.id}${search}`)
+        goBack(`${foodPath(food.id)}${search}`)
       } else {
         const created = await createFood(parsed.input)
         // Venu de l'écran Ajouter : on y revient (sans doublon d'historique) avec le nouvel aliment cherché ;
@@ -154,7 +149,7 @@ function FoodForm({
           setSearchSeed(created.name)
           goBack(`${addPath}&q=${encodeURIComponent(created.name)}`)
         } else {
-          goBack(`/nutrition/aliments/${created.id}`)
+          goBack(foodPath(created.id))
         }
       }
     } catch (e) {
@@ -167,81 +162,89 @@ function FoodForm({
     returnPath !== null && !food
       ? returnTarget(returnPath)
       : food
-        ? `/nutrition/aliments/${food.id}${search}`
+        ? `${foodPath(food.id)}${search}`
         : fromScan
           ? scanPath
           : addPath
 
   return (
-    <>
+    <div className="flex flex-col gap-3.5">
       <BackLink to={cancelTo}>Retour</BackLink>
-      <h1 className="mt-1 text-2xl font-bold">{food ? 'Modifier l’aliment' : 'Créer un aliment'}</h1>
+      <h1 className="m-0 font-display text-display-l">{food ? 'Modifier l’aliment' : 'Créer un aliment'}</h1>
       {fromScan ? (
-        <p className="mt-2 text-base text-zinc-300">
+        <p className="m-0 text-body text-ink-muted">
           {origin === 'incomplete'
             ? 'Open Food Facts connaît ce produit mais sans toutes les valeurs. Complète-les depuis l’emballage.'
             : 'Ce produit n’est pas dans Open Food Facts. Recopie les valeurs depuis l’emballage (pour 100 g).'}
         </p>
       ) : null}
       {food?.source === 'ciqual' ? (
-        <p className="mt-2 text-base text-zinc-300">
+        <p className="m-0 text-body text-ink-muted">
           Tes changements créent une version à toi de cet aliment ; tu pourras rétablir l’original.
         </p>
       ) : null}
       <form
-        className="mt-5 flex flex-col gap-4"
+        className="flex flex-col gap-3.5"
         onSubmit={(e) => {
           e.preventDefault()
           void save()
         }}
       >
-        <TextField label="Nom" value={draft.name} onChange={set('name')} maxLength={120} autoComplete="off" />
-        <TextField
-          label="Marque (facultatif)"
-          value={draft.brand}
-          onChange={set('brand')}
-          autoComplete="off"
-        />
-        <TextField
-          label="Code-barres (facultatif)"
-          value={draft.ean}
-          onChange={set('ean')}
-          inputMode="numeric"
-          pattern="[0-9 ]*"
-          autoComplete="off"
-          hint="Permet de retrouver cet aliment en le scannant."
-        />
-        <p className="-mb-2 text-base font-semibold text-zinc-200">Valeurs pour 100 g</p>
-        <DecimalField label="Calories" value={draft.kcal} onChange={set('kcal')} unit="kcal" />
-        <div className="grid grid-cols-3 gap-2">
-          <DecimalField label="Protéines" value={draft.protein} onChange={set('protein')} unit="g" />
-          <DecimalField label="Glucides" value={draft.carbs} onChange={set('carbs')} unit="g" />
-          <DecimalField label="Lipides" value={draft.fat} onChange={set('fat')} unit="g" />
-        </div>
-        <DecimalField label="Fibres (facultatif)" value={draft.fiber} onChange={set('fiber')} unit="g" />
-        <DecimalField
-          label="Portion habituelle (facultatif)"
-          value={draft.portion}
-          onChange={set('portion')}
-          unit="g"
-          hint="Proposée en raccourci quand tu ajoutes cet aliment."
-        />
-        <DecimalField
-          label="Contenance du paquet (facultatif)"
-          value={draft.packageG}
-          onChange={set('packageG')}
-          unit="g"
-          hint="Poids du paquet entier : permet d’ajouter « paquet entier » en un geste."
-        />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        <Button type="submit" disabled={busy}>
+        <Card padding="large" className="flex flex-col gap-4">
+          <TextField
+            label="Nom"
+            value={draft.name}
+            onChange={set('name')}
+            maxLength={120}
+            autoComplete="off"
+          />
+          <TextField
+            label="Marque (facultatif)"
+            value={draft.brand}
+            onChange={set('brand')}
+            autoComplete="off"
+          />
+          <TextField
+            label="Code-barres (facultatif)"
+            value={draft.ean}
+            onChange={set('ean')}
+            inputMode="numeric"
+            pattern="[0-9 ]*"
+            autoComplete="off"
+            hint="Permet de retrouver cet aliment en le scannant."
+          />
+          <p className="m-0 text-body-strong">Valeurs pour 100 g</p>
+          <DecimalField label="Calories" value={draft.kcal} onChange={set('kcal')} unit="kcal" />
+          <div className="grid grid-cols-3 gap-2">
+            <DecimalField label="Protéines" value={draft.protein} onChange={set('protein')} unit="g" />
+            <DecimalField label="Glucides" value={draft.carbs} onChange={set('carbs')} unit="g" />
+            <DecimalField label="Lipides" value={draft.fat} onChange={set('fat')} unit="g" />
+          </div>
+          <DecimalField label="Fibres (facultatif)" value={draft.fiber} onChange={set('fiber')} unit="g" />
+          <DecimalField
+            label="Portion habituelle (facultatif)"
+            value={draft.portion}
+            onChange={set('portion')}
+            unit="g"
+            hint="Proposée en raccourci quand tu ajoutes cet aliment."
+          />
+          <DecimalField
+            label="Contenance du paquet (facultatif)"
+            value={draft.packageG}
+            onChange={set('packageG')}
+            unit="g"
+            hint="Poids du paquet entier : permet d’ajouter « paquet entier » en un geste."
+          />
+        </Card>
+        {error ? <Note tone="error">{error}</Note> : null}
+        <Button type="submit" fullWidth disabled={busy}>
           Enregistrer
         </Button>
-        <Link to={cancelTo} className={linkButtonClass('secondary')}>
+        <Link to={cancelTo} className={buttonClass('secondary', 'normal', true)}>
           Annuler
         </Link>
       </form>
-    </>
+    </div>
   )
 }
 
@@ -267,10 +270,10 @@ export default function FoodFormScreen() {
   if (!data && loading) return <div aria-busy="true" className="min-h-40" />
   if (!data) {
     return (
-      <>
+      <div className="flex flex-col gap-3.5">
         <BackLink to={addPath}>Ajouter</BackLink>
-        <h1 className="mt-2 text-2xl font-bold">Aliment introuvable</h1>
-      </>
+        <h1 className="m-0 font-display text-display-l">Aliment introuvable</h1>
+      </div>
     )
   }
   return (

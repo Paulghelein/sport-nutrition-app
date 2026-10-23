@@ -10,7 +10,8 @@ import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { DecimalField, IntegerField, SelectField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { HISTORY_PATH } from '../routes'
-import { BackLink, ScreenTitle, Section } from './parts'
+import { ScreenTitle, Section } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { applyDrafts, byDuration, draftKey as key, toDraft } from './sessionDrafts'
 import type { SetDraft } from './sessionDrafts'
 import { SummaryView } from './SummaryView'
@@ -158,7 +159,7 @@ function Editor({
           maxLength={1000}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="focus-ring w-full rounded-ds-md bg-surface px-3.5 py-2.5 text-body text-ink shadow-card"
+          className="focus-ring w-full rounded-ds-md bg-surface px-3.5 py-2.5 text-input text-ink shadow-card"
         />
       </Section>
       <div className="mt-5 flex flex-col gap-3">

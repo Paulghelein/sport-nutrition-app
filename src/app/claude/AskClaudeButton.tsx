@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom'
 import { DEFAULT_REQUESTS } from '../../domain/claude/context'
 import type { ClaudeContextKind, ClaudeMessage } from '../../types/claude'
 import type { ClaudeBaseInput } from '../../domain/claude/context'
-import { Button, ErrorNote, Sheet, SuccessNote } from '../../ui'
+import { Button, Card, Sheet } from '../../ui/kit'
+import { Note } from '../../ui/kit/Note'
 import { CLAUDE_RESPONSE_PATH } from '../routes'
+import { pasteAreaClass } from './previewCards'
 import type { ClaudeBase } from './inputs'
 import { useClaudeBase } from './useClaudeBase'
 import { useClaudeBridge } from './useClaudeBridge'
@@ -27,7 +29,7 @@ interface Props {
 }
 
 const linkClass =
-  'flex min-h-11 items-center justify-center rounded-xl text-base font-semibold text-orange-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
+  'focus-ring flex min-h-11 items-center justify-center rounded-ds-md text-body-strong text-ember-ink underline underline-offset-4'
 
 function AskSheet({
   kind,
@@ -47,56 +49,66 @@ function AskSheet({
   return (
     <Sheet title="Demander à Claude" onClose={onClose}>
       {!base || !message ? (
-        <ErrorNote>
+        <Note tone="error">
           Il faut un profil et au moins une pesée pour préparer le message (ton poids sert aux objectifs).
-        </ErrorNote>
+        </Note>
       ) : (
         <div className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="claude-request" className="mb-1.5 block text-sm font-medium text-zinc-300">
-              Ta demande
-            </label>
-            <textarea
-              id="claude-request"
-              rows={3}
-              value={request}
-              onChange={(e) => setRequest(e.target.value)}
-              placeholder={DEFAULT_REQUESTS[kind]}
-              className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
-            />
-            <p className="mt-1 text-sm text-zinc-400">Laisse vide pour poser la question proposée.</p>
-          </div>
-          <div>
-            <label htmlFor="claude-message" className="mb-1.5 block text-sm font-medium text-zinc-300">
-              Message qui sera copié (rien n’est envoyé avant que tu le colles dans Claude)
-            </label>
-            <textarea
-              id="claude-message"
-              readOnly
-              rows={9}
-              value={message.text}
-              onFocus={(e) => e.currentTarget.select()}
-              className="w-full rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 font-mono text-xs leading-relaxed text-zinc-200 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
-            />
-          </div>
+          <Card className="flex flex-col gap-4">
+            <div>
+              <label htmlFor="claude-request" className="mb-1.5 block text-caption text-ink-muted">
+                Ta demande
+              </label>
+              <textarea
+                id="claude-request"
+                rows={3}
+                value={request}
+                onChange={(e) => setRequest(e.target.value)}
+                placeholder={DEFAULT_REQUESTS[kind]}
+                aria-describedby="claude-request-hint"
+                autoComplete="off"
+                className="focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-sans text-input text-ink placeholder:text-ink-muted"
+              />
+              <p id="claude-request-hint" className="mt-1.5 text-caption text-ink-muted">
+                Laisse vide pour poser la question proposée.
+              </p>
+            </div>
+            <div>
+              <label htmlFor="claude-message" className="mb-1.5 block text-caption text-ink-muted">
+                Message qui sera copié (rien n’est envoyé avant que tu le colles dans Claude)
+              </label>
+              <textarea
+                id="claude-message"
+                readOnly
+                rows={9}
+                value={message.text}
+                onFocus={(e) => e.currentTarget.select()}
+                className={pasteAreaClass}
+              />
+            </div>
+          </Card>
           {copy === 'copied' ? (
-            <SuccessNote>
+            <Note tone="success">
               {opened
                 ? 'Message copié. Colle-le dans Claude (appui long, puis Coller).'
                 : 'Message copié. Ouvre Claude et colle-le (appui long, puis Coller).'}
-            </SuccessNote>
+            </Note>
           ) : null}
           {copy === 'failed' ? (
-            <ErrorNote>
+            <Note tone="error">
               Impossible de copier automatiquement. Appuie sur le message ci-dessus, « Tout sélectionner »
               puis « Copier », ou réessaie avec le bouton « Copier ».
-            </ErrorNote>
+            </Note>
           ) : null}
           <div className="flex flex-col gap-2">
             {copy === 'failed' ? (
-              <Button onClick={() => void copyOnly()}>Copier</Button>
+              <Button fullWidth onClick={() => void copyOnly()}>
+                Copier
+              </Button>
             ) : (
-              <Button onClick={() => void copyAndOpen()}>Copier et ouvrir Claude</Button>
+              <Button fullWidth onClick={() => void copyAndOpen()}>
+                Copier et ouvrir Claude
+              </Button>
             )}
             {copy === 'failed' || (copy === 'copied' && opened === false) ? (
               <a href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>

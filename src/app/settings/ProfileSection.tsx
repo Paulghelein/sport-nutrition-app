@@ -1,20 +1,12 @@
 import { useState } from 'react'
 import { checkProfile, getProfile, saveProfile } from '../../db'
 import { toLocalDate } from '../../domain/shared'
-import {
-  Button,
-  Card,
-  ErrorNote,
-  GoalFields,
-  IdentityFields,
-  Section,
-  SuccessNote,
-  draftToProfile,
-  errorMessage,
-  profileToDraft,
-  useLiveQuery,
-} from '../../ui'
+import { draftToProfile, errorMessage, profileToDraft, useLiveQuery } from '../../ui'
+import { Button, Card } from '../../ui/kit'
+import { Note } from '../../ui/kit/Note'
 import type { Profile } from '../../types'
+import { GoalFields, IdentityFields } from './ProfileFields'
+import { SettingsSection } from './SettingsSection'
 
 function ProfileEditor({ profile }: { profile: Profile }) {
   const [draft, setDraft] = useState(() => profileToDraft(profile))
@@ -60,31 +52,33 @@ function ProfileEditor({ profile }: { profile: Profile }) {
   }
 
   return (
-    <Card>
-      <div className="flex flex-col gap-6">
-        <IdentityFields draft={draft} onChange={change} />
-        <GoalFields draft={draft} onChange={change} />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        {saved ? <SuccessNote>Profil enregistré.</SuccessNote> : null}
-        <Button onClick={() => void save()} disabled={busy}>
-          Enregistrer le profil
-        </Button>
-      </div>
-    </Card>
+    <div className="flex flex-col gap-3">
+      <Card>
+        <div className="flex flex-col gap-6">
+          <IdentityFields draft={draft} onChange={change} />
+          <GoalFields draft={draft} onChange={change} />
+          <Button variant="dark" fullWidth onClick={() => void save()} disabled={busy}>
+            Enregistrer le profil
+          </Button>
+        </div>
+      </Card>
+      {error ? <Note tone="error">{error}</Note> : null}
+      {saved ? <Note tone="success">Profil enregistré.</Note> : null}
+    </div>
   )
 }
 
 export function ProfileSection() {
   const { data: profile, loading, error } = useLiveQuery(() => getProfile(), [])
   return (
-    <Section title="Profil">
-      {error ? <ErrorNote>Impossible de lire le profil.</ErrorNote> : null}
+    <SettingsSection title="Profil">
+      {error ? <Note tone="error">Impossible de lire le profil.</Note> : null}
       {!loading && !error && !profile ? (
         <Card>
-          <p className="text-zinc-300">Aucun profil enregistré dans les données actuelles.</p>
+          <p className="m-0 text-body text-ink-muted">Aucun profil enregistré dans les données actuelles.</p>
         </Card>
       ) : null}
       {profile ? <ProfileEditor profile={profile} /> : null}
-    </Section>
+    </SettingsSection>
   )
 }

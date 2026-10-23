@@ -1,3 +1,4 @@
+import { ADD_FOOD_PATH } from '../routes'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 /**
@@ -13,7 +14,7 @@ export function useAddContext(): { search: string; addPath: string } {
   if (date) next.set('date', date)
   const text = next.toString()
   const search = text ? `?${text}` : ''
-  return { search, addPath: `/nutrition/ajouter${search}` }
+  return { search, addPath: `${ADD_FOOD_PATH}${search}` }
 }
 
 /** Revient en arrière dans l'historique (pas de doublon d'écran) ; ouvert directement : `fallback`. */

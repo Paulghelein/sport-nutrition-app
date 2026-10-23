@@ -2,17 +2,11 @@ import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { backupFileName, exportBackup, getSettings, importBackup, markExported, parseBackup } from '../../db'
 import type { TableCounts } from '../../db'
-import {
-  Button,
-  Card,
-  ConfirmSheet,
-  ErrorNote,
-  Section,
-  SuccessNote,
-  errorMessage,
-  formatDateTimeFr,
-  useLiveQuery,
-} from '../../ui'
+import { errorMessage, formatDateTimeFr, useLiveQuery } from '../../ui'
+import { Button, Card } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { Note } from '../../ui/kit/Note'
+import { SettingsSection } from './SettingsSection'
 import { TABLE_NAMES } from '../../types'
 import type { BackupFile, ImportMode, TableName } from '../../types'
 
@@ -198,138 +192,143 @@ export function BackupSection() {
   const nonEmpty = pending ? TABLE_NAMES.filter((name) => pending.summary[name] > 0) : []
 
   return (
-    <Section title="Sauvegarde">
-      <Card>
-        <h3 className="text-base font-semibold">Exporter mes données</h3>
-        <p className="mt-1 text-sm text-zinc-400">
-          Crée un fichier avec tout le contenu de l’app. Enregistre-le dans Fichiers ou iCloud : c’est ta
-          seule copie de secours.
-        </p>
-        <p className="mt-2 text-sm text-zinc-300">
+    <SettingsSection title="Sauvegarde">
+      <Card className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h3 className="m-0 font-display text-title">Exporter mes données</h3>
+          <p className="m-0 text-body text-ink-muted">
+            Crée un fichier avec tout le contenu de l’app. Enregistre-le dans Fichiers ou iCloud : c’est ta
+            seule copie de secours.
+          </p>
+        </div>
+        <p className="m-0 text-body-strong">
           {settings?.lastExportAt
             ? `Dernier export : ${formatDateTimeFr(settings.lastExportAt)}`
             : 'Aucun export pour l’instant.'}
         </p>
-        <div className="mt-3 flex flex-col gap-3">
-          {exportError ? <ErrorNote>{exportError}</ErrorNote> : null}
-          {exportNotice ? (
-            <p
-              role="status"
-              className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5 text-sm text-zinc-200"
-            >
-              {exportNotice}
-            </p>
-          ) : null}
-          {exportDone ? <SuccessNote>Sauvegarde exportée.</SuccessNote> : null}
-
-          {prepared ? (
-            <div className="rounded-xl border border-v1-line bg-v1-surface-hi p-3">
-              <p className="text-sm font-semibold break-all">{prepared.file.name}</p>
-              <p className="mt-1 text-sm text-zinc-400">{prepared.summary}</p>
-              <div className="mt-3 flex flex-col gap-2">
-                {canShareFile(prepared.file) ? (
-                  <Button onClick={share}>Enregistrer ou partager</Button>
-                ) : null}
-                <Button variant={canShareFile(prepared.file) ? 'secondary' : 'primary'} onClick={download}>
-                  Télécharger le fichier
-                </Button>
-                {awaitingConfirm ? (
-                  <Button variant="secondary" onClick={() => void confirmExported()}>
-                    C’est enregistré
-                  </Button>
-                ) : null}
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    sharing.current = false
-                    setPrepared(null)
-                    resetExportMessages()
-                  }}
-                >
-                  Annuler
-                </Button>
-              </div>
+        {prepared ? (
+          <div className="flex flex-col gap-3 rounded-ds-md bg-canvas p-3.5">
+            <div>
+              <p className="m-0 break-all text-body-strong">{prepared.file.name}</p>
+              <p className="m-0 mt-1 text-caption text-ink-muted">{prepared.summary}</p>
             </div>
-          ) : (
-            <Button onClick={() => void prepare()} disabled={busy}>
-              Préparer la sauvegarde
-            </Button>
-          )}
-        </div>
+            <div className="flex flex-col gap-2">
+              {canShareFile(prepared.file) ? (
+                <Button variant="dark" fullWidth onClick={share}>
+                  Enregistrer ou partager
+                </Button>
+              ) : null}
+              <Button
+                variant={canShareFile(prepared.file) ? 'secondary' : 'dark'}
+                fullWidth
+                onClick={download}
+              >
+                Télécharger le fichier
+              </Button>
+              {awaitingConfirm ? (
+                <Button variant="secondary" fullWidth onClick={() => void confirmExported()}>
+                  C’est enregistré
+                </Button>
+              ) : null}
+              <Button
+                variant="text"
+                fullWidth
+                onClick={() => {
+                  sharing.current = false
+                  setPrepared(null)
+                  resetExportMessages()
+                }}
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button variant="dark" fullWidth onClick={() => void prepare()} disabled={busy}>
+            Préparer la sauvegarde
+          </Button>
+        )}
       </Card>
+      {exportError ? <Note tone="error">{exportError}</Note> : null}
+      {exportNotice ? (
+        <div role="status">
+          <Note tone="warning">{exportNotice}</Note>
+        </div>
+      ) : null}
+      {exportDone ? <Note tone="success">Sauvegarde exportée.</Note> : null}
 
-      <Card className="mt-3">
-        <h3 className="text-base font-semibold">Importer une sauvegarde</h3>
-        <p className="mt-1 text-sm text-zinc-400">
-          Choisis un fichier <span className="whitespace-nowrap">forge-sauvegarde-….json</span>. Rien n’est
-          modifié avant ta confirmation.
-        </p>
-        <div className="mt-3 flex flex-col gap-3">
-          <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base font-semibold active:bg-zinc-700 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-orange-400">
-            Choisir un fichier
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/json,.json"
-              className="sr-only"
-              onChange={(e) => void onFile(e)}
-              disabled={busy}
-            />
-          </label>
+      <Card className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h3 className="m-0 font-display text-title">Importer une sauvegarde</h3>
+          <p className="m-0 text-body text-ink-muted">
+            Choisis un fichier <span className="whitespace-nowrap">forge-sauvegarde-….json</span>. Rien n’est
+            modifié avant ta confirmation.
+          </p>
+        </div>
+        <label className="relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-ds-pill bg-canvas px-5 text-body-strong text-ink active:opacity-80 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus">
+          Choisir un fichier
+          <input
+            ref={fileInput}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            onChange={(e) => void onFile(e)}
+            disabled={busy}
+          />
+        </label>
 
-          {importErrors.length > 0 ? (
-            <ErrorNote>
-              Ce fichier ne peut pas être importé :
-              <ul className="mt-1 list-disc pl-5">
-                {importErrors.map((message, i) => (
-                  <li key={i}>{message}</li>
-                ))}
-              </ul>
-            </ErrorNote>
-          ) : null}
-          {importDone ? <SuccessNote>{importDone}</SuccessNote> : null}
-
-          {pending ? (
-            <div className="rounded-xl border border-v1-line bg-v1-surface-hi p-3">
-              <p className="text-sm font-semibold break-all">{pending.fileName}</p>
-              <p className="mt-1 text-sm text-zinc-400">
+        {pending ? (
+          <div className="flex flex-col gap-3 rounded-ds-md bg-canvas p-3.5">
+            <div>
+              <p className="m-0 break-all text-body-strong">{pending.fileName}</p>
+              <p className="m-0 mt-1 text-caption text-ink-muted">
                 Exporté le {formatDateTimeFr(pending.backup.exportedAt)}
               </p>
-              {nonEmpty.length > 0 ? (
-                <ul className="mt-2 grid list-none grid-cols-1 gap-1 p-0">
-                  {nonEmpty.map((name) => (
-                    <li key={name} className="flex justify-between text-sm">
-                      <span>{tableLabels[name]}</span>
-                      <span className="font-semibold tabular-nums">{pending.summary[name]}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 text-sm text-zinc-400">Ce fichier ne contient aucune donnée.</p>
-              )}
-              {importError ? (
-                <div className="mt-3">
-                  <ErrorNote>{importError}</ErrorNote>
-                </div>
-              ) : null}
-              <div className="mt-4 flex flex-col gap-2">
-                <Button variant="secondary" onClick={() => void runImport('merge')} disabled={busy}>
-                  Fusionner avec mes données
-                </Button>
-                <p className="-mt-1 text-xs text-zinc-400">
-                  Fusionner garde tes données actuelles ; en cas de doublon, la version du fichier l’emporte.
-                </p>
-                <Button variant="danger" onClick={() => setConfirmReplace(true)} disabled={busy}>
-                  Remplacer toutes mes données
-                </Button>
-                <Button variant="ghost" onClick={() => setPending(null)} disabled={busy}>
-                  Annuler l’import
-                </Button>
-              </div>
             </div>
-          ) : null}
-        </div>
+            {nonEmpty.length > 0 ? (
+              <ul className="m-0 flex list-none flex-col p-0">
+                {nonEmpty.map((name) => (
+                  <li
+                    key={name}
+                    className="flex justify-between gap-3 border-t border-line py-1.5 text-body first:border-t-0"
+                  >
+                    <span>{tableLabels[name]}</span>
+                    <span className="font-display font-bold tabular-nums">{pending.summary[name]}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="m-0 text-body text-ink-muted">Ce fichier ne contient aucune donnée.</p>
+            )}
+            {importError ? <Note tone="error">{importError}</Note> : null}
+            <div className="flex flex-col gap-2">
+              <Button variant="dark" fullWidth onClick={() => void runImport('merge')} disabled={busy}>
+                Fusionner avec mes données
+              </Button>
+              <p className="m-0 px-1 text-caption text-ink-muted">
+                Fusionner garde tes données actuelles ; en cas de doublon, la version du fichier l’emporte.
+              </p>
+              <Button variant="danger" fullWidth onClick={() => setConfirmReplace(true)} disabled={busy}>
+                Remplacer toutes mes données
+              </Button>
+              <Button variant="text" fullWidth onClick={() => setPending(null)} disabled={busy}>
+                Annuler l’import
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Card>
+      {importErrors.length > 0 ? (
+        <Note tone="error">
+          Ce fichier ne peut pas être importé :
+          <ul className="m-0 mt-1 list-disc pl-5">
+            {importErrors.map((message, i) => (
+              <li key={i}>{message}</li>
+            ))}
+          </ul>
+        </Note>
+      ) : null}
+      {importDone ? <Note tone="success">{importDone}</Note> : null}
 
       {confirmReplace ? (
         <ConfirmSheet
@@ -341,6 +340,6 @@ export function BackupSection() {
           onConfirm={() => void runImport('replace')}
         />
       ) : null}
-    </Section>
+    </SettingsSection>
   )
 }

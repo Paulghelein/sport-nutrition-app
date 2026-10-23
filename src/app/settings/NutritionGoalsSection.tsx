@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PROGRESS_PATH } from '../routes'
 import {
   checkNutritionParams,
   defaultNutritionParams,
@@ -11,18 +12,11 @@ import { MAX_KCAL_ADJUSTMENT, nutritionTargets, targetWeight } from '../../domai
 import { toLocalDate } from '../../domain/shared/dates'
 import { fmtInt } from '../nutrition/format'
 import type { NutritionParams, Profile } from '../../types'
-import {
-  Button,
-  Card,
-  DecimalField,
-  ErrorNote,
-  Section,
-  SuccessNote,
-  errorMessage,
-  parseDecimal,
-  toInputNumber,
-  useLiveQuery,
-} from '../../ui'
+import { errorMessage, parseDecimal, toInputNumber, useLiveQuery } from '../../ui'
+import { Button, Card, Stepper } from '../../ui/kit'
+import { DecimalField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
+import { SettingsSection } from './SettingsSection'
 
 const ADJUST_STEP = 50
 const round = (n: number, digits: number): number => Math.round(n * 10 ** digits) / 10 ** digits
@@ -99,95 +93,83 @@ function GoalsEditor({ profile, weightKg }: { profile: Profile; weightKg: number
     }
   }
 
-  const stepButton =
-    'flex size-12 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-2xl font-semibold active:bg-zinc-700 disabled:text-zinc-600'
-
   return (
-    <Card>
-      <div className="flex flex-col gap-4">
-        <DecimalField
-          label="Surplus calorique"
-          unit="%"
-          value={draft.surplus}
-          onChange={(v) => edit({ surplus: v })}
-        />
-        <DecimalField
-          label="Protéines"
-          unit="g/kg"
-          value={draft.protein}
-          onChange={(v) => edit({ protein: v })}
-        />
-        <DecimalField
-          label="Part des lipides"
-          unit="%"
-          value={draft.fat}
-          onChange={(v) => edit({ fat: v })}
-        />
-        <div role="group" aria-labelledby="adjust-label">
-          <p id="adjust-label" className="mb-1.5 text-sm font-medium text-zinc-300">
-            Ajustement manuel
-          </p>
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              className={stepButton}
-              aria-label={`Retirer ${ADJUST_STEP} kcal`}
-              disabled={draft.adjust - ADJUST_STEP < -MAX_KCAL_ADJUSTMENT}
-              onClick={() => edit({ adjust: draft.adjust - ADJUST_STEP })}
-            >
-              −
-            </button>
-            <output aria-live="polite" className="text-2xl font-bold tabular-nums" data-testid="adjust">
-              {signed(draft.adjust)} kcal
-            </output>
-            <button
-              type="button"
-              className={stepButton}
-              aria-label={`Ajouter ${ADJUST_STEP} kcal`}
-              disabled={draft.adjust + ADJUST_STEP > MAX_KCAL_ADJUSTMENT}
-              onClick={() => edit({ adjust: draft.adjust + ADJUST_STEP })}
-            >
-              +
-            </button>
+    <div className="flex flex-col gap-3">
+      <Card>
+        <div className="flex flex-col gap-4">
+          <DecimalField
+            label="Surplus calorique"
+            unit="%"
+            value={draft.surplus}
+            onChange={(v) => edit({ surplus: v })}
+          />
+          <DecimalField
+            label="Protéines"
+            unit="g/kg"
+            value={draft.protein}
+            onChange={(v) => edit({ protein: v })}
+          />
+          <DecimalField
+            label="Part des lipides"
+            unit="%"
+            value={draft.fat}
+            onChange={(v) => edit({ fat: v })}
+          />
+          <Stepper
+            label="Ajustement manuel"
+            decreaseLabel={`Retirer ${ADJUST_STEP} kcal`}
+            increaseLabel={`Ajouter ${ADJUST_STEP} kcal`}
+            value={draft.adjust}
+            step={ADJUST_STEP}
+            min={-MAX_KCAL_ADJUSTMENT}
+            max={MAX_KCAL_ADJUSTMENT}
+            format={(v) => `${signed(v)} kcal`}
+            onChange={(v) => edit({ adjust: v })}
+          />
+
+          <div className="rounded-ds-md bg-canvas p-3.5" aria-live="polite">
+            <p className="m-0 text-label uppercase text-ink-muted">Objectifs par jour</p>
+            {targets ? (
+              <div data-testid="goals-preview" className="mt-1.5">
+                <p className="m-0 font-display text-number-l tabular-nums">{fmtInt(targets.kcal)} kcal</p>
+                <p className="m-0 text-body tabular-nums text-ink-muted">
+                  P {fmtInt(targets.protein)} g · G {fmtInt(targets.carbs)} g · L {fmtInt(targets.fat)} g
+                </p>
+              </div>
+            ) : weightKg === undefined ? (
+              <p className="m-0 mt-1.5 text-body text-ink-muted">
+                Ajoute une pesée dans{' '}
+                <Link
+                  to={PROGRESS_PATH}
+                  className="focus-ring font-bold text-ember-ink underline underline-offset-2"
+                >
+                  Progrès
+                </Link>{' '}
+                pour voir tes objectifs.
+              </p>
+            ) : (
+              <p className="m-0 mt-1.5 text-body text-ink">{problem}</p>
+            )}
           </div>
-        </div>
 
-        <div className="rounded-xl border border-v1-line bg-v1-surface-hi p-3" aria-live="polite">
-          <p className="m-0 text-sm text-zinc-400">Objectifs par jour</p>
-          {targets ? (
-            <p data-testid="goals-preview" className="m-0 mt-1 text-lg font-semibold">
-              {fmtInt(targets.kcal)} kcal · P {fmtInt(targets.protein)} g · G {fmtInt(targets.carbs)} g · L{' '}
-              {fmtInt(targets.fat)} g
-            </p>
-          ) : weightKg === undefined ? (
-            <p className="m-0 mt-1 text-base text-zinc-300">
-              Ajoute une pesée dans{' '}
-              <Link to="/progres" className="font-semibold text-orange-400">
-                Progrès
-              </Link>{' '}
-              pour voir tes objectifs.
-            </p>
-          ) : (
-            <p className="m-0 mt-1 text-base text-amber-200">{problem}</p>
-          )}
+          <Button variant="dark" fullWidth onClick={() => void save()} disabled={busy}>
+            Enregistrer
+          </Button>
+          <Button
+            fullWidth
+            variant="flat"
+            disabled={busy}
+            onClick={() =>
+              edit(toDraft({ ...defaultNutritionParams, kcalAdjustedOn: profile.nutrition.kcalAdjustedOn }))
+            }
+          >
+            Valeurs par défaut
+          </Button>
         </div>
-
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
-        {saved ? <SuccessNote>Objectifs enregistrés.</SuccessNote> : null}
-        <Button onClick={() => void save()} disabled={busy}>
-          Enregistrer
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={busy}
-          onClick={() =>
-            edit(toDraft({ ...defaultNutritionParams, kcalAdjustedOn: profile.nutrition.kcalAdjustedOn }))
-          }
-        >
-          Valeurs par défaut
-        </Button>
-      </div>
-    </Card>
+      </Card>
+      {error ? <Note tone="error">{error}</Note> : null}
+      {saved ? <Note tone="success">Objectifs enregistrés.</Note> : null}
+    </div>
   )
 }
 
@@ -198,9 +180,9 @@ export default function NutritionGoalsSection() {
     return { profile, weightKg: targetWeight(weighIns, today) }
   }, [])
   return (
-    <Section title="Objectifs nutritionnels">
-      {error ? <ErrorNote>Impossible de lire ton profil.</ErrorNote> : null}
+    <SettingsSection title="Objectifs nutritionnels">
+      {error ? <Note tone="error">Impossible de lire ton profil.</Note> : null}
       {data?.profile ? <GoalsEditor profile={data.profile} weightKg={data.weightKg} /> : null}
-    </Section>
+    </SettingsSection>
   )
 }

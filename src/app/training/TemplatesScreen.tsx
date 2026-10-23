@@ -8,7 +8,8 @@ import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
 import { TextField } from '../../ui/kit/Fields'
 import { Note } from '../../ui/kit/Note'
 import { PREVIEW_PATH, TRAINING_PATH } from '../routes'
-import { BackLink, ScreenTitle } from './parts'
+import { ScreenTitle } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
 
 function RenameSheet({ template, onClose }: { template: SessionTemplate; onClose: () => void }) {

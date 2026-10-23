@@ -1,3 +1,4 @@
+import { Plus, ScanBarcode } from 'lucide-react'
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { addLogEntries, deleteLogEntry, listLogBetween, listLogForDate, undoRecipeEntries } from '../../db'
@@ -10,42 +11,46 @@ import {
   roundMacros,
   searchFoodIndex,
 } from '../../domain/nutrition'
+import { foodCategory, isScannedFood } from '../../domain/nutrition/category'
 import { addDays, formatDateFr, isValidLocalDate, toLocalDate } from '../../domain/shared/dates'
 import type { Food, FoodLogEntry, FridgeItem, FreeEntryInput, QuickItem } from '../../types'
-import { Button, ChoiceGroup, ErrorBoundary, ErrorNote, errorMessage, useLiveQuery } from '../../ui'
+import { ErrorBoundary, errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card, Segmented, buttonClass } from '../../ui/kit'
+import { FoodRow as KitFoodRow } from '../../ui/kit/FoodRow'
+import { Note } from '../../ui/kit/Note'
+import { SearchBox } from '../../ui/kit/SearchBox'
+import { NEW_FOOD_PATH, NUTRITION_PATH, SCAN_PATH } from '../routes'
 import { FreeEntrySheet } from './FreeEntrySheet'
 import { QuantitySheet } from './QuantitySheet'
 import { SLOT_LABEL, SLOT_TO, fmtG, fmtInt, isMealSlot, slotForNow } from './format'
-import { BackLink, StickyStack, Toast } from './parts'
+import { Toast } from './JournalToast'
+import type { ToastState } from './JournalToast'
+import { StickyStack } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { clearSearchSeed, peekSearchSeed } from './navContext'
-import type { ToastState } from './parts'
 import { useFoods } from './useFoods'
 
 // Recettes de départ et feuille de choix : hors du chunk de l'écran tant qu'on n'ouvre pas ce choix.
 const RecipePickerSheet = lazy(() => import('../recipes/RecipePickerSheet'))
 
-const rowClass =
-  'flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface px-3 py-2 text-left active:bg-v1-surface-hi'
+const rowBorder = 'relative border-t border-line first:border-t-0'
 
 function FoodRow({ food, onPick }: { food: Food; onPick: (food: Food) => void }) {
+  const p = food.per100g
   return (
-    <li>
-      <button type="button" className={rowClass} onClick={() => onPick(food)}>
-        <span className="min-w-0">
-          <span className="block text-base font-medium leading-snug">
-            {food.favorite ? <span aria-label="Favori">★ </span> : null}
-            {food.name}
-          </span>
-          <span className="block text-sm text-zinc-400">
-            {food.brand ? `${food.brand} · ` : ''}P {fmtG(food.per100g.protein)} · G{' '}
-            {fmtG(food.per100g.carbs)} · L {fmtG(food.per100g.fat)} / 100 g
-          </span>
-        </span>
-        <span className="shrink-0 text-right text-base font-semibold tabular-nums">
-          {fmtInt(food.per100g.kcal)}
-          <span className="block text-sm font-normal text-zinc-400">kcal/100 g</span>
-        </span>
-      </button>
+    <li className={rowBorder}>
+      <KitFoodRow
+        name={food.favorite ? `${food.name} (favori)` : food.name}
+        quantity={food.brand ? `${food.brand} · 100 g` : '100 g'}
+        protein={p.protein}
+        carbs={p.carbs}
+        fat={p.fat}
+        kcal={p.kcal}
+        category={foodCategory({ name: food.name })}
+        scanned={isScannedFood(food)}
+        onPress={() => onPick(food)}
+        ariaLabel={`${food.name}${food.favorite ? ' (favori)' : ''}${food.brand ? `, ${food.brand}` : ''}, ${fmtInt(p.kcal)} kcal pour 100 g`}
+      />
     </li>
   )
 }
@@ -54,27 +59,26 @@ function QuickRow({ item, onAdd }: { item: QuickItem; onAdd: (item: QuickItem) =
   const name = item.kind === 'food' ? item.food.name : item.name
   const m = roundMacros(item.kind === 'food' ? macrosFor(item.food.per100g, item.grams) : item.macros)
   return (
-    <li>
-      <button
-        type="button"
-        className={rowClass}
-        aria-label={`Ajouter ${name}, ${item.kind === 'food' ? `${fmtG(item.grams)} g, ` : ''}${fmtInt(m.kcal)} kcal`}
-        onClick={() => onAdd(item)}
+    <li className={rowBorder}>
+      <KitFoodRow
+        name={name}
+        quantity={item.kind === 'food' ? `${fmtG(item.grams)} g` : 'Saisie libre'}
+        protein={m.protein}
+        carbs={m.carbs}
+        fat={m.fat}
+        kcal={m.kcal}
+        category={foodCategory({ name })}
+        scanned={item.kind === 'food' && isScannedFood(item.food)}
+        className="pr-12"
+        ariaLabel={`Ajouter ${name}, ${item.kind === 'food' ? `${fmtG(item.grams)} g, ` : ''}${fmtInt(m.kcal)} kcal`}
+        onPress={() => onAdd(item)}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-0 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-canvas text-ink"
       >
-        <span className="min-w-0">
-          <span className="block text-base font-medium leading-snug">{name}</span>
-          <span className="block text-sm text-zinc-400">
-            {item.kind === 'food' ? `${fmtG(item.grams)} g · ` : ''}
-            {fmtInt(m.kcal)} kcal · P {fmtG(m.protein)}
-          </span>
-        </span>
-        <span
-          aria-hidden="true"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-orange-400 text-2xl font-bold text-zinc-950"
-        >
-          +
-        </span>
-      </button>
+        <Plus size={20} strokeWidth={2.25} />
+      </span>
     </li>
   )
 }
@@ -88,7 +92,7 @@ export default function AddFoodScreen() {
   const askedSlot = params.get('repas')
   const slot = isMealSlot(askedSlot) ? askedSlot : slotForNow()
   const when = date === today ? '' : date === addDays(today, -1) ? ' · hier' : ` · ${formatDateFr(date)}`
-  const back = `/nutrition${date === today ? '' : `?date=${date}`}`
+  const back = `${NUTRITION_PATH}${date === today ? '' : `?date=${date}`}`
 
   const { foods, index, preparing, error: foodsError, retry } = useFoods()
   const recentLog = useLiveQuery(() => listLogBetween(addDays(today, -60), today), [today])
@@ -223,100 +227,76 @@ export default function AddFoodScreen() {
     })
   }
 
-  const createLink = `/nutrition/aliments/nouveau?repas=${slot}&date=${date}${searching ? `&nom=${encodeURIComponent(query.trim())}` : ''}`
+  const createLink = `${NEW_FOOD_PATH}?repas=${slot}&date=${date}${searching ? `&nom=${encodeURIComponent(query.trim())}` : ''}`
 
   return (
-    <>
+    <div className="flex flex-col gap-3.5">
       <BackLink to={back}>Journal</BackLink>
-      <h1 className="mt-1 text-2xl font-bold">
+      <h1 className="m-0 font-display text-display-l">
         Ajouter {SLOT_TO[slot]}
         {when}
       </h1>
 
-      <div className="mt-4">
-        <label htmlFor="food-search" className="sr-only">
-          Rechercher un aliment
-        </label>
-        <input
-          id="food-search"
-          type="search"
-          autoFocus
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher un aliment"
-          autoComplete="off"
-          autoCorrect="off"
-          enterKeyHint="search"
-          className="min-h-12 w-full rounded-xl border border-v1-line bg-v1-surface-hi px-4 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400"
-        />
-      </div>
+      <SearchBox
+        id="food-search"
+        label="Rechercher un aliment"
+        value={query}
+        onChange={setQuery}
+        onClear={() => setQuery('')}
+        autoFocus
+      />
 
-      <Link
-        to={`/nutrition/scanner?repas=${slot}&date=${date}`}
-        className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-400 px-3 text-base font-semibold text-zinc-950 no-underline active:bg-orange-300"
-      >
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M8 9v6M12 9v6M16 9v6" />
-        </svg>
+      <Link to={`${SCAN_PATH}?repas=${slot}&date=${date}`} className={buttonClass('primary', 'normal', true)}>
+        <ScanBarcode size={22} strokeWidth={1.75} aria-hidden="true" />
         Scanner un code-barres
       </Link>
 
-      <Button variant="secondary" className="mt-2" onClick={() => setRecipeOpen(true)}>
+      <Button variant="secondary" fullWidth onClick={() => setRecipeOpen(true)}>
         Portion de recette
       </Button>
 
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={() => setFreeOpen(true)}>
           Saisie libre
         </Button>
-        <Link
-          to={createLink}
-          className="inline-flex min-h-12 items-center justify-center rounded-xl border border-v1-line px-3 text-center text-base font-semibold text-orange-400 no-underline active:bg-white/5"
-        >
+        <Link to={createLink} className={buttonClass('secondary')}>
           Créer un aliment
         </Link>
       </div>
 
       {foodsError ? (
-        <div className="mt-3 flex flex-col gap-2">
-          <ErrorNote>Impossible de charger la base d’aliments.</ErrorNote>
+        <div className="flex flex-col gap-2">
+          <Note tone="error">Impossible de charger la base d’aliments.</Note>
           <Button variant="secondary" onClick={retry}>
             Réessayer
           </Button>
         </div>
       ) : null}
-      {error ? <ErrorNote>{error}</ErrorNote> : null}
+      {error ? <Note tone="error">{error}</Note> : null}
 
-      <div className="mt-5">
+      <div className="mt-2 flex flex-col gap-3">
         {preparing && searching ? (
-          <p role="status" className="text-base text-zinc-300">
+          <p role="status" className="m-0 text-body text-ink-muted">
             Préparation de la base d’aliments…
           </p>
         ) : searching ? (
           results.length > 0 ? (
-            <ul aria-label="Résultats" className="m-0 flex list-none flex-col gap-2 p-0">
-              {results.map((food) => (
-                <FoodRow key={food.id} food={food} onPick={setPicked} />
-              ))}
-            </ul>
+            <Card padding="none" className="px-4">
+              <ul aria-label="Résultats" className="m-0 list-none p-0">
+                {results.map((food) => (
+                  <FoodRow key={food.id} food={food} onPick={setPicked} />
+                ))}
+              </ul>
+            </Card>
           ) : (
-            <p className="text-base text-zinc-300">
+            <p className="m-0 text-body text-ink-muted">
               Aucun aliment ne correspond. Essaie un autre mot, ou crée-le avec « Créer un aliment ».
             </p>
           )
         ) : (
           <>
-            <ChoiceGroup
-              legend="Raccourcis"
+            <Segmented
+              ariaLabel="Raccourcis"
               value={shownTab}
               onChange={setTab}
               options={[
@@ -325,17 +305,19 @@ export default function AddFoodScreen() {
               ]}
             />
             {preparing && quick.length === 0 ? (
-              <p role="status" className="mt-4 text-base text-zinc-300">
+              <p role="status" className="m-0 text-body text-ink-muted">
                 Préparation de la base d’aliments…
               </p>
             ) : quick.length > 0 ? (
-              <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
-                {quick.map((item) => (
-                  <QuickRow key={item.key} item={item} onAdd={(i) => void addQuick(i)} />
-                ))}
-              </ul>
+              <Card padding="none" className="px-4">
+                <ul className="m-0 list-none p-0">
+                  {quick.map((item) => (
+                    <QuickRow key={item.key} item={item} onAdd={(i) => void addQuick(i)} />
+                  ))}
+                </ul>
+              </Card>
             ) : (
-              <p className="mt-4 text-base text-zinc-400">
+              <p className="m-0 text-body text-ink-muted">
                 {shownTab === 'recents'
                   ? 'Tes aliments récents apparaîtront ici. Cherche un aliment ci-dessus pour commencer.'
                   : 'Aucun favori pour l’instant : ouvre un aliment et touche l’étoile.'}
@@ -349,6 +331,7 @@ export default function AddFoodScreen() {
         <Toast toast={toast} onDismiss={dismissToast} />
         {added.length > 0 ? (
           <Button
+            fullWidth
             onClick={() => {
               sessionStorage.removeItem(addedKey)
               clearSearchSeed()
@@ -383,6 +366,6 @@ export default function AddFoodScreen() {
         </ErrorBoundary>
       ) : null}
       {freeOpen ? <FreeEntrySheet onSubmit={addFree} onClose={() => setFreeOpen(false)} /> : null}
-    </>
+    </div>
   )
 }

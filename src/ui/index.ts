@@ -8,8 +8,6 @@ export { ChoiceGroup } from './ChoiceGroup'
 export type { Choice } from './ChoiceGroup'
 export { DateField, DecimalField, IntegerField, SelectField, TextField } from './Field'
 export { ConfirmSheet, Sheet } from './Sheet'
-export { EquipmentFields } from './EquipmentFields'
-export { GoalFields, IdentityFields } from './ProfileFields'
 export {
   activityLabel,
   equipmentChoices,

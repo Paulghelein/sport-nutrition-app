@@ -7,7 +7,8 @@ import { useLiveQuery } from '../../ui'
 import { Card, buttonClass } from '../../ui/kit'
 import { Note } from '../../ui/kit/Note'
 import { HISTORY_PATH, TRAINING_PATH } from '../routes'
-import { BackLink, ScreenTitle, Tag } from './parts'
+import { ScreenTitle, Tag } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useLibrary } from './useLibrary'
 
 export default function HistoryScreen() {

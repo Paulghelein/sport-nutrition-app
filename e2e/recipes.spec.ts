@@ -136,14 +136,14 @@ test('recette perso : créer, modifier, supprimer', async ({ page }) => {
 
   // Validation : une recette vide est refusée.
   await page.getByRole('button', { name: 'Créer la recette' }).click()
-  await expect(page.getByText(/./).and(page.locator('[role="alert"]')).first()).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: /./ }).first()).toBeVisible()
 
   await page.getByLabel('Nom', { exact: true }).fill('Bol maison test')
   // Déjeuner est coché par défaut ; on ajoute le dîner.
   await expect(page.getByRole('checkbox', { name: 'Déjeuner', exact: true })).toBeChecked()
   await page.getByText('Dîner', { exact: true }).click()
   await page.getByLabel('Portions', { exact: true }).fill('2')
-  await page.getByRole('button', { name: '+ Ajouter un ingrédient' }).click()
+  await page.getByRole('button', { name: 'Ajouter un ingrédient' }).click()
   await page.getByLabel('Ingrédient 1', { exact: true }).fill('Riz maison')
   await page.getByLabel('Quantité 1', { exact: true }).fill('200')
   await page.getByLabel('Saisir les valeurs de l’ingrédient 1').click()

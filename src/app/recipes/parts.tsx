@@ -1,127 +1,19 @@
-import { useId } from 'react'
+import { CheckCircle2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { BackLink } from '../nutrition/parts'
-import { fmtPortions } from './format'
+import { cx } from '../../ui/kit'
+import { BackLink } from '../../ui/kit/BackLink'
+import { buttonClass } from '../../ui/kit/buttonClass'
+import { RECIPES_PATH } from '../routes'
 
-export const RECIPES_PATH = '/nutrition/recettes'
+// Éléments communs des écrans Recettes (liste, frigo, courses, fiche, cuisine, formulaire, import).
 
-export const focusRing =
-  'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-orange-400'
-
-const stepButton = `flex size-14 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-3xl font-semibold active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
-
-const round2 = (n: number): number => Math.round(n * 100) / 100
-
-/** Choix d'un nombre de portions avec − / + (cibles de 56 px), pas configurable (0,5 ou 1). */
-export function PortionsStepper({
-  legend,
-  value,
-  min,
-  max,
-  step,
-  onChange,
-  disabled = false,
-}: {
-  legend: string
-  value: number
-  min: number
-  max: number
-  step: number
-  onChange: (value: number) => void
-  disabled?: boolean
-}) {
-  const id = useId()
-  return (
-    <div role="group" aria-labelledby={id}>
-      <p id={id} className="mb-1.5 text-sm font-medium text-zinc-300">
-        {legend}
-      </p>
-      <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          className={stepButton}
-          disabled={disabled || value <= min}
-          onClick={() => onChange(Math.max(min, round2(value - step)))}
-          aria-label={`Diminuer : ${legend}`}
-        >
-          −
-        </button>
-        <output
-          aria-live="polite"
-          aria-label={`${legend} : ${fmtPortions(value)}`}
-          className="min-w-16 text-center text-4xl font-bold tabular-nums"
-        >
-          {fmtPortions(value)}
-        </output>
-        <button
-          type="button"
-          className={stepButton}
-          disabled={disabled || value >= max}
-          onClick={() => onChange(Math.min(max, round2(value + step)))}
-          aria-label={`Augmenter : ${legend}`}
-        >
-          +
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/** Pastille de choix multiple ou de filtre (case à cocher habillée, cible 44 px). */
-export function ToggleChip({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}) {
-  return (
-    <label
-      className={`flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-base font-medium has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-orange-400 ${
-        checked
-          ? 'border-orange-400 bg-orange-400/15 text-orange-300'
-          : 'border-v1-line bg-v1-surface-hi text-zinc-200'
-      }`}
-    >
-      <input
-        type="checkbox"
-        className="sr-only"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      {label}
-    </label>
-  )
-}
-
-export function Badge({
-  children,
-  tone = 'neutral',
-}: {
-  children: ReactNode
-  tone?: 'neutral' | 'warn' | 'danger'
-}) {
-  const style =
-    tone === 'warn'
-      ? 'border-amber-400/40 text-amber-300'
-      : tone === 'danger'
-        ? 'border-red-400/40 text-red-300'
-        : 'border-v1-line text-zinc-300'
-  return (
-    <span
-      className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-medium ${style}`}
-    >
-      {children}
-    </span>
-  )
-}
+export { RECIPES_PATH }
 
 export function Loading() {
   return (
-    <p className="mt-6 text-base text-zinc-400" aria-busy="true">
+    <p className="m-0 text-body text-ink-muted" aria-busy="true">
       Chargement…
     </p>
   )
@@ -129,40 +21,92 @@ export function Loading() {
 
 export function NotFound({ message }: { message: string }) {
   return (
-    <section>
-      <BackLink to={RECIPES_PATH}>Recettes</BackLink>
-      <h1 className="mt-2 text-2xl font-bold">Recette introuvable</h1>
-      <p className="mt-2 text-base text-zinc-300">{message}</p>
-      <Link
-        to={RECIPES_PATH}
-        className="mt-4 inline-flex min-h-12 items-center text-base font-semibold text-orange-400"
-      >
-        Voir toutes les recettes
-      </Link>
+    <section className="flex flex-col gap-3">
+      <div>
+        <BackLink to={RECIPES_PATH}>Recettes</BackLink>
+      </div>
+      <h1 className="m-0 font-display text-display-l">Recette introuvable</h1>
+      <p className="m-0 text-body text-ink-muted">{message}</p>
+      <div>
+        <Link to={RECIPES_PATH} className={buttonClass('secondary')}>
+          Voir toutes les recettes
+        </Link>
+      </div>
     </section>
   )
 }
 
-export const iconButtonClass = `flex size-11 shrink-0 items-center justify-center rounded-xl border border-v1-line bg-v1-surface-hi text-zinc-300 active:bg-zinc-700 disabled:text-zinc-600 ${focusRing}`
+export interface NoticeState {
+  message: string
+  to?: string
+  linkLabel?: string
+  /** Bouton « Annuler » (ex. retirer une portion loguée) ; proposé 7 s, l'échec est affiché dans le message. */
+  undo?: () => Promise<void>
+}
 
-export const searchInputClass = `min-h-12 w-full rounded-xl border border-v1-line bg-v1-surface-hi pl-10 pr-11 text-base text-zinc-100 [color-scheme:dark] placeholder:text-zinc-500 ${focusRing}`
+/** Durée pendant laquelle « Annuler » reste proposé (comme le toast du journal). */
+const UNDO_MS = 7000
 
-export function SearchIcon() {
+/**
+ * Confirmation (zone `role=status` toujours présente, annoncée à l'apparition du message), lien et annulation
+ * facultatifs. « Annuler » disparaît après 7 s (le message reste) et est désactivé pendant l'annulation.
+ */
+export function Notice({ notice }: { notice: NoticeState | null }) {
+  const [failedFor, setFailedFor] = useState<NoticeState | null>(null)
+  const [undoneFor, setUndoneFor] = useState<NoticeState | null>(null)
+  const [expiredFor, setExpiredFor] = useState<NoticeState | null>(null)
+  const [pending, setPending] = useState(false)
+  const failed = notice !== null && failedFor === notice
+  const undone = notice !== null && undoneFor === notice
+  const canUndo = notice?.undo !== undefined && expiredFor !== notice && !undone
+  useEffect(() => {
+    if (!notice?.undo) return
+    const t = setTimeout(() => setExpiredFor(notice), failed ? UNDO_MS * 1.5 : UNDO_MS)
+    return () => clearTimeout(t)
+  }, [notice, failed])
+  const actionClass =
+    'focus-ring flex min-h-11 items-center rounded-ds-pill px-3 text-body-strong text-ember-ink active:opacity-70 disabled:text-ink-muted'
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="M20 20l-4-4" />
-    </svg>
+    <div role="status" aria-live="polite">
+      {notice ? (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 rounded-ds-md bg-surface py-1 pl-3.5 pr-1.5 shadow-card">
+          <p className="m-0 flex min-w-0 items-center gap-2.5 py-2 text-body">
+            <CheckCircle2 size={20} strokeWidth={1.75} aria-hidden="true" className="shrink-0 text-good" />
+            <span>{undone ? 'Annulé.' : failed ? 'Annulation impossible. Réessaie.' : notice.message}</span>
+          </p>
+          <span className="flex items-center">
+            {canUndo ? (
+              <button
+                type="button"
+                disabled={pending}
+                className={actionClass}
+                onClick={() => {
+                  const undo = notice.undo
+                  setPending(true)
+                  void (async () => {
+                    try {
+                      await undo?.()
+                      setUndoneFor(notice)
+                    } catch {
+                      setFailedFor(notice)
+                    } finally {
+                      setPending(false)
+                    }
+                  })()
+                }}
+              >
+                {failed ? 'Réessayer' : 'Annuler'}
+              </button>
+            ) : null}
+            {notice.to && !undone ? (
+              <Link to={notice.to} className={cx(actionClass, 'no-underline')}>
+                {notice.linkLabel ?? 'Voir'}
+              </Link>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -172,16 +116,52 @@ export function CiqualBanner({ failed, onRetry }: { failed: boolean; onRetry: ()
   return (
     <div
       role="alert"
-      className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-200"
+      className="flex items-center justify-between gap-3 rounded-ds-md bg-surface py-1 pl-3.5 pr-1.5 text-body shadow-card"
     >
-      <span>Base d’aliments non chargée : les macros sont incomplètes.</span>
+      <span className="py-2">Base d’aliments non chargée : les macros sont incomplètes.</span>
       <button
         type="button"
         onClick={onRetry}
-        className={`min-h-11 shrink-0 rounded-lg px-3 text-base font-semibold text-orange-300 active:bg-white/10 ${focusRing}`}
+        className="focus-ring min-h-11 shrink-0 rounded-ds-pill px-3 text-body-strong text-ember-ink active:opacity-70"
       >
         Réessayer
       </button>
     </div>
   )
 }
+
+/** Petite étiquette (Perso, Modifiée, tags). */
+export function Badge({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-ds-pill bg-surface-sunken px-2.5 py-0.5 text-caption text-ink">
+      {children}
+    </span>
+  )
+}
+
+/** Pastille de filtre (bouton à bascule, cible 44 px) : sélection = fond ember-soft, anneau ET graisse. */
+export function FilterChip({
+  label,
+  pressed,
+  onClick,
+}: {
+  label: string
+  pressed: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={cx(
+        'focus-ring min-h-11 shrink-0 rounded-ds-pill px-4 text-body-strong',
+        pressed ? 'bg-ember-soft font-bold text-ink ring-2 ring-ember' : 'bg-surface text-ink shadow-card',
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+/** Champ de recherche (loupe, bouton d'effacement 44 px). */

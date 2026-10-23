@@ -2,7 +2,7 @@ import { undoRecipeEntries } from '../../db'
 import type { FoodLogEntry, FridgeItem } from '../../types'
 import { journalPath } from '../routes'
 import { portionsText } from './format'
-import type { NoticeState } from './partsV2'
+import type { NoticeState } from './parts'
 
 /**
  * « 1 portion ajoutée au journal » + Annuler (remet les portions au frigo et retire l'entrée) + lien vers le jour.

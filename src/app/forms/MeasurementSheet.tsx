@@ -1,16 +1,12 @@
 import { useState } from 'react'
 import { addMeasurement, deleteMeasurement, updateMeasurement } from '../../db'
 import { formatDateFr, toLocalDate } from '../../domain/shared/dates'
-import {
-  Button,
-  ConfirmSheet,
-  DateField,
-  DecimalField,
-  ErrorNote,
-  Sheet,
-  TextField,
-  errorMessage,
-} from '../../ui'
+import { errorMessage } from '../../ui'
+import { Button, Sheet } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { DateField } from '../../ui/kit/DateField'
+import { DecimalField, TextField } from '../../ui/kit/Fields'
+import { Note } from '../../ui/kit/Note'
 import type { Measurement } from '../../types'
 import {
   MEASURE_FIELDS,
@@ -21,7 +17,7 @@ import {
 } from './measurementDraft'
 import type { MeasurementDraft } from './measurementDraft'
 
-/** Feuille d'ajout / modification d'une mensuration. Écran de saisie v1 (champs sombres), refait avec les Réglages (R5). */
+/** Feuille d'ajout / modification d'une mensuration (feuille du bas du kit). */
 export function MeasurementSheet({
   measurement,
   onClose,
@@ -104,17 +100,17 @@ export function MeasurementSheet({
           maxLength={120}
           onChange={(note) => setDraft({ ...draft, note })}
         />
-        {error ? <ErrorNote>{error}</ErrorNote> : null}
+        {error ? <Note tone="error">{error}</Note> : null}
         <div className="flex flex-col gap-2">
-          <Button onClick={save} disabled={busy}>
+          <Button fullWidth onClick={save} disabled={busy}>
             Enregistrer
           </Button>
           {measurement ? (
-            <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
+            <Button variant="dangerSoft" fullWidth onClick={() => setConfirmDelete(true)} disabled={busy}>
               Supprimer
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={() => onClose()} disabled={busy}>
+          <Button variant="flat" fullWidth onClick={() => onClose()} disabled={busy}>
             Annuler
           </Button>
         </div>

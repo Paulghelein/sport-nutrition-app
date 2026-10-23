@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { recipeListItems, recipeNutrition, roundMacros, normalizeFoodSearch } from '../../domain/nutrition'
 import type { FoodLogEntry, FridgeItem, LibraryRecipe, LocalDate, MealSlot } from '../../types'
-import { Sheet } from '../../ui'
+import { Card, ListRow, Sheet } from '../../ui/kit'
 import { fmtG, fmtInt } from '../nutrition/format'
 import { fmtPortions, portionsWord } from './format'
-import { LogRecipeSheet } from './LogRecipeSheet'
-import { CiqualBanner, SearchIcon, focusRing, searchInputClass } from './parts'
+import { CiqualBanner } from './parts'
+import { SearchBox } from '../../ui/kit/SearchBox'
+import { RecipeLogSheet } from './RecipeLogSheet'
 import { recipesWithMissingData, useFridge, useRecipeLibrary } from './useRecipes'
 
 type Item = ReturnType<typeof recipeListItems>[number]
@@ -24,23 +25,17 @@ function PickRow({
   const m = roundMacros(item.perServing)
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => onPick(item.recipe)}
-        className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2 text-left active:bg-zinc-700 ${focusRing}`}
-      >
-        <span className="min-w-0">
-          <span className="block text-base font-medium leading-snug">{item.recipe.name}</span>
-          <span className="block text-sm text-zinc-400">
-            {left !== undefined ? `Au frigo : ${fmtPortions(left)} ${portionsWord(left)} · ` : ''}P{' '}
-            {fmtG(m.protein)} g par portion
+      <ListRow
+        title={item.recipe.name}
+        subtitle={`${left !== undefined ? `Au frigo : ${fmtPortions(left)} ${portionsWord(left)} · ` : ''}P ${fmtG(m.protein)} g par portion`}
+        trailing={
+          <span className="font-display text-body-strong tabular-nums">
+            {approx ? <span aria-label="Macros incomplètes, environ ">≈ </span> : null}
+            {fmtInt(m.kcal)} kcal
           </span>
-        </span>
-        <span className="shrink-0 text-base font-semibold tabular-nums">
-          {approx ? <span aria-label="Macros incomplètes, environ ">≈ </span> : null}
-          {fmtInt(m.kcal)} kcal
-        </span>
-      </button>
+        }
+        onPress={() => onPick(item.recipe)}
+      />
     </li>
   )
 }
@@ -84,59 +79,56 @@ export default function RecipePickerSheet({
 
   const group = (title: string, list: Item[]) =>
     list.length === 0 ? null : (
-      <section className="mt-4" aria-label={title}>
-        <h3 className="mb-1.5 text-base font-bold text-zinc-300">{title}</h3>
-        <ul className="m-0 flex list-none flex-col gap-2 p-0">
-          {list.map((i) => (
-            <PickRow
-              key={i.recipe.id}
-              item={i}
-              left={left.get(i.recipe.id)}
-              approx={approx.has(i.recipe.id)}
-              onPick={setChosen}
-            />
-          ))}
-        </ul>
+      <section aria-label={title} className="flex flex-col gap-1.5">
+        <h3 className="m-0 text-label uppercase text-ink-muted">{title}</h3>
+        <Card padding="none" className="px-4 py-1">
+          <ul className="m-0 list-none p-0">
+            {list.map((i) => (
+              <PickRow
+                key={i.recipe.id}
+                item={i}
+                left={left.get(i.recipe.id)}
+                approx={approx.has(i.recipe.id)}
+                onPick={setChosen}
+              />
+            ))}
+          </ul>
+        </Card>
       </section>
     )
 
   return (
     <>
       <Sheet title="Portion de recette" onClose={onClose}>
-        <div className="relative">
-          <label htmlFor="recipe-pick-search" className="sr-only">
-            Rechercher une recette
-          </label>
-          <SearchIcon />
-          <input
-            id="recipe-pick-search"
-            type="text"
-            inputMode="search"
-            autoComplete="off"
-            placeholder="Rechercher une recette"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className={searchInputClass}
-          />
+        <div className="flex flex-col gap-4">
+          <div className="flex">
+            <SearchBox
+              id="recipe-pick-search"
+              label="Rechercher une recette"
+              value={query}
+              onChange={setQuery}
+              onClear={() => setQuery('')}
+            />
+          </div>
+          {lib ? <CiqualBanner failed={lib.ciqualFailed} onRetry={lib.retry} /> : null}
+          {!lib ? (
+            <p className="m-0 text-body text-ink-muted" aria-busy="true">
+              Chargement…
+            </p>
+          ) : (
+            <>
+              {group('Au frigo', inFridge)}
+              {group('Favoris', favorites)}
+              {group(searching ? 'Résultats' : 'Toutes les recettes', others)}
+              {matches.length === 0 ? (
+                <p className="m-0 text-body text-ink-muted">Aucune recette trouvée.</p>
+              ) : null}
+            </>
+          )}
         </div>
-        {lib ? <CiqualBanner failed={lib.ciqualFailed} onRetry={lib.retry} /> : null}
-        {!lib ? (
-          <p className="mt-4 text-base text-zinc-400" aria-busy="true">
-            Chargement…
-          </p>
-        ) : (
-          <>
-            {group('Au frigo', inFridge)}
-            {group('Favoris', favorites)}
-            {group(searching ? 'Résultats' : 'Toutes les recettes', others)}
-            {matches.length === 0 ? (
-              <p className="mt-4 text-base text-zinc-400">Aucune recette trouvée.</p>
-            ) : null}
-          </>
-        )}
       </Sheet>
       {chosen && lib ? (
-        <LogRecipeSheet
+        <RecipeLogSheet
           recipe={chosen}
           nutrition={recipeNutrition(chosen, lib.lookup)}
           fridge={fridge ?? []}

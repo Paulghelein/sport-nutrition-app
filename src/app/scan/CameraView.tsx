@@ -27,7 +27,7 @@ export function CameraView({
   )
 
   return (
-    <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-2xl bg-black">
+    <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-ds-lg bg-inverse shadow-card">
       <video
         ref={video}
         muted
@@ -37,14 +37,14 @@ export function CameraView({
       />
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-x-6 top-1/2 h-1/3 -translate-y-1/2 rounded-2xl border-4 transition-colors ${flash ? 'border-emerald-400 bg-emerald-400/20' : 'border-white/80'}`}
+        className={`pointer-events-none absolute inset-x-6 top-1/2 h-1/3 -translate-y-1/2 rounded-ds-lg border-4 transition-colors ${flash ? 'border-good bg-good/20' : 'border-on-inverse/80'}`}
       />
       {starting && running ? (
-        <p role="status" className="absolute inset-x-0 bottom-3 text-center text-base text-white">
+        <p role="status" className="absolute inset-x-0 bottom-3 text-center text-body-strong text-on-inverse">
           Ouverture de la caméra…
         </p>
       ) : (
-        <p className="absolute inset-x-0 bottom-3 text-center text-base text-zinc-300">
+        <p className="absolute inset-x-0 bottom-3 text-center text-body text-on-inverse-muted">
           Tiens le code à 15–20 cm
         </p>
       )}
@@ -53,7 +53,7 @@ export function CameraView({
           type="button"
           aria-pressed={torchOn}
           onClick={() => void toggleTorch()}
-          className="absolute right-3 top-3 flex min-h-11 items-center rounded-full bg-black/60 px-4 text-base font-semibold text-white active:bg-black/80"
+          className="focus-ring absolute right-3 top-3 flex min-h-11 items-center rounded-ds-pill bg-inverse/70 px-4 text-body-strong text-on-inverse active:opacity-70"
         >
           {torchOn ? 'Lampe allumée' : 'Lampe'}
         </button>

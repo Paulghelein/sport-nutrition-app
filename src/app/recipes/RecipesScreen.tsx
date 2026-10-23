@@ -16,7 +16,8 @@ import { NutritionTabs } from '../nutrition/NutritionTabs'
 import { SLOT_LABEL, fmtG, fmtInt, isMealSlot, slotChoices } from '../nutrition/format'
 import { NEW_RECIPE_PATH, RECIPE_SCAN_PATH, SETTINGS_PATH, VIDEO_RECIPE_PATH, recipePath } from '../routes'
 import { fmtMinutes } from './format'
-import { Badge, CiqualBanner, FilterChip, Loading, SearchBox } from './partsV2'
+import { Badge, CiqualBanner, FilterChip, Loading } from './parts'
+import { SearchBox } from '../../ui/kit/SearchBox'
 import { recipesWithMissingData, useRecipeLibrary } from './useRecipes'
 
 type TimeFilter = 'all' | 15 | 30 | 45 | 60

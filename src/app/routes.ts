@@ -15,6 +15,7 @@ export const GUIDED_PATH = `${TRAINING_PATH}/seance`
 export const NUTRITION_PATH = '/nutrition'
 export const PROGRESS_PATH = '/progres'
 export const SETTINGS_PATH = '/reglages'
+export const IMPORT_PATH = `${SETTINGS_PATH}/importer`
 
 /** Mode cuisine d'une recette : plein écran, hors de la barre d'onglets. */
 export const COOK_PATH_PATTERN = /^\/nutrition\/recettes\/[^/]+\/cuisine\/?$/
@@ -47,3 +48,11 @@ export const cookPath = (id: string): string => `${RECIPES_PATH}/${id}/cuisine`
 export const editRecipePath = (id: string): string => `${RECIPES_PATH}/${id}/modifier`
 /** Journal d'un jour donné. */
 export const journalPath = (date: string): string => `${NUTRITION_PATH}?date=${date}`
+
+/** R5 : ajout d'un aliment au journal, scan, fiches et formulaire d'aliment. */
+export const ADD_FOOD_PATH = `${NUTRITION_PATH}/ajouter`
+export const SCAN_PATH = `${NUTRITION_PATH}/scanner`
+export const FOODS_PATH = `${NUTRITION_PATH}/aliments`
+export const NEW_FOOD_PATH = `${FOODS_PATH}/nouveau`
+export const foodPath = (id: string): string => `${FOODS_PATH}/${id}`
+export const editFoodPath = (id: string): string => `${FOODS_PATH}/${id}/modifier`

@@ -1,18 +1,23 @@
+import { Star } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CIQUAL_ATTRIBUTION } from '../../content/foods/version'
 import { deleteFood, getCiqualFood, getFoodRow, restoreCiqualFood, setFoodFavorite } from '../../db'
 import { isCiqualOverrideModified, mergeFoods } from '../../domain/nutrition'
-import { Button, Card, ConfirmSheet, ErrorNote, errorMessage, linkButtonClass, useLiveQuery } from '../../ui'
+import { errorMessage, useLiveQuery } from '../../ui'
+import { Button, Card, buttonClass } from '../../ui/kit'
+import { ConfirmSheet } from '../../ui/kit/ConfirmSheet'
+import { Note } from '../../ui/kit/Note'
+import { editFoodPath } from '../routes'
 import { fmtG, fmtInt } from './format'
-import { BackLink } from './parts'
+import { BackLink } from '../../ui/kit/BackLink'
 import { useAddContext, useGoBack } from './navContext'
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-v1-line bg-v1-surface-hi px-3 py-2.5">
-      <dt className="text-sm text-zinc-400">{label}</dt>
-      <dd className="m-0 mt-0.5 text-xl font-bold tabular-nums">{value}</dd>
+    <div className="rounded-ds-md bg-canvas px-3 py-2.5">
+      <dt className="text-caption text-ink-muted">{label}</dt>
+      <dd className="m-0 mt-0.5 font-display text-title tabular-nums">{value}</dd>
     </div>
   )
 }
@@ -34,15 +39,15 @@ export default function FoodScreen() {
 
   if (!data) {
     return (
-      <>
+      <div className="flex flex-col gap-3.5">
         <BackLink to={addPath}>Ajouter</BackLink>
         {loading ? null : (
           <>
-            <h1 className="mt-2 text-2xl font-bold">Aliment introuvable</h1>
-            <p className="mt-2 text-base text-zinc-300">Il a peut-être été supprimé.</p>
+            <h1 className="m-0 font-display text-display-l">Aliment introuvable</h1>
+            <p className="m-0 text-body text-ink-muted">Il a peut-être été supprimé.</p>
           </>
         )}
-      </>
+      </div>
     )
   }
 
@@ -77,21 +82,25 @@ export default function FoodScreen() {
         : 'Aliment personnalisé'
 
   return (
-    <>
+    <div className="flex flex-col gap-3.5">
       <BackLink to={addPath}>Ajouter</BackLink>
-      <h1 className="mt-2 text-2xl font-bold leading-tight">{food.name}</h1>
-      <p className="mt-1 text-base text-zinc-400">
-        {food.brand ? `${food.brand} · ` : ''}
-        {sourceLabel}
-        {modified ? ' · modifié' : ''}
-      </p>
-      {food.ean ? <p className="mt-1 text-base text-zinc-400">Code-barres : {food.ean}</p> : null}
-      {food.source === 'off' ? (
-        <p className="mt-1 text-sm text-zinc-400">Données Open Food Facts (ODbL)</p>
-      ) : null}
+      <header className="flex flex-col gap-1">
+        <h1 className="m-0 font-display text-display-l">{food.name}</h1>
+        <p className="m-0 text-body text-ink-muted">
+          {food.brand ? `${food.brand} · ` : ''}
+          {sourceLabel}
+          {modified ? ' · modifié' : ''}
+        </p>
+        {food.ean ? <p className="m-0 text-body text-ink-muted">Code-barres : {food.ean}</p> : null}
+        {food.source === 'off' ? (
+          <p className="m-0 text-caption text-ink-muted">Données Open Food Facts (ODbL)</p>
+        ) : null}
+      </header>
 
-      <Card className="mt-5">
-        <h2 className="text-lg font-bold">Pour 100 g</h2>
+      <Card padding="large" aria-labelledby="food-per100">
+        <h2 id="food-per100" className="m-0 font-display text-title">
+          Pour 100 g
+        </h2>
         <dl className="m-0 mt-3 grid grid-cols-2 gap-2">
           <Fact label="Calories" value={`${fmtInt(per.kcal)} kcal`} />
           <Fact label="Protéines" value={`${fmtG(per.protein)} g`} />
@@ -104,40 +113,44 @@ export default function FoodScreen() {
         </dl>
       </Card>
 
-      {error ? (
-        <div className="mt-4">
-          <ErrorNote>{error}</ErrorNote>
-        </div>
-      ) : null}
+      {error ? <Note tone="error">{error}</Note> : null}
 
-      <div className="mt-5 flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <Button
           variant="secondary"
+          fullWidth
+          icon={
+            <Star
+              size={20}
+              strokeWidth={1.75}
+              aria-hidden="true"
+              className={food.favorite ? 'fill-ember' : ''}
+            />
+          }
           aria-pressed={food.favorite}
           disabled={busy}
           onClick={() => void run(async () => void (await setFoodFavorite(food, !food.favorite)))}
         >
-          {food.favorite ? '★ Retirer des favoris' : '☆ Mettre en favori'}
+          {food.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
         </Button>
-        <Link
-          to={`/nutrition/aliments/${food.id}/modifier${search}`}
-          className={linkButtonClass('secondary')}
-        >
+        <Link to={`${editFoodPath(food.id)}${search}`} className={buttonClass('secondary', 'normal', true)}>
           Modifier
         </Link>
         {modified ? (
-          <Button variant="secondary" disabled={busy} onClick={() => setConfirm('restore')}>
+          <Button variant="secondary" fullWidth disabled={busy} onClick={() => setConfirm('restore')}>
             Rétablir l’original
           </Button>
         ) : null}
         {food.source !== 'ciqual' ? (
-          <Button variant="danger" disabled={busy} onClick={() => setConfirm('delete')}>
+          <Button variant="danger" fullWidth disabled={busy} onClick={() => setConfirm('delete')}>
             Supprimer
           </Button>
         ) : null}
       </div>
 
-      {food.source === 'ciqual' ? <p className="mt-6 text-sm text-zinc-400">{CIQUAL_ATTRIBUTION}</p> : null}
+      {food.source === 'ciqual' ? (
+        <p className="m-0 text-caption text-ink-muted">{CIQUAL_ATTRIBUTION}</p>
+      ) : null}
 
       {confirm === 'delete' ? (
         <ConfirmSheet
@@ -165,6 +178,6 @@ export default function FoodScreen() {
           onCancel={() => setConfirm(null)}
         />
       ) : null}
-    </>
+    </div>
   )
 }

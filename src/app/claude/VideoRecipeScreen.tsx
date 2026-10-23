@@ -16,7 +16,7 @@ import { useClaudeBridge } from './useClaudeBridge'
 import { INVALID_LINK_MESSAGE, PLATFORM_LABEL, linkState, pasteOutcome } from './videoFlow'
 
 const areaClass =
-  'focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-sans text-body text-ink placeholder:text-ink-muted'
+  'focus-ring w-full rounded-ds-md bg-canvas px-3.5 py-3 font-sans text-input text-ink placeholder:text-ink-muted'
 
 function Step({ n, children }: { n: number; children: string }) {
   return (
@@ -161,7 +161,7 @@ export default function VideoRecipeScreen() {
                   rows={8}
                   value={message.text}
                   onFocus={(e) => e.currentTarget.select()}
-                  className={`${areaClass} font-mono text-caption`}
+                  className={`${areaClass} font-mono`}
                 />
               </div>
             </Card>

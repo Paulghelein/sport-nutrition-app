@@ -1,10 +1,13 @@
 import { ClipboardPaste, FileJson, Ruler } from 'lucide-react'
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getActiveSession, listWeighIns } from '../../db'
 import type { MealSlot, WeighIn } from '../../types'
+import { formatKg } from '../../ui'
 import { DEFAULT_CREATE_ENTRIES, LogSheet } from '../../ui/kit'
 import type { LogEntry } from '../../ui/kit'
+import { Toast } from '../nutrition/JournalToast'
+import type { ToastState } from '../nutrition/JournalToast'
 import { slotForNow } from '../nutrition/format'
 import { GUIDED_PATH, PREVIEW_PATH } from '../routes'
 import { loadDuration } from '../training/durations'
@@ -72,6 +75,9 @@ function AddSheet({ onClose, onWeigh }: { onClose: () => void; onWeigh: () => vo
 export function AddHost({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [weighIns, setWeighIns] = useState<WeighIn[] | null>(null)
   const [failed, setFailed] = useState(false)
+  const [toast, setToast] = useState<ToastState | null>(null)
+  // Stable : le minuteur du toast dépend de `onDismiss` et ne doit pas repartir à chaque rendu.
+  const dismissToast = useCallback(() => setToast(null), [])
   const reading = useRef(false)
 
   useEffect(() => {
@@ -86,7 +92,7 @@ export function AddHost({ open, onClose }: { open: boolean; onClose: () => void 
     // Sans les pesées existantes, la feuille ne saurait pas qu'une pesée existe déjà ce jour-là : on n'ouvre rien.
     void listWeighIns()
       .then((list) => {
-        // Le kit et la v1 ont chacun leur pile `inert` : on ferme la feuille Ajouter avant d'ouvrir la pesée.
+        // On ferme la feuille Ajouter avant d'ouvrir la pesée (deux feuilles superposées seraient inutiles ici).
         onClose()
         setWeighIns(list)
       })
@@ -104,8 +110,19 @@ export function AddHost({ open, onClose }: { open: boolean; onClose: () => void 
       {open && <AddSheet onClose={onClose} onWeigh={weigh} />}
       {weighIns && (
         <Suspense fallback={null}>
-          <WeightSheet weighIn={null} existing={weighIns} onClose={() => setWeighIns(null)} />
+          <WeightSheet
+            weighIn={null}
+            existing={weighIns}
+            onClose={() => setWeighIns(null)}
+            onSaved={(kg) => setToast({ message: `Pesée enregistrée : ${formatKg(kg)} kg.` })}
+          />
         </Suspense>
+      )}
+      {/* Confirmation brève (7 s), au-dessus de la barre flottante comme les autres messages de ce shell. */}
+      {toast && (
+        <div style={{ bottom: 'var(--bar-clearance)' }} className="fixed inset-x-4 z-50 mx-auto max-w-xl">
+          <Toast toast={toast} onDismiss={dismissToast} />
+        </div>
       )}
       {failed && (
         <p

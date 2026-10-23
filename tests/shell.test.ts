@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activeTab, hidesTabBar, usesCanvas } from '../src/app/shell/activeTab'
+import { activeTab, hidesTabBar } from '../src/app/shell/activeTab'
 import { legacyRedirect } from '../src/app/shell/legacyRedirect'
 import { destinationFor } from '../src/app/shell/destinations'
 import { GUIDED_PATH } from '../src/app/routes'
@@ -44,30 +44,9 @@ describe('mise en page', () => {
     expect(hidesTabBar('/entrainement')).toBe(false)
     expect(hidesTabBar('/nutrition/recettes/abc')).toBe(false)
   })
-  it('seuls les écrans refaits (accueil, Progrès, Entraînement) sont en clair', () => {
-    expect(usesCanvas('/')).toBe(true)
-    expect(usesCanvas('/progres')).toBe(true)
-    expect(usesCanvas('/entrainement')).toBe(true)
-    expect(usesCanvas('/entrainement/apercu')).toBe(true)
-    expect(usesCanvas('/nutrition')).toBe(true)
-    expect(usesCanvas('/nutrition/recette-scan')).toBe(true)
+  it('masque la barre en recette par scan, pas en recette d’une vidéo', () => {
     expect(hidesTabBar('/nutrition/recette-scan')).toBe(true)
     expect(hidesTabBar('/nutrition/recette-video')).toBe(false)
-    expect(usesCanvas('/nutrition/recette-video')).toBe(true)
-    for (const p of [
-      '/nutrition/recettes',
-      '/nutrition/recettes/poulet-riz',
-      '/nutrition/recettes/poulet-riz/cuisine',
-      '/nutrition/frigo',
-      '/nutrition/courses',
-    ])
-      expect(usesCanvas(p), p).toBe(true)
-    // Formulaire de recette et import : encore en v1 (R5).
-    expect(usesCanvas('/nutrition/recettes/nouvelle')).toBe(false)
-    expect(usesCanvas('/nutrition/recettes/poulet-riz/modifier')).toBe(false)
-    expect(usesCanvas('/reglages/importer')).toBe(false)
-    expect(usesCanvas('/nutrition/ajouter')).toBe(false)
-    expect(usesCanvas('/nutrition/scanner')).toBe(false)
   })
 })
 
